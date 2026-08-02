@@ -270,18 +270,20 @@ const MOTIV = [
 ];
 const weekStart = ()=>{ const d=nowKST(); const day=(d.getDay()+6)%7; const m=new Date(d.getTime()-day*86400000); return m.toISOString().slice(0,10); };
 function weekDoneCount(){ const ws=weekStart(); return P().logdays.filter(k=>k>=ws).length; }
-function streakCount(){ const days=P().logdays; if(!days.length) return 0; let s=0;
-  for(let i=0;i<90;i++){ const t=new Date(nowKST().getTime()-i*86400000); const k=t.toISOString().slice(0,10); const dow=t.getUTCDay();
-    if(dow===0||dow===6) continue; if(days.includes(k)) s++; else if(i>0) break; } return s; }
+function activeDays(){ const s=new Set(P().logdays); (P().cardio||[]).forEach(c=>s.add(c.date)); return s; }
+function streakCount(){ const A=activeDays(); if(!A.size) return 0; let s=0;
+  for(let i=0;i<120;i++){ const t=new Date(nowKST().getTime()-i*86400000); const k=t.toISOString().slice(0,10); const dow=t.getUTCDay();
+    if(A.has(k)) s++; else if(dow===0||dow===6) continue; else if(i>0) break; } return s; }
 function gameStats(){
   const sessions=P().logdays.length;
   const hist=Object.values(P().history).flat();
   const sets=hist.reduce((a,h)=>a+h.sets.filter(s=>s.w!=null||s.reps!=null).length,0);
   const prs=Object.values(P().history).filter(h=>h.some(x=>x.pr)).length;
   const vol=hist.reduce((a,h)=>a+h.sets.reduce((x,s)=>x+((s.w||0)*(s.reps||0)),0),0);
-  const xp=sessions*50+sets*5+prs*30;
+  const cardio=(P().cardio||[]).length;
+  const xp=sessions*50+sets*5+prs*30+cardio*20;
   const per=300; const level=Math.floor(xp/per)+1;
-  return {sessions,sets,prs,vol,xp,level,xpIn:xp%per,xpFor:per,streak:streakCount(),week:weekDoneCount(),target:P().weeklyTarget||4};
+  return {sessions,sets,prs,vol,cardio,xp,level,xpIn:xp%per,xpFor:per,streak:streakCount(),week:weekDoneCount(),target:P().weeklyTarget||4};
 }
 const BADGES=[
   {id:"first", i:"🎯", n:"첫 발걸음", chk:g=>g.sessions>=1},
@@ -292,6 +294,8 @@ const BADGES=[
   {id:"s12",   i:"📅", n:"습관 형성(12회)", chk:g=>g.sessions>=12},
   {id:"ton1",  i:"🛢️", n:"1톤 클럽", chk:g=>g.vol>=1000},
   {id:"s30",   i:"🦾", n:"철인(30회)", chk:g=>g.sessions>=30},
+  {id:"cardio10",i:"🏃", n:"유산소 10회", chk:g=>g.cardio>=10},
+  {id:"cardio1",i:"🌅", n:"첫 유산소", chk:g=>g.cardio>=1},
 ];
 function earnedBadges(g){ return BADGES.filter(b=>b.chk(g)).map(b=>b.id); }
 function syncBadges(g){ // 신규 획득분 반환
@@ -314,7 +318,7 @@ function renderGameCard(v){
       <div class="xpbar"><i style="width:${pct}%"></i></div>
       <div class="k" style="margin-top:4px">다음 레벨까지 ${g.xpFor-g.xpIn} XP</div>
     </div></div>
-    <div class="badges">${BADGES.slice(0,8).map(b=>{const on=(P().badges||[]).includes(b.id);
+    <div class="badges">${BADGES.map(b=>{const on=(P().badges||[]).includes(b.id);
       return `<div class="bdg ${on?'':'lock'}"><div class="i">${b.i}</div><div class="n">${b.n}</div></div>`;}).join("")}</div>
     <div class="motiv">${g.week>=g.target?`⭐ 이번주 목표 달성! 대단해요 ${P().name}님`:MOTIV[g.sessions%MOTIV.length]}</div>`;
   v.appendChild(c);
@@ -340,6 +344,74 @@ function celebrate(d){
     <button class="btn" id="celeOk" style="max-width:340px">좋아요! 🙌</button>`;
   document.body.appendChild(cele); confetti(); beep();
   $("#celeOk").onclick=()=>{ cele.remove(); nav("progress"); };
+}
+
+/* ---------- 유산소 모듈 (아침 공복 · Zone2 중심) ---------- */
+const CARDIO=[
+  {id:"walk", n:"빠른 걷기", yt:"빠른 걷기 유산소 방법"},
+  {id:"incline", n:"트레드밀 경사 걷기", yt:"트레드밀 경사 걷기 유산소"},
+  {id:"cycle", n:"실내 사이클", yt:"실내 사이클 유산소 방법"},
+  {id:"row", n:"로잉머신", yt:"로잉머신 자세 유산소"},
+  {id:"hiit", n:"HIIT 인터벌", yt:"HIIT 유산소 초보 홈트"},
+];
+function cardioRec(){
+  const day=SPLIT[nowKST().getDay()];
+  const legDay = day.key==="legs"||day.key==="lower";
+  const goal=P().goal||"";
+  const cut = goal.includes("체지방");
+  const min = cut? "35~40분" : "30분";
+  let note = `아침 공복 · <b style="color:var(--brand2)">Zone 2</b>(대화되는 강도)로 ${min}. 끝나고 1시간 내 단백질로 근육 보호.`;
+  if(legDay) note += " ⚠️ 오늘 하체날 → HIIT 말고 저강도로!";
+  const weekN=(P().cardio||[]).filter(c=>c.date>=weekStart()).length;
+  const target = cut? 4 : 3;
+  return {min, note, legDay, weekN, target};
+}
+function renderCardioCard(v){
+  const r=cardioRec(); const doneToday=(P().cardio||[]).some(c=>c.date===todayKey());
+  const c=el("div","card");
+  c.innerHTML=`<div class="row between"><b>🏃 오늘의 유산소</b><span class="pill">이번주 ${r.weekN}/${r.target}회</span></div>
+    <div class="rec" style="text-align:left;margin-top:10px;line-height:1.55">💡 ${r.note}</div>`;
+  const rowb=el("div","row"); rowb.style.marginTop="12px"; rowb.style.gap="8px";
+  if(doneToday){ rowb.innerHTML=`<span class="chip">✅ 오늘 유산소 완료 (+20 XP)</span>`; }
+  else{
+    const b=el("button","btn sec","🏃 유산소 시작 · 기록"); b.style.flex="1"; b.onclick=openCardioLog; rowb.appendChild(b);
+  }
+  const yt=el("button","yt","▶ 방법"); yt.onclick=()=>openYT("Zone 2 공복 유산소 방법"); rowb.appendChild(yt);
+  c.appendChild(rowb); v.appendChild(c);
+}
+let cardioT=null, cardioSec=0;
+function openCardioLog(){
+  cardioSec=0; if(cardioT){clearInterval(cardioT); cardioT=null;}
+  const m=el("div","card"); m.id="cardioModal";
+  m.style.cssText="position:fixed;inset:0;z-index:80;margin:0;border-radius:0;overflow:auto;background:var(--bg);padding:20px 16px";
+  m.innerHTML=`<h2>🏃 유산소 기록</h2>
+    <label class="fld">종류</label>
+    <select id="c_type">${CARDIO.map(c=>`<option value="${c.id}">${c.n}</option>`).join("")}</select>
+    <label class="fld">시간 (분)</label><input id="c_min" type="number" inputmode="numeric" placeholder="예: 30">
+    <label class="fld">거리 (km · 선택)</label><input id="c_dist" type="number" inputmode="decimal" placeholder="예: 3.5">
+    <label class="fld">강도</label>
+    <select id="c_int"><option>Zone 2 (저강도)</option><option>중강도</option><option>HIIT (고강도)</option></select>
+    <div class="note" style="margin-top:14px"><div class="row between"><b id="c_tdisp" style="font-size:22px">00:00</b>
+      <button class="btn sm" id="c_tstart">⏱️ 타이머 시작</button></div>
+      <div class="k" style="margin-top:6px">타이머로 재면 시간이 자동 입력돼요</div></div>`;
+  const save=el("button","btn green","저장 (+20 XP)"); save.style.marginTop="16px"; save.onclick=saveCardio;
+  const cancel=el("button","btn sec","취소"); cancel.style.marginTop="8px"; cancel.onclick=()=>{ if(cardioT){clearInterval(cardioT);cardioT=null;} m.remove(); };
+  m.appendChild(save); m.appendChild(cancel); document.body.appendChild(m);
+  $("#c_tstart").onclick=()=>{ const btn=$("#c_tstart");
+    if(cardioT){ clearInterval(cardioT); cardioT=null; btn.textContent="⏱️ 타이머 시작"; $("#c_min").value=Math.max(1,Math.round(cardioSec/60)); return; }
+    btn.textContent="⏸️ 정지 (시간 입력)"; cardioT=setInterval(()=>{ cardioSec++;
+      $("#c_tdisp").textContent=String(Math.floor(cardioSec/60)).padStart(2,'0')+":"+String(cardioSec%60).padStart(2,'0'); },1000); };
+}
+function saveCardio(){
+  const min=+($("#c_min").value||0); if(!min){ toast("시간(분)을 입력하세요"); return; }
+  if(cardioT){clearInterval(cardioT); cardioT=null;}
+  P().cardio=P().cardio||[];
+  const type=(CARDIO.find(c=>c.id===$("#c_type").value)||{n:"유산소"}).n;
+  P().cardio.push({date:todayKey(), type, min, dist:$("#c_dist").value?+$("#c_dist").value:null, intensity:$("#c_int").value});
+  const g=gameStats(); const newB=syncBadges(g); persist();
+  $("#cardioModal").remove(); beep();
+  toast("🏃 유산소 저장 · +20 XP"+(newB.length?` · 배지 ${newB.length}개!`:""));
+  nav("home");
 }
 
 /* ---------- 점진적 과부하 엔진 ---------- */
@@ -417,6 +489,7 @@ function renderHome(){
     <span class="tag ${plan.day.key}">${plan.day.key.toUpperCase()}</span></div>`;
   v.appendChild(head);
   renderGameCard(v);
+  renderCardioCard(v);
 
   if(plan.rest){
     v.appendChild(el("div","note",`<div class="h">🌙 회복도 훈련의 일부예요</div>근육은 쉴 때 자랍니다(근단백 합성↑). 가벼운 산책·스트레칭·충분한 수면·단백질(체중×1.6~2.2g) 챙기세요. 월~금에 프로그램이 나옵니다.`));
@@ -657,15 +730,18 @@ function renderProgress(){
       v.appendChild(card);
     });
   } else {
-    const days=[...P().logdays].reverse();
+    const days=[...new Set([...P().logdays, ...(P().cardio||[]).map(c=>c.date)])].sort().reverse();
     if(!days.length){ v.appendChild(el("div","note","운동 일지가 비어 있어요. 첫 운동을 완료해보세요!")); return; }
     days.forEach(dk=>{
       const items=[]; for(const id in P().history){ const rec=P().history[id].find(x=>x.date===dk); if(rec) items.push({id,rec}); }
+      const cardios=(P().cardio||[]).filter(c=>c.date===dk);
       const card=el("div","card");
-      card.innerHTML=`<b>${dk}</b> <span class="k">· ${items.length}종목</span>
+      card.innerHTML=`<b>${dk}</b> <span class="k">· ${items.length?items.length+"종목":""}${items.length&&cardios.length?" · ":""}${cardios.length?"유산소 "+cardios.length:""}</span>
         <div style="margin-top:8px">${items.map(it=>`<div class="row between" style="padding:5px 0;border-top:1px solid var(--line)">
           <span>${EX[it.id].name} ${it.rec.pr?'🏆':''}</span>
-          <span class="k">${it.rec.sets.filter(s=>s.w).map(s=>`${s.w}×${s.reps}`).join(" · ")||"완료"}</span></div>`).join("")}</div>`;
+          <span class="k">${it.rec.sets.filter(s=>s.w).map(s=>`${s.w}×${s.reps}`).join(" · ")||"완료"}</span></div>`).join("")}
+          ${cardios.map(c=>`<div class="row between" style="padding:5px 0;border-top:1px solid var(--line)">
+          <span>🏃 ${c.type}</span><span class="k">${c.min}분${c.dist?" · "+c.dist+"km":""} · ${c.intensity}</span></div>`).join("")}</div>`;
       v.appendChild(card);
     });
   }
@@ -739,13 +815,7 @@ function nav(view){
 }
 document.querySelectorAll("nav button").forEach(b=> b.onclick=()=>nav(b.dataset.nav));
 
-function updateStreak(){
-  // 연속 운동일(주말 제외 관대) 간단 계산
-  const days=P().logdays; let streak=0;
-  if(days.length){ let d=nowKST(); for(let i=0;i<60;i++){ const k=new Date(d.getTime()-i*86400000+9*3600000).toISOString().slice(0,10);
-    const dow=new Date(k).getDay(); if(dow===0||dow===6) continue; if(days.includes(k)) streak++; else if(i>0) break; } }
-  $("#streakPill").textContent="🔥 "+streak+"일";
-}
+function updateStreak(){ $("#streakPill").textContent="🔥 "+streakCount()+"일"; }
 
 function boot(){
   if(!S.current){ $("#app").classList.add("hidden"); $("#onboard").classList.remove("hidden"); renderProfiles(); return; }
