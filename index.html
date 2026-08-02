@@ -99,6 +99,34 @@
   .note .h{font-weight:800; color:var(--brand2); margin-bottom:6px}
   .k{font-size:12px;color:var(--sub)}
   .toast{position:fixed; left:50%; top:20px; transform:translateX(-50%); background:#04121e; border:1px solid var(--brand2); color:var(--brand2); padding:12px 18px; border-radius:12px; font-weight:800; z-index:99; box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  /* gamification */
+  .game{background:linear-gradient(135deg,#1a2740,#12203a); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin:12px 0}
+  .game .lv{display:flex; align-items:center; gap:12px}
+  .ring{position:relative; width:64px; height:64px; flex:0 0 64px}
+  .ring .txt{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:900}
+  .ring .txt small{font-size:9px; color:var(--sub); font-weight:700}
+  .lvlbadge{font-size:13px; font-weight:900; color:#04121e; background:linear-gradient(135deg,#ffd76b,#ffb020); padding:3px 9px; border-radius:999px}
+  .xpbar{height:9px;background:#0d1826;border-radius:99px;overflow:hidden;margin-top:7px;border:1px solid var(--line)}
+  .xpbar>i{display:block;height:100%;background:linear-gradient(90deg,#ffd76b,#ffb020)}
+  .badges{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px}
+  .bdg{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:9px 4px; text-align:center}
+  .bdg.lock{opacity:.32; filter:grayscale(1)}
+  .bdg .i{font-size:22px; line-height:1.1}
+  .bdg .n{font-size:9.5px; color:var(--sub); margin-top:3px; line-height:1.1}
+  .motiv{font-size:13px; color:#ffd76b; font-weight:700; margin-top:10px; line-height:1.5}
+  /* celebrate */
+  .cele{position:fixed; inset:0; z-index:90; background:rgba(6,12,20,.94); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; text-align:center; overflow:hidden}
+  .cele h1{font-size:30px; margin-bottom:6px}
+  .cele .sub{color:var(--sub); margin-bottom:20px}
+  .cele .box{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; width:100%; max-width:340px}
+  .cele .g2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .cele .g2 .n{font-size:24px; font-weight:900} .cele .g2 .l{font-size:11px; color:var(--sub)}
+  .cele .xpg{font-size:16px; font-weight:900; color:#ffd76b; margin-top:14px}
+  .cele .newb{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .cele .newb .b{background:linear-gradient(135deg,#ffd76b22,#ffb02022); border:1px solid #ffb02055; border-radius:12px; padding:8px 12px; font-size:13px; font-weight:800; color:#ffd76b}
+  .cele .mv{color:#eaf2fb; font-size:15px; font-weight:700; margin:18px 0 22px; line-height:1.6}
+  .cf{position:fixed; top:-20px; width:9px; height:14px; z-index:91; border-radius:2px; animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg); opacity:.9}}
 </style>
 </head>
 <body>
@@ -229,6 +257,91 @@ if(!S.profiles){
 const P = ()=> S.profiles[S.current];
 const persist = ()=> DB.save(S);
 
+/* ---------- 게임화(재미·동기·습관) ---------- */
+const MOTIV = [
+  "오늘의 1%가 쌓여 완전히 다른 몸을 만듭니다.",
+  "어제의 나보다 강해졌어요. 그거면 충분해요.",
+  "운동은 '기분'이 아니라 '시스템'이에요. 오늘도 시스템 승리 💪",
+  "빠지지 않는 사람이 결국 이깁니다.",
+  "몸은 정직해요 — 한 만큼 그대로 돌려줍니다.",
+  "당신은 이제 '운동하는 사람'이에요. 오늘도 증명했어요.",
+  "완벽한 하루보다, 빠지지 않는 한 주가 강합니다.",
+  "지금 흘린 땀이 3개월 뒤 거울을 바꿉니다.",
+];
+const weekStart = ()=>{ const d=nowKST(); const day=(d.getDay()+6)%7; const m=new Date(d.getTime()-day*86400000); return m.toISOString().slice(0,10); };
+function weekDoneCount(){ const ws=weekStart(); return P().logdays.filter(k=>k>=ws).length; }
+function streakCount(){ const days=P().logdays; if(!days.length) return 0; let s=0;
+  for(let i=0;i<90;i++){ const t=new Date(nowKST().getTime()-i*86400000); const k=t.toISOString().slice(0,10); const dow=t.getUTCDay();
+    if(dow===0||dow===6) continue; if(days.includes(k)) s++; else if(i>0) break; } return s; }
+function gameStats(){
+  const sessions=P().logdays.length;
+  const hist=Object.values(P().history).flat();
+  const sets=hist.reduce((a,h)=>a+h.sets.filter(s=>s.w!=null||s.reps!=null).length,0);
+  const prs=Object.values(P().history).filter(h=>h.some(x=>x.pr)).length;
+  const vol=hist.reduce((a,h)=>a+h.sets.reduce((x,s)=>x+((s.w||0)*(s.reps||0)),0),0);
+  const xp=sessions*50+sets*5+prs*30;
+  const per=300; const level=Math.floor(xp/per)+1;
+  return {sessions,sets,prs,vol,xp,level,xpIn:xp%per,xpFor:per,streak:streakCount(),week:weekDoneCount(),target:P().weeklyTarget||4};
+}
+const BADGES=[
+  {id:"first", i:"🎯", n:"첫 발걸음", chk:g=>g.sessions>=1},
+  {id:"streak3",i:"🔥", n:"3일 연속", chk:g=>g.streak>=3},
+  {id:"pr1",   i:"🏆", n:"첫 최고기록", chk:g=>g.prs>=1},
+  {id:"s5",    i:"💪", n:"5회 달성", chk:g=>g.sessions>=5},
+  {id:"week",  i:"⭐", n:"완벽한 한 주", chk:g=>g.week>=g.target},
+  {id:"s12",   i:"📅", n:"습관 형성(12회)", chk:g=>g.sessions>=12},
+  {id:"ton1",  i:"🛢️", n:"1톤 클럽", chk:g=>g.vol>=1000},
+  {id:"s30",   i:"🦾", n:"철인(30회)", chk:g=>g.sessions>=30},
+];
+function earnedBadges(g){ return BADGES.filter(b=>b.chk(g)).map(b=>b.id); }
+function syncBadges(g){ // 신규 획득분 반환
+  P().badges=P().badges||[]; const now=earnedBadges(g); const fresh=now.filter(id=>!P().badges.includes(id));
+  P().badges=now; return fresh.map(id=>BADGES.find(b=>b.id===id));
+}
+function renderGameCard(v){
+  const g=gameStats(); const c=el("div","game");
+  const pct=Math.round(g.xpIn/g.xpFor*100);
+  const wPct=Math.min(100,Math.round(g.week/g.target*100));
+  const R=28,C=2*Math.PI*R, off=C*(1-Math.min(1,g.week/g.target));
+  c.innerHTML=`<div class="lv">
+    <div class="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="#0d1826" stroke-width="7"/>
+      <circle cx="32" cy="32" r="${R}" fill="none" stroke="url(#rg)" stroke-width="7" stroke-linecap="round"
+        stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 32 32)"/>
+      <defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#2ea8ee"/><stop offset="1" stop-color="#12d18e"/></linearGradient></defs></svg>
+      <div class="txt">${g.week}/${g.target}<small>이번주</small></div></div>
+    <div style="flex:1">
+      <div class="row between"><span class="lvlbadge">Lv.${g.level}</span><span class="pill">🔥 ${g.streak}일 연속</span></div>
+      <div class="xpbar"><i style="width:${pct}%"></i></div>
+      <div class="k" style="margin-top:4px">다음 레벨까지 ${g.xpFor-g.xpIn} XP</div>
+    </div></div>
+    <div class="badges">${BADGES.slice(0,8).map(b=>{const on=(P().badges||[]).includes(b.id);
+      return `<div class="bdg ${on?'':'lock'}"><div class="i">${b.i}</div><div class="n">${b.n}</div></div>`;}).join("")}</div>
+    <div class="motiv">${g.week>=g.target?`⭐ 이번주 목표 달성! 대단해요 ${P().name}님`:MOTIV[g.sessions%MOTIV.length]}</div>`;
+  v.appendChild(c);
+}
+function confetti(){ const cols=["#ffd76b","#2ea8ee","#12d18e","#ff5d6c","#c3a0ff"];
+  for(let i=0;i<70;i++){ const c=el("div","cf"); c.style.left=Math.random()*100+"vw"; c.style.background=cols[i%cols.length];
+    c.style.animationDuration=(1.6+Math.random()*1.8)+"s"; c.style.animationDelay=(Math.random()*.6)+"s";
+    document.body.appendChild(c); setTimeout(()=>c.remove(),3600); } }
+function celebrate(d){
+  const g=gameStats();
+  const cele=el("div","cele");
+  const mv = d.newPR? "🏆 최고기록 경신! 몸이 성장하고 있다는 확실한 증거예요." :
+             g.streak>=3? `🔥 ${g.streak}일째 이어가는 중 — 이게 바로 '습관'이에요!` :
+             MOTIV[g.sessions%MOTIV.length];
+  cele.innerHTML=`<h1>운동 완료! 💥</h1><div class="sub">${P().name}님, 오늘도 해냈어요</div>
+    <div class="box"><div class="g2">
+      <div><div class="n">${(d.vol/1000).toFixed(2)}t</div><div class="l">오늘 볼륨</div></div>
+      <div><div class="n">${d.sets}</div><div class="l">완료 세트</div></div></div>
+      <div class="xpg">+${d.xpGain} XP · Lv.${g.level}${d.levelUp?" 🎉 레벨업!":""}</div>
+      ${d.newBadges.length?`<div class="newb">${d.newBadges.map(b=>`<div class="b">${b.i} ${b.n}</div>`).join("")}</div>`:""}
+    </div>
+    <div class="mv">${mv}</div>
+    <button class="btn" id="celeOk" style="max-width:340px">좋아요! 🙌</button>`;
+  document.body.appendChild(cele); confetti(); beep();
+  $("#celeOk").onclick=()=>{ cele.remove(); nav("progress"); };
+}
+
 /* ---------- 점진적 과부하 엔진 ---------- */
 // 지난 기록으로 오늘 추천무게 계산
 function recommend(exId){
@@ -303,6 +416,7 @@ function renderHome(){
     <h2 style="margin-top:4px">${plan.rest? "오늘은 휴식일 🌙":"오늘의 운동"}</h2></div>
     <span class="tag ${plan.day.key}">${plan.day.key.toUpperCase()}</span></div>`;
   v.appendChild(head);
+  renderGameCard(v);
 
   if(plan.rest){
     v.appendChild(el("div","note",`<div class="h">🌙 회복도 훈련의 일부예요</div>근육은 쉴 때 자랍니다(근단백 합성↑). 가벼운 산책·스트레칭·충분한 수면·단백질(체중×1.6~2.2g) 챙기세요. 월~금에 프로그램이 나옵니다.`));
@@ -433,11 +547,21 @@ function finishWorkout(){
     P().history[id].push({date:tk, sets, e1rm:best, failed, pr});
   }
   if(logged===0){ toast("기록할 세트가 없어요"); return; }
-  if(!P().logdays.includes(tk)) P().logdays.push(tk);
+  // 오늘 볼륨·세트 집계
+  let vol=0, setsCount=0;
+  for(const id in c.sets_by){ c.sets_by[id].forEach(s=>{ if(s.w!=null||s.reps!=null){ setsCount++; vol+=(s.w||0)*(s.reps||0);} }); }
+  const firstToday = !P().logdays.includes(tk);
+  if(firstToday) P().logdays.push(tk);
   P().logdays.sort();
   persist();
-  if(newPR>0) toast(`🎉 최고기록 ${newPR}개 경신!`); else toast("💾 오늘 운동 저장 완료!");
-  nav("progress");
+  // XP·레벨·배지
+  const xpGain = (firstToday?50:0) + setsCount*5 + newPR*30;
+  const g=gameStats();
+  const levelBefore=Math.floor((g.xp-xpGain)/g.xpFor)+1;
+  const levelUp = g.level>levelBefore;
+  const newBadges = syncBadges(g);
+  persist();
+  celebrate({vol, sets:setsCount, xpGain, levelUp, newBadges, newPR:newPR>0});
 }
 
 /* ---------- 타이머 ---------- */
@@ -565,9 +689,11 @@ function renderSettings(){
     <label class="fld">목표</label>
     <select id="s_goal">${["근비대","근력↑","체지방↓·탄탄","건강·유지"].map(g=>`<option ${p.goal===g?'selected':''}>${g}</option>`).join("")}</select>
     <label class="fld">숙련도</label>
-    <select id="s_exp">${["초급","중급","상급"].map(g=>`<option ${p.exp===g?'selected':''}>${g}</option>`).join("")}</select>`;
+    <select id="s_exp">${["초급","중급","상급"].map(g=>`<option ${p.exp===g?'selected':''}>${g}</option>`).join("")}</select>
+    <label class="fld">주간 목표</label>
+    <select id="s_wt">${[3,4,5].map(n=>`<option value="${n}" ${(p.weeklyTarget||4)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>`;
   const save=el("button","btn sm","저장"); save.style.marginTop="14px";
-  save.onclick=()=>{ p.name=$("#s_name").value||p.name; p.goal=$("#s_goal").value; p.exp=$("#s_exp").value; persist(); toast("저장됨"); renderProfiles(); $("#whoBtn").textContent=p.name[0]; };
+  save.onclick=()=>{ p.name=$("#s_name").value||p.name; p.goal=$("#s_goal").value; p.exp=$("#s_exp").value; p.weeklyTarget=+$("#s_wt").value; persist(); toast("저장됨"); renderProfiles(); $("#whoBtn").textContent=p.name[0]; };
   c.appendChild(save); v.appendChild(c);
 
   const eq=el("div","card");
