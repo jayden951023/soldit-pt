@@ -2902,6 +2902,10 @@ function renderWorkout(){
           }
         };
       });
+      const _wIn=set.querySelector("[data-w]");
+      if(_wIn) _wIn.addEventListener("change",()=>{ const v=parseFloat(_wIn.value); if(!(v>0)) return; psi.w=v; psi.w0=v;
+        for(let j=i+1;j<ps.length;j++){ if(ps[j] && ps[j].kind!=="warm"){ ps[j].w=v; ps[j].w0=v; if(rows[j]){ const wj=rows[j].querySelector("[data-w]"); if(wj && wj.value==="") wj.placeholder=v; } } }
+        saveWorkoutDraft(); });
       const chk=set.querySelector("[data-chk]");
       chk.onclick=()=>{ const on=!chk.classList.contains("on"); chk.classList.toggle("on",on); chk.textContent=on?'✓':'';
         if(on){ // 빈 값이면 지시한 무게·횟수를 자동으로 채움
@@ -3587,7 +3591,9 @@ function coachStart(){
   // 이미 한 세트 복원 — 나갔다 와도 처음부터 안 하고 이어서 (대표 지시 8/4)
   try{
     const _dm=(P().done[todayKey()])||{};
-    plan.exs.forEach(e=>{ const sv=_dm[e.id]; if(sv && Array.isArray(sv.sets) && sv.sets.length){ CO.log[e.id]=sv.sets.filter(s=>s&&(s.done||s.w!=null||s.reps!=null)).map(s=>({w:s.w,reps:s.reps,done:s.done!==false,sec:s.sec||0})); } });
+    plan.exs.forEach(e=>{ const sv=_dm[e.id]; if(sv && Array.isArray(sv.sets) && sv.sets.length){ CO.log[e.id]=sv.sets.filter(s=>s&&(s.done||s.w!=null||s.reps!=null)).map(s=>({w:s.w,reps:s.reps,done:s.done!==false,sec:s.sec||0}));
+      const _lw=[...(CO.log[e.id]||[])].reverse().find(x=>x&&x.w!=null); const _dn=(CO.log[e.id]||[]).filter(x=>x&&x.done).length;
+      if(_lw && e.planSets) for(let _si=_dn; _si<e.planSets.length; _si++){ if(e.planSets[_si] && e.planSets[_si].kind!=="warm"){ e.planSets[_si].w=_lw.w; e.planSets[_si].w0=_lw.w; } } } });
     for(let _ei=0; _ei<plan.exs.length; _ei++){ const _e=plan.exs[_ei]; const _n=(_e.planSets&&_e.planSets.length)?_e.planSets.length:1; const _done=(CO.log[_e.id]||[]).filter(x=>x&&x.done).length; if(_done<_n){ CO.ei=_ei; CO.si=_done; break; } }
   }catch(e){}
   document.body.classList.add("coach-on");
