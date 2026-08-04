@@ -229,6 +229,21 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .acct-add,.acct-close{width:100%;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;margin-top:8px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#cfe3f5}
 .acct-close{background:transparent;border:0;color:#8fa8bd}
+
+/* 암호 잠금 화면 */
+#lockView{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#0b1520,#0a1118)}
+.lk-box{width:100%;max-width:340px;padding:0 26px;text-align:center}
+.lk-logo{font-size:52px;margin-bottom:10px}
+.lk-t{font-size:26px;font-weight:900;color:#eaf4ff;letter-spacing:1px}
+.lk-s{font-size:13.5px;color:#8fa8bd;margin:8px 0 20px}
+#lkIn{width:100%;padding:15px 16px;border-radius:13px;font-size:17px;text-align:center;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#fff;outline:none}
+#lkIn:focus{border-color:#38bdf8}
+.lk-err{min-height:20px;font-size:12.5px;color:#ff9b9b;margin:8px 0 2px}
+.lk-btn{width:100%;padding:15px;border-radius:13px;border:0;cursor:pointer;font-size:16px;font-weight:900;
+  background:linear-gradient(90deg,#22d3a7,#38bdf8);color:#04212b}
+.lk-btn:active{transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -2631,7 +2646,7 @@ function boot(){
   updateStreak();
   nav("home");
 }
-boot();
+// 앱 시작은 파일 끝에서 (lockGate 정의 이후) — 8/4
 
 /* ═══════════════════════════════════════════════════════════════
    코치 모드 — 한 화면에 한 세트씩, 카운트다운으로 이끈다 (8/4 대표)
@@ -3266,6 +3281,59 @@ document.addEventListener("visibilitychange", ()=>{
 });
 window.addEventListener("load", ()=>{ setTimeout(notiSchedule, 1500); });
 
+
+/* ═══ 암호 잠금 (8/4 대표) ═══
+   GitHub Pages 는 비공개가 안 돼서 앱 자체에 잠금을 건다.
+   암호는 평문 대신 SHA-256 해시로만 넣는다(소스를 봐도 바로 안 보이게).
+   ⚠️ 마음먹으면 우회 가능한 약한 보호다 — 민감정보는 넣지 말 것. */
+const LOCK_HASH = "138e9nk-gjy43i";
+/* crypto.subtle 은 file:// 에서 막혀 있어 동기 해시를 쓴다.
+   평문을 소스에 안 두는 게 목적이라 이 정도면 충분하다. */
+function lockHash(t){
+  t = String(t||"").trim();
+  let a=0x811c9dc5;
+  for(let i=0;i<t.length;i++){ a^=t.charCodeAt(i); a=Math.imul(a,0x01000193)>>>0; }
+  let c=5381;
+  for(let i=t.length-1;i>=0;i--){ c=((c<<5)+c+t.charCodeAt(i))>>>0; }
+  return a.toString(36)+"-"+c.toString(36);
+}
+function lockCheck(v){ return lockHash(v) === LOCK_HASH; }
+
+function lockGate(){
+  return new Promise(resolve=>{
+    // 이미 통과한 기기면 바로 진입
+    if(localStorage.getItem("soldpt_unlocked") === LOCK_HASH){ resolve(); return; }
+    const w = document.createElement("div");
+    w.id = "lockView";
+    w.innerHTML =
+      '<div class="lk-box">' +
+        '<div class="lk-logo">🏋️</div>' +
+        '<div class="lk-t">SOLD PT</div>' +
+        '<div class="lk-s">암호를 입력해주세요</div>' +
+        '<input id="lkIn" type="password" inputmode="text" placeholder="암호" autocomplete="current-password">' +
+        '<div class="lk-err" id="lkErr"></div>' +
+        '<button class="lk-btn" id="lkGo">들어가기</button>' +
+      '</div>';
+    document.body.appendChild(w);
+    const inp = w.querySelector("#lkIn"), err = w.querySelector("#lkErr");
+    const go = ()=>{
+      if(lockCheck(inp.value)){
+        localStorage.setItem("soldpt_unlocked", LOCK_HASH);
+        w.remove(); resolve();
+      } else {
+        err.textContent = "암호가 맞지 않아요";
+        inp.value = ""; inp.focus();
+      }
+    };
+    w.querySelector("#lkGo").onclick = go;
+    inp.onkeydown = (e)=>{ if(e.key === "Enter") go(); };
+    setTimeout(()=>inp.focus(), 100);
+  });
+}
+
+
+/* 암호 통과 후 앱 시작 — lockGate 정의가 위에 있어야 하므로 맨 끝에서 호출 */
+lockGate().then(boot);
 </script>
 </body>
 </html>
