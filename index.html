@@ -2038,13 +2038,21 @@ function todayPlan(){
   //   ⚠️ '사두'는 반드시 별도로 뽑는다. /사두|하체/ 로 묶으면 '하체 전체'(레그프레스)가
   //      먼저 매칭돼 대퇴사두 종목이 0세트가 되던 문제가 있었다.
   //   ⚠️ 팔(이두/삼두)은 매일 1개씩 — 기존엔 주 3세트뿐이라 등(26세트) 대비 8배 차이였다.
-  const QUOTA = {
+  // 목표별 쿼터 (8/4 대표) — 체지방·탄탄은 둔근/하체 비중을 높인다.
+  const _toneUp = (P().goal||"").includes("체지방") || (P().goal||"").includes("탄탄");
+  const QUOTA = (_toneUp ? {
+    push:  [[/가슴/,2],[/어깨/,2],[/삼두/,1],[/코어/,1]],
+    pull:  [[/등/,3],[/이두/,1],[/어깨\(후면\)/,1]],
+    legs:  [[/둔근|내전/,2],[/대퇴사두/,1],[/햄/,2],[/종아리/,1]],
+    upper: [[/등/,2],[/가슴/,1],[/어깨/,2],[/이두|삼두/,1]],
+    lower: [[/둔근|내전/,3],[/햄/,2],[/대퇴사두/,1]],
+  } : {
     push:  [[/가슴/,2],[/어깨/,2],[/삼두/,2]],
     pull:  [[/등/,4],[/이두/,2]],
     legs:  [[/대퇴사두/,2],[/햄/,2],[/하체 전체|하체\(/,1],[/종아리/,1]],
     upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/이두|삼두/,1]],
     lower: [[/둔근|내전/,3],[/햄/,1],[/대퇴사두/,1],[/종아리/,1]],
-  }[day.key] || [];
+  })[day.key] || [];
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
   const wk = weekIndex();
@@ -2088,9 +2096,17 @@ function todayPlan(){
   const exs = chosen.map((id,i)=>{
     const ex=EX[id]; const rec=recommend(id);
     let setN = ex.type==="comp"? (i===0?4:3) : 3; setN=Math.max(2,setN+setMod);
-    const w = rec.w==null? null : round(rec.w*wMod, ex.inc||1.25);
-    const planSets = buildSets(ex, setN, w, rec.reps);
-    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: ex.type==="comp"?60:45,   // 8/4 대표 — 아침에 빨리 끝내야 해서 단축 yt:ex.yt,
+    let w = rec.w==null? null : round(rec.w*wMod, ex.inc||1.25);
+    // 고반복(12~20회)은 같은 무게로 못 채운다 → 15% 낮춰 시작
+    if(_toneUp && w!=null && (P().history[id]||[]).length===0) w = round(w*0.85, ex.inc||1.25);
+    // 체지방·탄탄이면 반복수를 올리고 휴식을 줄인다 (근지구력·심박 유지)
+    let reps = rec.reps, restSec = ex.type==="comp"?60:45;
+    if(_toneUp){
+      reps = Math.min(20, Math.max(ex.rep[1], 12));
+      restSec = ex.type==="comp"?45:30;
+    }
+    const planSets = buildSets(ex, setN, w, reps);
+    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:reps, note:rec.note, rest: restSec,   // 8/4 — 근비대 60/45초 · 체지방 45/30초 yt:ex.yt,
             br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[], planSets};
   });
   const deloadWk = isDeloadWeek();
