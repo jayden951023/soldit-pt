@@ -3005,7 +3005,8 @@ async function startTimer(sec, label){
   const draw=(left)=>{ wrap.innerHTML=`<div class="inner"><div><div style="font-size:12px;opacity:.8">쉬는 시간 · ${label||''}</div>
     <div class="big">${String(Math.floor(left/60)).padStart(1,'0')}:${String(left%60).padStart(2,'0')}</div></div>
     <div class="row"><button onclick="addTimer(15)">+15초</button><button onclick="stopTimer()">건너뛰기</button></div></div>`; };
-  const tick=()=>{ const left=Math.max(0,Math.ceil((endAt-Date.now())/1000)); if(left<=0){ clearInterval(timerInt); _timerFinish(label); return; } draw(left); };
+  let _lastCB=99;
+  const tick=()=>{ const left=Math.max(0,Math.ceil((endAt-Date.now())/1000)); if(left<=0){ clearInterval(timerInt); _timerFinish(label); return; } if(left<=5 && left!==_lastCB){ _lastCB=left; try{ beep(2); }catch(e){} } draw(left); };
   draw(total); timerInt=setInterval(tick,500);
   window._tleft=()=>Math.max(0,Math.ceil((endAt-Date.now())/1000)); window._tset=(n)=>{endAt=Date.now()+n*1000;}; window._tadd=(n)=>{endAt+=n*1000;};
 }
