@@ -40,3 +40,14 @@ self.addEventListener('fetch', (e) => {
     }).catch(() => hit))
   );
 });
+
+/* 알림 클릭 → 앱 열기 (8/4) */
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({type:'window', includeUncontrolled:true}).then((cs) => {
+      for (const c of cs) { if ('focus' in c) return c.focus(); }
+      if (self.clients.openWindow) return self.clients.openWindow('./');
+    })
+  );
+});
