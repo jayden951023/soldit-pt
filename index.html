@@ -2351,6 +2351,11 @@ function todayPlan(dayOffset){
   const eq = P().equip;
   const avail = id => EX[id].eq.every(t=> eq.includes(t) || t==="");
   let pool = day.pool.filter(avail);
+  // (8/4 대표) 프리웨이트 우선 모드 — 덤벨·바벨을 풀 앞으로 올려 우선 선택되게 한다.
+  if(P().freeFirst){
+    const isFree = id => (EX[id].wt==="free");
+    pool = [...pool.filter(isFree), ...pool.filter(id=>!isFree(id))];
+  }
   // 무릎 보호가 켜져 있으면 무릎 부담 큰 종목을 뺀다 (8/4)
   if(kneeSafeOn()) pool = pool.filter(id => !isKneeRisk(id));
   // 부족하면 다른 요일 풀에서 같은 성격 보충
@@ -2577,7 +2582,7 @@ function ensureEquipStyle(){
 /* 오늘 운동 전체를 한 화면에 (8/4 대표 — 미리 공부용) */
 function showTodayPreview(offset){
   const plan = todayPlan(offset || 0);
-  if(plan.rest){ toast(offset ? "내일은 쉬는 날이에요 🌙 푹 쉬세요" : "오늘은 쉬는 날이에요 🌙"); return; }
+  if(plan.rest){ toast((offset===0?"오늘은":(offset===1?"내일은":todayLabel(offset)+"은")) + " 쉬는 날이에요 🌙"); return; }
   const w = document.createElement("div");
   w.id = "pvSheet";
   const totalSets = plan.exs.reduce((a,e)=>a+((e.planSets||[]).length||e.sets),0);
@@ -2903,7 +2908,7 @@ async function sendChat(){
 let progTab="strength";
 function renderProgress(){
   const v=$("#view-progress"); v.innerHTML="";
-  const seg=el("div","seg"); seg.innerHTML=`<button data-p="cal" class="${progTab==='cal'?'on':''}">캘린더</button><button data-p="strength" class="${progTab==='strength'?'on':''}">근력 추이</button><button data-p="log" class="${progTab==='log'?'on':''}">운동 일지</button>`;
+  const seg=el("div","seg"); seg.innerHTML=`<button data-p="cal" class="${progTab==='cal'?'on':''}">캘린더</button><button data-p="strength" class="${progTab==='strength'?'on':''}">근력 추이</button><button data-p="body" class="${progTab==='body'?'on':''}">몸무게</button><button data-p="log" class="${progTab==='log'?'on':''}">운동 일지</button>`;
   seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{progTab=b.dataset.p; renderProgress();});
   v.appendChild(seg);
 
@@ -2916,6 +2921,7 @@ function renderProgress(){
   v.appendChild(st);
 
   if(progTab==="cal"){ calRender(v); return; }
+  if(progTab==="body"){ bodyRender(v); return; }
   if(progTab==="strength"){
     const exsWith=Object.keys(P().history).filter(id=>(P().history[id]||[]).length>0);
     if(!exsWith.length){ v.appendChild(el("div","note","아직 기록이 없어요. 운동을 끝내면 종목별로 최대 무게 그래프가 여기 그려져요 📈")); return; }
@@ -2944,6 +2950,36 @@ function renderProgress(){
     });
   }
 }
+/* 몸무게 기록·추이 (8/4 대표) */
+function bodyRender(v){
+  const p=P();
+  const c=el("div","card");
+  c.innerHTML='<h3>오늘 몸무게 기록</h3><p class="k" style="margin:6px 0 8px">아침 공복에 재는 게 가장 일정해요.</p>'+
+    '<input id="b_w" type="number" inputmode="decimal" placeholder="예: 78.4" value="'+((p.wlog||{})[todayKey()]||'')+'">';
+  const b=el("button","btn green","오늘 기록 저장"); b.style.marginTop="10px";
+  b.onclick=()=>{ const w=parseFloat($("#b_w").value); if(!(w>0)){ toast("몸무게를 입력해주세요"); return; }
+    p.wlog=p.wlog||{}; p.wlog[todayKey()]=w; p.weightKg=w; persist(); toast("기록됨 💪"); renderProgress(); };
+  c.appendChild(b); v.appendChild(c);
+  if(p.heightCm && p.weightKg){ const bx=el("div","card"); bx.innerHTML=bmiHtml(p); v.appendChild(bx); }
+  const keys=Object.keys(p.wlog||{}).sort();
+  if(keys.length<2){ v.appendChild(el("div","note","몸무게가 2번 이상 쌓이면 추이 그래프가 그려져요 📉")); return; }
+  const pts=keys.map(k=>p.wlog[k]);
+  const first=pts[0], last=pts[pts.length-1], diff=(last-first).toFixed(1);
+  const card=el("div","card");
+  const mx=Math.max(...pts), mn=Math.min(...pts);
+  // 변화폭이 작아도 보이게 아래위 여유를 준다
+  const lo=mn-1, hi=mx+1, rng=(hi-lo)||1;
+  const W=280,H=80,pad=8, step=(W-2*pad)/(pts.length-1);
+  const y=q=>(H-pad-((q-lo)/rng)*(H-2*pad)).toFixed(1);
+  const path=pts.map((q,i)=>(i?'L':'M')+(pad+i*step).toFixed(1)+','+y(q)).join(' ');
+  const dots=pts.map((q,i)=>'<circle cx="'+(pad+i*step).toFixed(1)+'" cy="'+y(q)+'" r="3" fill="#12d18e"/>').join('');
+  card.innerHTML='<div class="row between"><b>몸무게 추이</b><span class="chip">'+(diff>0?'+':'')+diff+'kg</span></div>'+
+    '<svg viewBox="0 0 '+W+' '+H+'" style="margin-top:8px"><path d="'+path+'" fill="none" stroke="url(#gw)" stroke-width="2.5"/>'+dots+
+    '<defs><linearGradient id="gw" x1="0" x2="1"><stop offset="0" stop-color="#2ea8ee"/><stop offset="1" stop-color="#12d18e"/></linearGradient></defs></svg>'+
+    '<div class="k" style="margin-top:6px">'+keys[0]+' '+first+'kg → '+keys[keys.length-1]+' '+last+'kg</div>';
+  v.appendChild(card);
+}
+
 function spark(pts,max){
   if(pts.length<2){ return `<div class="k" style="margin-top:8px">데이터가 2회 이상 쌓이면 추이선이 그려져요 (현재 ${pts.length}회)</div>`; }
   const W=280,H=70,pad=6; const step=(W-2*pad)/(pts.length-1);
@@ -2951,6 +2987,25 @@ function spark(pts,max){
   const dots=pts.map((p,i)=>`<circle cx="${(pad+i*step).toFixed(1)}" cy="${(H-pad-(p/max)*(H-2*pad)).toFixed(1)}" r="3" fill="#12d18e"/>`).join("");
   return `<svg viewBox="0 0 ${W} ${H}" style="margin-top:8px"><path d="${pathd}" fill="none" stroke="url(#g)" stroke-width="2.5"/>${dots}
     <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#2ea8ee"/><stop offset="1" stop-color="#12d18e"/></linearGradient></defs></svg>`;
+}
+
+/* 키·몸무게 → BMI + 단백질 권장량 (8/4 대표) */
+function bmiHtml(p){
+  const h=parseFloat(p.heightCm||0), w=parseFloat(p.weightKg||0);
+  if(!(h>0&&w>0)) return '<div class="k">키·몸무게를 넣으면 BMI와 하루 단백질 권장량을 계산해드려요.</div>';
+  const bmi = w/Math.pow(h/100,2);
+  const b = bmi.toFixed(1);
+  let lab, col;
+  if(bmi<18.5){ lab="저체중"; col="#f5c451"; }
+  else if(bmi<23){ lab="정상"; col="#22d3a7"; }
+  else if(bmi<25){ lab="과체중(주의)"; col="#f5c451"; }
+  else if(bmi<30){ lab="비만"; col="#ff9f6b"; }
+  else { lab="고도비만"; col="#ff6b6b"; }
+  const pLo=Math.round(w*1.6), pHi=Math.round(w*2.2);
+  const cut=(p.goal||"").includes("체지방");
+  const pace = cut ? '<div class="k" style="margin-top:6px">🎯 감량 페이스 권장: 주당 '+(w*0.005).toFixed(1)+'~'+(w*0.01).toFixed(1)+'kg (너무 빠르면 근손실)</div>' : '';
+  return '<div class="row between"><b>BMI '+b+'</b><span class="pill" style="color:'+col+';border-color:'+col+'55">'+lab+'</span></div>'+
+    '<div class="k" style="margin-top:6px">🥩 하루 단백질 권장 <b>'+pLo+'~'+pHi+'g</b> (체중 1kg당 1.6~2.2g)</div>'+pace;
 }
 
 /* ---------- 렌더: 설정 ---------- */
@@ -2966,10 +3021,31 @@ function renderSettings(){
     <label class="fld">숙련도</label>
     <select id="s_exp">${["초급","중급","상급"].map(g=>`<option ${p.exp===g?'selected':''}>${g}</option>`).join("")}</select>
     <label class="fld">주간 목표</label>
-    <select id="s_wt">${[3,4,5].map(n=>`<option value="${n}" ${(p.weeklyTarget||4)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>`;
+    <select id="s_wt">${[3,4,5].map(n=>`<option value="${n}" ${(p.weeklyTarget||4)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>
+    <div class="row" style="gap:10px;margin-top:4px">
+      <div style="flex:1"><label class="fld">키 (cm)</label><input id="s_ht" type="number" inputmode="decimal" placeholder="예: 175" value="${p.heightCm||''}"></div>
+      <div style="flex:1"><label class="fld">몸무게 (kg)</label><input id="s_wtkg" type="number" inputmode="decimal" placeholder="예: 78" value="${p.weightKg||''}"></div>
+    </div>
+    <div id="bmiBox" style="margin-top:8px">${bmiHtml(p)}</div>`;
   const save=el("button","btn sm","저장"); save.style.marginTop="14px";
-  save.onclick=()=>{ p.name=$("#s_name").value||p.name; p.goal=$("#s_goal").value; p.exp=$("#s_exp").value; p.weeklyTarget=+$("#s_wt").value; persist(); toast("저장됨"); renderProfiles(); $("#whoBtn").textContent=p.name[0]; };
+  save.onclick=()=>{ p.name=$("#s_name").value||p.name; p.goal=$("#s_goal").value; p.exp=$("#s_exp").value; p.weeklyTarget=+$("#s_wt").value;
+    // 키·몸무게 (8/4 대표) — 몸무게는 날짜별로도 기록해 추이 그래프에 쓴다
+    const _h=parseFloat($("#s_ht").value), _w=parseFloat($("#s_wtkg").value);
+    p.heightCm = (_h>0? _h : null);
+    if(_w>0){
+      if(p.weightKg !== _w){ p.wlog = p.wlog||{}; p.wlog[todayKey()] = _w; }
+      p.weightKg = _w;
+    } else { p.weightKg = null; }
+    persist(); toast("저장됨"); renderProfiles(); $("#whoBtn").textContent=p.name[0];
+    try{ const bb=$("#bmiBox"); if(bb) bb.innerHTML=bmiHtml(p); }catch(e){} };
   c.appendChild(save); v.appendChild(c);
+
+  // (8/4 대표) 프리웨이트 우선 모드 토글
+  const ff=el("div","card");
+  ff.innerHTML='<h3>덤벨·바벨 위주로</h3><p class="k" style="margin:6px 0 10px">켜면 머신보다 <b>덤벨·바벨·스쿼트랙</b> 운동을 먼저 뽑아요. (프리웨이트 13종목)</p>';
+  const ffb=el("button","btn "+(p.freeFirst?"green":"sec"), p.freeFirst?"✓ 켜짐 — 덤벨·바벨 우선":"꺼짐 — 머신 포함 균등");
+  ffb.onclick=()=>{ p.freeFirst=!p.freeFirst; persist(); toast(p.freeFirst?"덤벨·바벨 우선으로 짤게요 🏋️":"균등하게 짤게요"); renderSettings(); };
+  ff.appendChild(ffb); v.appendChild(ff);
 
   const eq=el("div","card");
   const onCnt=p.equip.length;
@@ -3310,6 +3386,12 @@ function calRender(v){
       '<div class="cal-tag">'+tag+'</div>'+
       (done ? '<div class="cal-mark">✓'+(didCardio?'🏃':'')+'</div>'
             : (past && !rest ? '<div class="cal-mark miss">·</div>' : ''));
+    // (8/4 대표) 날짜를 누르면 그 날 운동 상세를 미리 볼 수 있게 — 미래 날짜도 가능
+    if(!rest){
+      cell.style.cursor="pointer";
+      const _off = Math.round((new Date(y,m,d) - new Date(now.getFullYear(),now.getMonth(),now.getDate()))/86400000);
+      cell.onclick = ()=> showTodayPreview(_off);
+    }
     grid.appendChild(cell);
   }
   c.appendChild(grid);
