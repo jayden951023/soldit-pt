@@ -145,6 +145,11 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-bar i{ display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22d3a7); transition:width .35s; }
 
 .co-exname{ font-size:26px; font-weight:900; color:#eaf4ff; margin:14px 0 4px; line-height:1.25; word-break:keep-all; }
+.co-adj{ display:flex; align-items:center; gap:14px; margin-top:4px; }
+.co-adj span{ font-size:12px; color:#8fa8bd; }
+.co-adj button{ width:46px; height:46px; border-radius:14px; cursor:pointer; font-size:24px; font-weight:800;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:#dbe9f7; line-height:1; }
+.co-adj button:active{ transform:scale(.94); }
 .co-yt{ margin-top:8px; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:700;
   background:rgba(255,80,80,.13); border:1px solid rgba(255,110,110,.35); color:#ff9b9b; }
 .co-yt:active{ transform:scale(.97); }
@@ -433,7 +438,7 @@ const EX = {
   "inc": 5,
   "start": 20,
   "yt": "숄더 프레스 (레드) 자세",
-  "br": "미상",
+  "br": "브랜드 확인필요",
   "wt": "plate",
   "no": "15",
   "c": 0
@@ -1269,7 +1274,7 @@ const EX = {
   "inc": 5,
   "start": 15,
   "yt": "글루트 킥백 자세",
-  "br": "미상",
+  "br": "브랜드 확인필요",
   "wt": "plate",
   "no": "20",
   "c": 0
@@ -1307,7 +1312,7 @@ const EX = {
   "inc": 10,
   "start": 40,
   "yt": "힙 쓰러스트 라인 (3~4대) 자세",
-  "br": "미상",
+  "br": "브랜드 확인필요",
   "wt": "plate",
   "no": "61",
   "c": 0
@@ -1584,7 +1589,7 @@ const EX = {
 };
 /* 실제 보유 기구 62종 (2026-08-04 실사 기준)
    b=브랜드 · w=pin(핀)/plate(원판)/free(프리) · g=부위 · no=안내판 번호 · c=1이면 QR/명판 확정 */
-const GYM = [{"id":"tg_latraise","n":"래터럴 레이즈","b":"테크노짐","w":"pin","g":"어깨","no":"1"},{"id":"tg_shpress","n":"숄더 프레스","b":"테크노짐","w":"pin","g":"어깨","no":"2"},{"id":"tg_ps_shpress","n":"Pure Strength 숄더 프레스","b":"테크노짐","w":"plate","g":"어깨","no":"28","c":1},{"id":"gr_shpress","n":"숄더 프레스 (Active 330)","b":"짐레코","w":"pin","g":"어깨","no":"8"},{"id":"nt_latraise","n":"스탠딩 래터럴 레이즈","b":"뉴텍","w":"plate","g":"어깨","no":"11"},{"id":"sp_shpress","n":"Super Multi 숄더 프레스","b":"Super","w":"plate","g":"어깨","no":"27"},{"id":"mt_shpress","n":"M-Torture 숄더 프레스","b":"M-Torture","w":"plate","g":"어깨","no":"30"},{"id":"red_shpress","n":"숄더 프레스 (레드)","b":"미상","w":"plate","g":"어깨","no":"15"},{"id":"nt_chestpress","n":"시티드 체스트 프레스","b":"뉴텍","w":"plate","g":"가슴","no":"10"},{"id":"nt_pecdeck","n":"펙덱 플라이 & 리어 델트","b":"뉴텍","w":"plate","g":"가슴","no":"7"},{"id":"nt_incline","n":"인클라인 프레스","b":"뉴텍","w":"plate","g":"가슴","no":"32"},{"id":"gr_widechest","n":"와이드 체스트 (Active 326)","b":"짐레코","w":"pin","g":"가슴","no":"9"},{"id":"hs_bench","n":"아이소래터럴 벤치 프레스","b":"해머스트렝스","w":"plate","g":"가슴","no":"14"},{"id":"hs_decline","n":"아이소래터럴 디클라인","b":"해머스트렝스","w":"plate","g":"가슴","no":"51"},{"id":"mt_incline","n":"M-Torture 인클라인 프레스","b":"M-Torture","w":"plate","g":"가슴","no":"31"},{"id":"mt_pecdeck","n":"M-Torture 펙덱 플라이","b":"M-Torture","w":"plate","g":"가슴","no":"33"},{"id":"sc_pullover","n":"풀 오버","b":"신코","w":"pin","g":"가슴","no":"43"},{"id":"tg_latpull","n":"Selection 랫 풀다운","b":"테크노짐","w":"pin","g":"등","no":"4","c":1},{"id":"tg_revfly","n":"리버스 플라이","b":"테크노짐","w":"pin","g":"등","no":"3"},{"id":"pc_latpull","n":"다이버징 랫 풀다운","b":"프리코","w":"pin","g":"등","no":"5"},{"id":"ip_vrow","n":"버티컬 로우","b":"임펄스","w":"pin","g":"등","no":"6"},{"id":"nt_row","n":"어드저스터블 로우 폴리","b":"뉴텍","w":"pin","g":"등","no":"12"},{"id":"hs_row","n":"아이소래터럴 로우","b":"해머스트렝스","w":"plate","g":"등","no":"16"},{"id":"hs_lowrow","n":"아이소래터럴 로우 로우","b":"해머스트렝스","w":"plate","g":"등","no":"17"},{"id":"hs_highrow","n":"아이소래터럴 하이 로우","b":"해머스트렝스","w":"plate","g":"등","no":"18"},{"id":"hs_rowpin","n":"로우 (셀렉토라이즈)","b":"해머스트렝스","w":"pin","g":"등","no":"39"},{"id":"nl_lowrow","n":"멀티 스테이션 로우 로우","b":"너틸러스","w":"pin","g":"등","no":"52"},{"id":"sp_pulldown","n":"Super Leverage 풀다운","b":"Super","w":"plate","g":"등","no":"53"},{"id":"mt_vpull","n":"M-Torture 버티컬 풀다운","b":"M-Torture","w":"plate","g":"등","no":"54"},{"id":"mt_highrow","n":"M-Torture 하이 로우","b":"M-Torture","w":"plate","g":"등","no":"55"},{"id":"mt_widepull","n":"M-Torture 와이드 풀다운","b":"M-Torture","w":"plate","g":"등","no":"56"},{"id":"mt_lowrow","n":"M-Torture 로우 로우","b":"M-Torture","w":"plate","g":"등","no":"58"},{"id":"lx_widepull","n":"와이드 풀다운 (LP-305)","b":"렉스코","w":"plate","g":"등","no":"60"},{"id":"lx_assist","n":"친/딥 어시스트 (LPS-114)","b":"렉스코","w":"pin","g":"등","no":"57"},{"id":"df_armcurl","n":"암 컬","b":"델타피트니스","w":"pin","g":"팔","no":"34"},{"id":"lf_bicurl","n":"바이셉스 컬","b":"라이프피트니스","w":"pin","g":"팔","no":"35"},{"id":"nl_bicurl","n":"바이셉스 컬 (화이트)","b":"너틸러스","w":"pin","g":"팔","no":"37"},{"id":"lf_tripress","n":"트라이셉스 프레스","b":"라이프피트니스","w":"pin","g":"팔","no":"36","c":1},{"id":"hs_triext","n":"트라이셉스 익스텐션","b":"해머스트렝스","w":"pin","g":"팔","no":"38"},{"id":"ip_legpress","n":"레그 프레스 / 카프","b":"임펄스","w":"plate","g":"하체","no":"40"},{"id":"ip_slegpress","n":"시티드 레그 프레스","b":"임펄스","w":"pin","g":"하체","no":"—"},{"id":"ip_1legpress","n":"원 레그 프레스 (편측)","b":"임펄스","w":"pin","g":"하체","no":"—"},{"id":"nl_hack","n":"핵 스쿼트","b":"너틸러스","w":"plate","g":"하체","no":"24"},{"id":"nt_legext","n":"레그 익스텐션","b":"뉴텍","w":"plate","g":"하체","no":"48"},{"id":"dx_lyingcurl","n":"라잉 레그컬","b":"디랙스","w":"pin","g":"하체","no":"—"},{"id":"dx_seatcurl","n":"시티드 레그컬","b":"디랙스","w":"pin","g":"하체","no":"—"},{"id":"dx_abduction","n":"시티드 아웃타이 (외전)","b":"디랙스","w":"pin","g":"하체","no":"45"},{"id":"lf_adduction","n":"힙 어덕션 (이너타이)","b":"라이프피트니스","w":"pin","g":"하체","no":"44","c":1},{"id":"sp_hippress","n":"Super Hip Press","b":"Super","w":"plate","g":"하체","no":"21"},{"id":"bb_hipthrust","n":"힙 쓰러스트 머신","b":"부티빌더","w":"plate","g":"하체","no":"22"},{"id":"bb_standabd","n":"스탠딩 어브덕터","b":"부티빌더","w":"pin","g":"하체","no":"42"},{"id":"gk_kickback","n":"글루트 킥백","b":"미상","w":"plate","g":"하체","no":"20"},{"id":"gr_calf","n":"동키 카프 레이즈","b":"짐레코","w":"plate","g":"하체","no":"19"},{"id":"ht_line","n":"힙 쓰러스트 라인 (3~4대)","b":"미상","w":"plate","g":"하체","no":"61"},{"id":"dx_cable","n":"듀얼 풀리 케이블 크로스오버","b":"디랙스","w":"pin","g":"케이블","no":"13","c":1},{"id":"rack","n":"파워랙 / 스쿼트랙","b":"미상","w":"free","g":"프리","no":"49"},{"id":"platform","n":"리프팅 플랫폼","b":"EiGRO","w":"free","g":"프리","no":"49"},{"id":"dx_smith","n":"스미스 머신","b":"디랙스","w":"free","g":"프리","no":"50"},{"id":"barbell","n":"올림픽 바벨 · 원판","b":"—","w":"free","g":"프리","no":"—"},{"id":"dumbbell","n":"덤벨","b":"—","w":"free","g":"프리","no":"—"},{"id":"bench","n":"조절식 벤치","b":"—","w":"free","g":"프리","no":"—"},{"id":"dx_tread","n":"트레드밀","b":"디랙스","w":"free","g":"유산소","no":"64"}];
+const GYM = [{"id":"tg_latraise","n":"래터럴 레이즈","b":"테크노짐","w":"pin","g":"어깨","no":"1"},{"id":"tg_shpress","n":"숄더 프레스","b":"테크노짐","w":"pin","g":"어깨","no":"2"},{"id":"tg_ps_shpress","n":"Pure Strength 숄더 프레스","b":"테크노짐","w":"plate","g":"어깨","no":"28","c":1},{"id":"gr_shpress","n":"숄더 프레스 (Active 330)","b":"짐레코","w":"pin","g":"어깨","no":"8"},{"id":"nt_latraise","n":"스탠딩 래터럴 레이즈","b":"뉴텍","w":"plate","g":"어깨","no":"11"},{"id":"sp_shpress","n":"Super Multi 숄더 프레스","b":"Super","w":"plate","g":"어깨","no":"27"},{"id":"mt_shpress","n":"M-Torture 숄더 프레스","b":"M-Torture","w":"plate","g":"어깨","no":"30"},{"id":"red_shpress","n":"숄더 프레스 (레드)","b":"브랜드 확인필요","w":"plate","g":"어깨","no":"15"},{"id":"nt_chestpress","n":"시티드 체스트 프레스","b":"뉴텍","w":"plate","g":"가슴","no":"10"},{"id":"nt_pecdeck","n":"펙덱 플라이 & 리어 델트","b":"뉴텍","w":"plate","g":"가슴","no":"7"},{"id":"nt_incline","n":"인클라인 프레스","b":"뉴텍","w":"plate","g":"가슴","no":"32"},{"id":"gr_widechest","n":"와이드 체스트 (Active 326)","b":"짐레코","w":"pin","g":"가슴","no":"9"},{"id":"hs_bench","n":"아이소래터럴 벤치 프레스","b":"해머스트렝스","w":"plate","g":"가슴","no":"14"},{"id":"hs_decline","n":"아이소래터럴 디클라인","b":"해머스트렝스","w":"plate","g":"가슴","no":"51"},{"id":"mt_incline","n":"M-Torture 인클라인 프레스","b":"M-Torture","w":"plate","g":"가슴","no":"31"},{"id":"mt_pecdeck","n":"M-Torture 펙덱 플라이","b":"M-Torture","w":"plate","g":"가슴","no":"33"},{"id":"sc_pullover","n":"풀 오버","b":"신코","w":"pin","g":"가슴","no":"43"},{"id":"tg_latpull","n":"Selection 랫 풀다운","b":"테크노짐","w":"pin","g":"등","no":"4","c":1},{"id":"tg_revfly","n":"리버스 플라이","b":"테크노짐","w":"pin","g":"등","no":"3"},{"id":"pc_latpull","n":"다이버징 랫 풀다운","b":"프리코","w":"pin","g":"등","no":"5"},{"id":"ip_vrow","n":"버티컬 로우","b":"임펄스","w":"pin","g":"등","no":"6"},{"id":"nt_row","n":"어드저스터블 로우 폴리","b":"뉴텍","w":"pin","g":"등","no":"12"},{"id":"hs_row","n":"아이소래터럴 로우","b":"해머스트렝스","w":"plate","g":"등","no":"16"},{"id":"hs_lowrow","n":"아이소래터럴 로우 로우","b":"해머스트렝스","w":"plate","g":"등","no":"17"},{"id":"hs_highrow","n":"아이소래터럴 하이 로우","b":"해머스트렝스","w":"plate","g":"등","no":"18"},{"id":"hs_rowpin","n":"로우 (셀렉토라이즈)","b":"해머스트렝스","w":"pin","g":"등","no":"39"},{"id":"nl_lowrow","n":"멀티 스테이션 로우 로우","b":"너틸러스","w":"pin","g":"등","no":"52"},{"id":"sp_pulldown","n":"Super Leverage 풀다운","b":"Super","w":"plate","g":"등","no":"53"},{"id":"mt_vpull","n":"M-Torture 버티컬 풀다운","b":"M-Torture","w":"plate","g":"등","no":"54"},{"id":"mt_highrow","n":"M-Torture 하이 로우","b":"M-Torture","w":"plate","g":"등","no":"55"},{"id":"mt_widepull","n":"M-Torture 와이드 풀다운","b":"M-Torture","w":"plate","g":"등","no":"56"},{"id":"mt_lowrow","n":"M-Torture 로우 로우","b":"M-Torture","w":"plate","g":"등","no":"58"},{"id":"lx_widepull","n":"와이드 풀다운 (LP-305)","b":"렉스코","w":"plate","g":"등","no":"60"},{"id":"lx_assist","n":"친/딥 어시스트 (LPS-114)","b":"렉스코","w":"pin","g":"등","no":"57"},{"id":"df_armcurl","n":"암 컬","b":"델타피트니스","w":"pin","g":"팔","no":"34"},{"id":"lf_bicurl","n":"바이셉스 컬","b":"라이프피트니스","w":"pin","g":"팔","no":"35"},{"id":"nl_bicurl","n":"바이셉스 컬 (화이트)","b":"너틸러스","w":"pin","g":"팔","no":"37"},{"id":"lf_tripress","n":"트라이셉스 프레스","b":"라이프피트니스","w":"pin","g":"팔","no":"36","c":1},{"id":"hs_triext","n":"트라이셉스 익스텐션","b":"해머스트렝스","w":"pin","g":"팔","no":"38"},{"id":"ip_legpress","n":"레그 프레스 / 카프","b":"임펄스","w":"plate","g":"하체","no":"40"},{"id":"ip_slegpress","n":"시티드 레그 프레스","b":"임펄스","w":"pin","g":"하체","no":"—"},{"id":"ip_1legpress","n":"원 레그 프레스 (편측)","b":"임펄스","w":"pin","g":"하체","no":"—"},{"id":"nl_hack","n":"핵 스쿼트","b":"너틸러스","w":"plate","g":"하체","no":"24"},{"id":"nt_legext","n":"레그 익스텐션","b":"뉴텍","w":"plate","g":"하체","no":"48"},{"id":"dx_lyingcurl","n":"라잉 레그컬","b":"디랙스","w":"pin","g":"하체","no":"—"},{"id":"dx_seatcurl","n":"시티드 레그컬","b":"디랙스","w":"pin","g":"하체","no":"—"},{"id":"dx_abduction","n":"시티드 아웃타이 (외전)","b":"디랙스","w":"pin","g":"하체","no":"45"},{"id":"lf_adduction","n":"힙 어덕션 (이너타이)","b":"라이프피트니스","w":"pin","g":"하체","no":"44","c":1},{"id":"sp_hippress","n":"Super Hip Press","b":"Super","w":"plate","g":"하체","no":"21"},{"id":"bb_hipthrust","n":"힙 쓰러스트 머신","b":"부티빌더","w":"plate","g":"하체","no":"22"},{"id":"bb_standabd","n":"스탠딩 어브덕터","b":"부티빌더","w":"pin","g":"하체","no":"42"},{"id":"gk_kickback","n":"글루트 킥백","b":"브랜드 확인필요","w":"plate","g":"하체","no":"20"},{"id":"gr_calf","n":"동키 카프 레이즈","b":"짐레코","w":"plate","g":"하체","no":"19"},{"id":"ht_line","n":"힙 쓰러스트 라인 (3~4대)","b":"브랜드 확인필요","w":"plate","g":"하체","no":"61"},{"id":"dx_cable","n":"듀얼 풀리 케이블 크로스오버","b":"디랙스","w":"pin","g":"케이블","no":"13","c":1},{"id":"rack","n":"파워랙 / 스쿼트랙","b":"브랜드 확인필요","w":"free","g":"프리","no":"49"},{"id":"platform","n":"리프팅 플랫폼","b":"EiGRO","w":"free","g":"프리","no":"49"},{"id":"dx_smith","n":"스미스 머신","b":"디랙스","w":"free","g":"프리","no":"50"},{"id":"barbell","n":"올림픽 바벨 · 원판","b":"—","w":"free","g":"프리","no":"—"},{"id":"dumbbell","n":"덤벨","b":"—","w":"free","g":"프리","no":"—"},{"id":"bench","n":"조절식 벤치","b":"—","w":"free","g":"프리","no":"—"},{"id":"dx_tread","n":"트레드밀","b":"디랙스","w":"free","g":"유산소","no":"64"}];
 const GYM_BY = Object.fromEntries(GYM.map(m => [m.id, m]));
 const DEFAULT_EQUIP = GYM.map(m => m.id);   // 기본 = 전부 보유
 const ALL_EQUIP = GYM.map(m => m.id);
@@ -2372,11 +2377,54 @@ function renderChat(){
   $("#chatbar").classList.remove("hidden");
   setTimeout(()=>window.scrollTo(0,document.body.scrollHeight),50);
 }
-function sendChat(){
+/* 코치 AI (8/4 대표) — 카톡봇 서버의 /pt-coach 경유.
+   API 키는 서버에만 있고 앱에는 없다. 실패하면 기존 키워드 답변으로 폴백. */
+const PT_API = "https://kakao-report-bot-production.up.railway.app/pt-coach";
+
+/* 오늘 프로그램·최근 기록을 같이 보내 그 맥락으로 답하게 한다 */
+function coachContext(){
+  try{
+    const p = P();
+    const out = {이름:p.name, 목표:p.goal, 수준:p.exp, 누적운동:(p.logdays||[]).length+"회"};
+    const pl = todayPlan();
+    out.오늘 = pl.rest ? "휴식일" : pl.day.label;
+    if(!pl.rest) out.오늘종목 = pl.exs.map(e=>e.name+" "+(e.recW!=null?e.recW+"kg":"맨몸")+"×"+e.recReps+"회 "+e.sets+"세트");
+    // 최근 3세션 요약
+    const recent = [];
+    Object.keys(p.history||{}).forEach(id=>{
+      const h=(p.history[id]||[]).slice(-1)[0];
+      if(h) recent.push((EX[id]?EX[id].name:id)+": "+Math.max(0,...h.sets.map(x=>+x.w||0))+"kg");
+    });
+    if(recent.length) out.최근기록 = recent.slice(0,8);
+    return out;
+  }catch(e){ return {}; }
+}
+
+async function sendChat(){
   const inp=$("#chatIn"); const t=inp.value.trim(); if(!t) return; inp.value="";
   const log=$("#chatLog");
   log.appendChild(el("div","msg u",t)); P()._chat.push({r:"u",t});
-  const a=coachReply(t);
+  // 로딩 표시
+  const wait=el("div","msg a","…"); wait.style.opacity=".6"; log.appendChild(wait);
+  setTimeout(()=>window.scrollTo(0,document.body.scrollHeight),50);
+
+  let a = null;
+  try{
+    const hist = (P()._chat||[]).slice(-6).map(m=>({role: m.r==="a"?"assistant":"user", text:m.t}));
+    const ctrl = new AbortController();
+    const to = setTimeout(()=>ctrl.abort(), 20000);   // 20초 넘으면 폴백
+    const r = await fetch(PT_API, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({q:t, ctx:coachContext(), history:hist}),
+      signal: ctrl.signal,
+    });
+    clearTimeout(to);
+    const j = await r.json();
+    if(j && j.ok && j.answer) a = j.answer;
+  }catch(e){ /* 오프라인·서버다운 → 폴백 */ }
+
+  if(!a) a = coachReply(t) + "\n\n(지금 인터넷이 불안정해 기본 답변을 드렸어요)";
+  wait.remove();
   const am=el("div","msg a",a); log.appendChild(am); P()._chat.push({r:"a",t:a});
   persist(); setTimeout(()=>window.scrollTo(0,document.body.scrollHeight),50);
 }
@@ -2487,7 +2535,7 @@ function renderSettings(){
   const noti=el("div","card");
   const nOn = notiEnabled();
   noti.innerHTML=`<h3>운동 알림 <span class="pill">${nOn?"켜짐":"꺼짐"}</span></h3>
-    <p class="k" style="margin:6px 0 10px">저녁 <b>21:00</b> 내일 운동 예고 · 오전 <b>07:50</b> 오늘 운동 알림</p>`;
+    <p class="k" style="margin:6px 0 10px">저녁 <b>21:00</b> 내일 운동 예고 · 오전 <b>07:50</b> 오늘 운동 알림<br><span style="color:#7fd3a8">텔레그램으로도 같은 시각에 발송돼요 (앱을 안 열어도 도착)</span></p>`;
   const nb=el("button", nOn?"btn sec":"btn green", nOn?"알림 끄기":"🔔 알림 켜기");
   nb.onclick=async ()=>{
     if(notiEnabled()){ notiOff(); toast("알림을 껐어요"); }
@@ -2627,6 +2675,27 @@ function coachDone(){
 function coachMoved(){
   CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; coachRender();
 }
+/* 준비 화면에서 무게 ± (8/4) — 첫 세션 추천치는 추정값이라 실제와 다를 수 있다.
+   지금 세트부터 뒤 세트까지 같이 바뀐다. 워밍업에서 바꾸면 본세트도 비율대로 따라간다. */
+function coachNudge(dir){
+  const e = coachEx(), ex = EX[e.id], sets = coachSets();
+  const step = ex.inc || 2.5;
+  const cur = sets[CO.si];
+  if(cur.w == null) return;
+  const nw = Math.max(step, round(cur.w + step*dir, step));
+  const diff = nw - cur.w;
+  if(cur.kind === "warm"){
+    cur.w = nw;
+    for(const x of sets) if(x.kind === "work") x.w = round(nw/0.6, step);
+  } else {
+    for(let i=CO.si; i<sets.length; i++){
+      if(sets[i].w != null && sets[i].kind === "work") sets[i].w = round(sets[i].w + diff, step);
+    }
+  }
+  coachSaveDraft();
+  coachRender();
+}
+
 /* 세트 체감 — 다음 세트 무게 즉시 조정 */
 function coachFeel(dir){
   const e = coachEx();
@@ -2684,6 +2753,7 @@ function coachBodyHTML(){
   if(CO.phase==="ready"){
     return `<div class="co-phase">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 준비</div>
       <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
+      ${st.w!=null ? '<div class="co-adj"><button onclick="coachNudge(-1)">−</button><span>무게 조절</span><button onclick="coachNudge(1)">＋</button></div>' : ''}
       <div class="co-count" id="coT">5</div>
       <div class="co-sub">곧 시작합니다!</div>
       <button class="co-btn ghost" onclick="CO.t=1">바로 시작 ▶</button>`;
