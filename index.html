@@ -1825,7 +1825,7 @@ if(!S.profiles){
   };
   DB.save(S);
 }
-const P = ()=> S.profiles[S.current];
+const P = ()=> S.profiles[S.current] || S.profiles[Object.keys(S.profiles)[0]];
 const persist = ()=> DB.save(S);
 
 /* ---------- 게임화(재미·동기·습관) ---------- */
@@ -2696,6 +2696,14 @@ function renderProfiles(){
 
 /* ---------- 네비/부트 ---------- */
 function nav(view){
+  // 프로필이 선택 안 된 상태(사람 바꾸기 직후 등)에서 탭을 누르면
+  //   P() 가 undefined 라 앱 전체가 죽는다 → 온보딩으로 돌려보낸다. (8/4)
+  if(!S.current || !S.profiles[S.current]){
+    $("#app").classList.add("hidden");
+    $("#onboard").classList.remove("hidden");
+    renderProfiles();
+    return;
+  }
   ["home","workout","chat","progress","settings"].forEach(x=>{ $("#view-"+x).classList.toggle("hidden",x!==view); });
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.nav===view));
   $("#chatbar") && $("#chatbar").classList.toggle("hidden", view!=="chat");
@@ -2731,6 +2739,10 @@ let CO = null;   // {plan, ei, si, phase, t, timer}
 // phase: "ready"(5초 카운트다운) | "work"(운동중) | "rest"(휴식) | "move"(다음운동 이동) | "done"
 
 function coachStart(){
+  if(!S.current || !S.profiles[S.current]){ boot(); return; }
+  // 이전 코치 세션이 어중간하게 남아 있으면 정리하고 새로 시작 (8/4)
+  if(typeof CO !== "undefined" && CO){ if(CO.timer) clearInterval(CO.timer); CO = null; }
+  const _old = $("#coachView"); if(_old) _old.remove();
   const plan = todayPlan();
   if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
   CO = {plan, ei:0, si:0, phase:"ready", t:5, timer:null, log:{}};
@@ -2756,6 +2768,8 @@ function coachTick(){
   if(CO.timer) clearInterval(CO.timer);
   CO.timer = setInterval(()=>{
     if(!CO) return;
+    // 화면이 없어졌는데 타이머만 도는 상태 방지 (8/4)
+    if(!document.getElementById("coachView")){ clearInterval(CO.timer); CO = null; return; }
     if(CO.phase==="work" || CO.phase==="cardio"){ CO.t++; coachPaint(); return; }
     CO.t--;
     if(CO.t<=0){
