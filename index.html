@@ -141,6 +141,33 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-top{ width:100%; display:flex; align-items:center; gap:10px; }
 .co-x{ width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:#cfe3f5; font-size:17px; cursor:pointer; }
 .co-prog{ flex:1; font-size:13px; color:#8fa8bd; letter-spacing:.3px; line-height:1.4; }
+#pvSheet{position:fixed;inset:0;z-index:10002;display:flex;align-items:flex-end;justify-content:center}
+.pv-bg{position:absolute;inset:0;background:rgba(0,0,0,.66)}
+.pv-box{position:relative;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;
+  background:#111e2b;border-radius:20px 20px 0 0;border-top:1px solid rgba(255,255,255,.1)}
+.pv-head{display:flex;align-items:flex-start;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.pv-head b{display:block;font-size:16px;color:#eaf4ff}
+.pv-head small{display:block;font-size:12px;color:#8fa8bd;margin-top:3px}
+.pv-head div{flex:1}
+.pv-x{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);color:#cfe3f5;cursor:pointer;font-size:15px;flex:0 0 36px}
+.pv-list{overflow-y:auto;padding:8px 12px}
+.pv-row{display:flex;align-items:center;gap:11px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.05)}
+.pv-th{width:54px;height:54px;flex:0 0 54px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;color:#5f7f9b;font-size:16px;font-weight:800}
+.pv-th img{width:100%;height:100%;object-fit:cover}
+.pv-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pv-info b{font-size:14.5px;color:#dbe9f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-info small{font-size:11.5px;color:#7f97ab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-set{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.pv-warm{font-size:11px;color:#ffc98a;background:rgba(255,180,90,.1);border-radius:5px;padding:2px 6px}
+.pv-work{font-size:11.5px;color:#9fd0a8;background:rgba(120,220,150,.1);border-radius:5px;padding:2px 6px;font-weight:700}
+.pv-yt{width:40px;height:40px;flex:0 0 40px;border-radius:10px;cursor:pointer;font-size:13px;
+  background:rgba(255,80,80,.13);border:1px solid rgba(255,110,110,.32);color:#ff9b9b}
+.pv-cardio{margin:10px 4px 4px;padding:10px;border-radius:10px;text-align:center;font-size:13px;
+  color:#7fd3a8;background:rgba(34,211,167,.08);border:1px solid rgba(34,211,167,.2)}
+.pv-go{margin:10px 14px calc(18px + env(safe-area-inset-bottom));padding:16px;border-radius:14px;border:0;
+  cursor:pointer;background:linear-gradient(90deg,#22d3a7,#38bdf8);color:#04212b;font-size:16px;font-weight:900}
 .co-knee{font-size:11.5px;color:#9fc0ff;background:rgba(138,180,255,.1);
   border:1px solid rgba(138,180,255,.24);border-radius:8px;padding:5px 10px;margin-top:4px}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -2328,6 +2355,48 @@ function ensureEquipStyle(){
   document.head.appendChild(st);
 }
 
+/* 오늘 운동 전체를 한 화면에 (8/4 대표 — 미리 공부용) */
+function showTodayPreview(){
+  const plan = todayPlan();
+  if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
+  const w = document.createElement("div");
+  w.id = "pvSheet";
+  const totalSets = plan.exs.reduce((a,e)=>a+((e.planSets||[]).length||e.sets),0);
+  const rows = plan.exs.map((e,i)=>{
+    const ps = e.planSets || [];
+    const work = ps.filter(x=>x.kind==="work");
+    const warm = ps.filter(x=>x.kind==="warm");
+    const ph = photoOf(e.id);
+    return '<div class="pv-row">'+
+      '<div class="pv-th">'+(ph?'<img src="'+ph+'">':'<span>'+(i+1)+'</span>')+'</div>'+
+      '<div class="pv-info">'+
+        '<b>'+(i+1)+'. '+e.name+'</b>'+
+        '<small>'+e.m+(e.br&&e.wt!=="free" ? ' · '+e.br+(e.no&&e.no!=="—"?' · No.'+e.no:'') : '')+'</small>'+
+        '<div class="pv-set">'+
+          (warm.length ? '<span class="pv-warm">🔥 워밍업 '+warm[0].w+'kg×'+warm[0].reps+'</span>' : '')+
+          '<span class="pv-work">'+(work.length||e.sets)+'세트 × '+
+            (work[0] ? (work[0].w!=null? work[0].w+'kg':'맨몸')+' × '+work[0].reps+'회'
+                     : (e.recW!=null? e.recW+'kg':'맨몸')+' × '+e.recReps+'회')+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<button class="pv-yt" onclick="openYT(\''+String(e.yt||e.name).replace(/'/g,"")+'\')">▶</button>'+
+      '</div>';
+  }).join("");
+  w.innerHTML = '<div class="pv-bg"></div><div class="pv-box">'+
+    '<div class="pv-head"><div><b>'+plan.day.label+'</b>'+
+      '<small>'+todayLabel()+' · '+plan.exs.length+'종목 · '+totalSets+'세트</small></div>'+
+      '<button class="pv-x" id="pvClose">✕</button></div>'+
+    '<div class="pv-list">'+rows+
+      '<div class="pv-cardio">🏃 마무리 유산소 '+((P().goal||"").includes("체지방")?20:15)+'분</div>'+
+    '</div>'+
+    '<button class="pv-go" id="pvGo">▶ 웨이트 시작</button></div>';
+  document.body.appendChild(w);
+  const close=()=>w.remove();
+  w.querySelector("#pvClose").onclick=close;
+  w.querySelector(".pv-bg").onclick=close;
+  w.querySelector("#pvGo").onclick=()=>{ close(); coachStart(); };
+}
+
 function renderWorkout(){
   ensureEquipStyle();
   const v=$("#view-workout"); v.innerHTML="";
@@ -2336,9 +2405,21 @@ function renderWorkout(){
   curPlan=plan;
   const doneMap = P().done[todayKey()]||{};
   // 코치 모드 진입 (8/4 대표) — 한 세트씩 카운트다운으로 이끄는 전체화면
-  const go=el("button","btn green","▶ 코치 모드로 시작 (한 세트씩 안내)");
-  go.style.cssText="margin:0 0 10px;padding:16px;font-size:16px;font-weight:800";
-  go.onclick=coachStart; v.appendChild(go);
+  const go=el("button","btn green","▶ 웨이트 시작");
+  go.style.cssText="margin:0 0 8px;padding:16px;font-size:17px;font-weight:800";
+  go.onclick=()=>{
+    try{ coachStart(); }
+    catch(e){
+      console.error(e);
+      toast("화면을 다시 불러올게요");
+      setTimeout(()=>location.reload(), 800);
+    }
+  };
+  v.appendChild(go);
+  // 오늘 운동 미리보기 (8/4 대표 — 미리 공부하려고)
+  const pv=el("button","btn sec","📋 오늘 운동 한눈에 보기");
+  pv.style.cssText="margin:0 0 10px;padding:14px;font-size:15px";
+  pv.onclick=showTodayPreview; v.appendChild(pv);
   v.appendChild(el("div","card",`<div class="row between"><b>${plan.day.label}</b><span class="pill">완료 후 다음날 무게 자동 반영</span></div>`));
   plan.exs.forEach((e,ei)=>{
     const card=el("div","ex"); card.dataset.ex=e.id;
@@ -2920,7 +3001,10 @@ function calRender(v){
     const past = key < todayK;
 
     const cell = el("div","cal-cell"+(isToday?" today":"")+(rest?" rest":"")+(done?" done":""));
-    const tag = rest ? "휴식" : sp.label.split("·")[0].trim();
+    // 한글로 (8/4 대표) — PUSH 대신 '가슴·어깨'
+    const KOR = {push:"가슴·어깨", pull:"등·이두", legs:"하체", upper:"상체", lower:"하체·어깨",
+                 push2:"어깨·가슴", pull2:"등·이두", legs2:"하체·둔근"};
+    const tag = rest ? "휴식" : (KOR[sp.key] || sp.label.split("·")[0].trim());
     cell.innerHTML = '<div class="cal-d">'+d+'</div>'+
       '<div class="cal-tag">'+tag+'</div>'+
       (done ? '<div class="cal-mark">✓'+(didCardio?'🏃':'')+'</div>'
