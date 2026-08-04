@@ -2386,7 +2386,9 @@ Object.defineProperty(window, "SPLIT", { get: activeSplit, configurable: true })
 function todayPlan(dayOffset){
   const _d = nowKST(); if(dayOffset) _d.setDate(_d.getDate() + dayOffset);
   const dow = _d.getDay();
-  const day = activeSplit()[dow];
+  let day = activeSplit()[dow];
+  const _ovKey = (P().dayOverride||{})[_d.toISOString().slice(0,10)];
+  if(_ovKey){ const _sp=activeSplit(); const _f=Object.values(_sp).find(x=>x&&(x.key===_ovKey||String(x.key||"").startsWith(_ovKey))); if(_f) day=_f; }
   if(day.key==="rest") return {rest:true, day};
   const eq = P().equip;
   const avail = id => EX[id].eq.every(t=> eq.includes(t) || t==="");
@@ -2558,6 +2560,7 @@ const _Q6 = {
     }
     // 코어(맨몸)는 오래 쉴 필요가 없다
     if(String(ex.m||"").includes("코어")) restSec = 40;
+    if(P().restOverride>0) restSec = P().restOverride;
     const planSets = buildSets(ex, setN, w, reps);
     // rest: 근비대 60/45초 · 체지방 45/30초 (8/4)
     return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:reps, note:rec.note, rest: restSec, yt:ex.yt,
@@ -3053,6 +3056,21 @@ function coachContext(){
   }catch(e){ return {}; }
 }
 
+/* 코치가 실제로 프로그램/설정을 바꾸게 (8/4) */
+function _dateKeyOff(off){ const d=nowKST(); if(off) d.setDate(d.getDate()+(+off||0)); return d.toISOString().slice(0,10); }
+const _PART2KEY={"가슴":"push","어깨":"push","미는":"push","등":"pull","당기는":"pull","이두":"pull","하체":"legs","다리":"legs","엉덩이":"legs","허벅지":"legs","상체":"upper","전신":"upper"};
+function applyCoachActions(actions){
+  const p=P(); const done=[];
+  for(const a of (actions||[])){ try{
+    if(a.type==="set_day"){ const key=_PART2KEY[a.part]||String(a.part||"").toLowerCase(); const off=+a.offset||0;
+      p.dayOverride=p.dayOverride||{}; p.dayOverride[_dateKeyOff(off)]=key;
+      done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+(a.part||key)+" 운동으로 변경"); }
+    else if(a.type==="set_rest"){ p.restOverride=Math.max(20,Math.min(300,+a.sec||60)); done.push("쉬는시간 "+p.restOverride+"초"); }
+    else if(a.type==="set_goal"){ if(a.value){ p.goal=String(a.value); done.push("목표 "+a.value);} }
+  }catch(e){} }
+  persist();
+  return done.length? "적용됨 — "+done.join(" · ") : "";
+}
 async function sendChat(){
   const inp=$("#chatIn"); const t=inp.value.trim(); if(!t) return; inp.value="";
   const log=$("#chatLog");
@@ -3073,7 +3091,8 @@ async function sendChat(){
     });
     clearTimeout(to);
     const j = await r.json();
-    if(j && j.ok && j.answer) a = j.answer;
+    if(j && j.ok && j.answer){ a = j.answer;
+      if(Array.isArray(j.actions) && j.actions.length){ const _s=applyCoachActions(j.actions); if(_s) a += "\n\n✅ "+_s; } }
   }catch(e){ /* 오프라인·서버다운 → 폴백 */ }
 
   if(!a) a = coachReply(t) + "\n\n(지금 인터넷이 불안정해 기본 답변을 드렸어요)";
