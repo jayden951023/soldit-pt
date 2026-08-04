@@ -145,6 +145,9 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-bar i{ display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22d3a7); transition:width .35s; }
 
 .co-exname{ font-size:26px; font-weight:900; color:#eaf4ff; margin:14px 0 4px; line-height:1.25; word-break:keep-all; }
+.co-skip{ font-size:11.5px; padding:7px 10px; border-radius:9px; cursor:pointer; white-space:nowrap;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.13); color:#9fb4c7; }
+.co-skip:active{ transform:scale(.96); }
 .co-adj{ display:flex; align-items:center; gap:14px; margin-top:4px; }
 .co-adj span{ font-size:12px; color:#8fa8bd; }
 .co-adj button{ width:46px; height:46px; border-radius:14px; cursor:pointer; font-size:24px; font-weight:800;
@@ -1902,7 +1905,7 @@ function cardioRec(){
   let note = `근력 끝나고 바로 · <b style="color:var(--brand2)">Zone 2</b>(대화되는 강도)로 ${min}. 끝나고 1시간 내 단백질로 근육 보호.`;
   if(legDay) note += " ⚠️ 오늘 하체날 → HIIT 말고 저강도로!";
   const weekN=(P().cardio||[]).filter(c=>c.date>=weekStart()).length;
-  const target = cut? 4 : 3;
+  const target = 5;   // 8/4 대표 — 운동하는 날은 무조건 (월~금 5회)
   return {min, note, legDay, weekN, target};
 }
 function renderCardioCard(v){
@@ -2031,19 +2034,25 @@ function todayPlan(){
   // 부위 쿼터 (8/4) — 요일 성격에 맞게 부위를 배분한다.
   //   기존엔 풀 앞에서 잘라 PUSH인데 가슴만 6개, UPPER는 PUSH와 동일한 종목이 나왔다.
   //   [정규식, 뽑을 개수] 순서대로 채우고, 모자라면 남은 풀에서 보충한다.
+  // 부위 쿼터 (8/4 감사 후 재설계)
+  //   ⚠️ '사두'는 반드시 별도로 뽑는다. /사두|하체/ 로 묶으면 '하체 전체'(레그프레스)가
+  //      먼저 매칭돼 대퇴사두 종목이 0세트가 되던 문제가 있었다.
+  //   ⚠️ 팔(이두/삼두)은 매일 1개씩 — 기존엔 주 3세트뿐이라 등(26세트) 대비 8배 차이였다.
   const QUOTA = {
-    push:  [[/가슴/,2],[/어깨/,2],[/삼두/,1]],
-    pull:  [[/등/,3],[/이두/,2]],
-    legs:  [[/사두|하체/,2],[/햄/,2],[/둔근|내전/,1]],
-    upper: [[/등/,2],[/가슴/,2],[/어깨/,1]],
-    lower: [[/둔근|내전/,2],[/햄/,2],[/사두|하체/,1]],
+    push:  [[/가슴/,2],[/어깨/,2],[/삼두/,2]],
+    pull:  [[/등/,4],[/이두/,2]],
+    legs:  [[/대퇴사두/,2],[/햄/,2],[/하체 전체|하체\(/,1],[/종아리/,1]],
+    upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/이두|삼두/,1]],
+    lower: [[/둔근|내전/,3],[/햄/,1],[/대퇴사두/,1],[/종아리/,1]],
   }[day.key] || [];
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
   const wk = weekIndex();
+  //  요일 시드를 더해 수요일/금요일이 같은 종목을 뽑지 않게 한다 (8/4 감사 — 레그컬 중복)
+  const daySeed = dow * 3;
   const rot = (arr, take, seed) => {
     if(!arr.length) return [];
-    const out=[]; for(let i=0;i<take && i<arr.length;i++) out.push(arr[(wk*take + i + seed) % arr.length]);
+    const out=[]; for(let i=0;i<take && i<arr.length;i++) out.push(arr[(wk*take + i + seed + daySeed) % arr.length]);
     return out;
   };
 
@@ -2054,15 +2063,19 @@ function todayPlan(){
     const c = hit.filter(id=>EX[id].type==="comp");
     const iso = hit.filter(id=>EX[id].type==="iso");
     const ordered = [...c, ...iso];
-    chosen.push(...rot(ordered, cnt, qi).filter(x=>!chosen.includes(x)));
+    // rot 이 같은 배열에서 같은 인덱스를 두 번 뽑을 수 있어(배열이 짧을 때)
+    //   push 시점마다 중복을 다시 확인한다. (8/4 — 친/딥 어시스트가 2번 나오던 버그)
+    for(const id of rot(ordered, cnt, qi)){
+      if(!chosen.includes(id)) chosen.push(id);
+    }
   });
   // 쿼터로 못 채웠으면(기구를 꺼둔 경우 등) 남은 풀에서 보충
-  if(chosen.length<4){
-    for(const id of pool){ if(chosen.length>=5) break; if(!chosen.includes(id)) chosen.push(id); }
+  if(chosen.length<5){
+    for(const id of pool){ if(chosen.length>=6) break; if(!chosen.includes(id)) chosen.push(id); }
   }
   // 복합 → 고립 순으로 정렬 (무거운 운동을 앞에)
   //  총 50분 = 근력 35분 + 유산소 15분 (8/4 대표). 6종목이면 근력만 50분이라 5종목으로.
-  chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,5);
+  chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,6);
   // 오토레귤레이션: 오늘 컨디션
   const r = P().readiness[todayKey()];
   let setMod = 0, wMod = 1, coach="";
@@ -2634,7 +2647,7 @@ function coachTick(){
   if(CO.timer) clearInterval(CO.timer);
   CO.timer = setInterval(()=>{
     if(!CO) return;
-    if(CO.phase==="work"){ CO.t++; coachPaint(); return; }
+    if(CO.phase==="work" || CO.phase==="cardio"){ CO.t++; coachPaint(); return; }
     CO.t--;
     if(CO.t<=0){
       if(CO.phase==="ready"){ CO.phase="work"; CO.t=0; beep(2); }
@@ -2668,9 +2681,20 @@ function coachDone(){
   const last = CO.si >= coachSets().length-1;
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; }
   else if(CO.ei < CO.plan.exs.length-1){ CO.phase="move"; CO.t=20; }
-  else { CO.phase="done"; if(CO.timer) clearInterval(CO.timer); }
+  else { CO.phase="cardio"; CO.t=0; }   // 근력 끝 → 유산소 (8/4 대표)
   coachRender();
 }
+/* 이 운동 건너뛰기 (8/4 대표) — 기구가 사용 중이거나 컨디션이 안 될 때.
+   기록에는 남기지 않고 바로 다음 운동으로 넘어간다. */
+function coachSkipEx(){
+  if(CO.ei < CO.plan.exs.length-1){
+    CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5;
+  } else {
+    CO.phase="cardio"; CO.t=0;   // 마지막 운동이면 유산소로
+  }
+  coachRender();
+}
+
 /* [이동완료] — 다음 운동으로 */
 function coachMoved(){
   CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; coachRender();
@@ -2733,6 +2757,7 @@ function coachRender(){
     <div class="co-top">
       <button class="co-x" onclick="coachStop()">✕</button>
       <div class="co-prog">${CO.ei+1} / ${total} 운동 · ${CO.si+1} / ${sets.length} 세트</div>
+      <button class="co-skip" onclick="coachSkipEx()">이 운동 건너뛰기 ⏭</button>
     </div>
     <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
 
@@ -2780,6 +2805,24 @@ function coachBodyHTML(){
         <button class="co-btn" onclick="coachSkipRest()">건너뛰기 ▶</button>
       </div>`;
   }
+  if(CO.phase==="cardio"){
+    // 유산소도 코치가 정해준다 (8/4 대표) — 요일마다 기구를 바꿔 지루하지 않게.
+    //   하체날은 다리에 부담 적은 걸로 (자전거·러닝머신).
+    const c = CO.cardio || (CO.cardio = pickCardio());
+    const mins = (P().goal||"").includes("체지방") ? 20 : 15;
+    const done = CO.t;
+    return `<div class="co-phase" style="color:#7fd3a8">🏃 마무리 유산소</div>
+      <div class="co-movename">${c.n}</div>
+      <div class="co-eq">${c.tip}</div>
+      <div class="co-target" style="font-size:22px;margin-top:10px"><b>${mins}<small>분</small></b></div>
+      <div class="co-count sm" id="coT">${mmss(done)}</div>
+      <div class="co-sub">시작하면 시간이 올라가요</div>
+      <div class="co-row">
+        <button class="co-btn ghost" onclick="coachCardioSwap()">다른 기구 ↻</button>
+        <button class="co-btn" onclick="coachCardioDone()">유산소 완료 ✓</button>
+      </div>
+      <button class="co-btn ghost" style="margin-top:6px" onclick="coachCardioSkip()">오늘은 건너뛰기</button>`;
+  }
   if(CO.phase==="move"){
     const nx = CO.plan.exs[CO.ei+1];
     return `<div class="co-phase move">🚶 다음 운동으로 이동</div>
@@ -2792,6 +2835,37 @@ function coachBodyHTML(){
   return "";
 }
 
+/* 유산소 종목 선택 (8/4) — 요일별로 돌려 지루하지 않게. 하체날은 저강도 우선. */
+function pickCardio(){
+  const dow = nowKST().getDay();
+  const legDay = SPLIT[dow] && (SPLIT[dow].key==="legs" || SPLIT[dow].key==="lower");
+  // 하체날엔 천국의 계단·경사러닝 제외(다리 부담) → 러닝머신·자전거만
+  const pool = legDay ? CARDIO.filter(c=>c.id==="tread"||c.id==="cycle") : CARDIO;
+  const wk = weekIndex();
+  return pool[(wk + dow) % pool.length];
+}
+function coachCardioSwap(){
+  const cur = CO.cardio;
+  const i = CARDIO.findIndex(c=>c.id===cur.id);
+  CO.cardio = CARDIO[(i+1) % CARDIO.length];
+  coachRender();
+}
+function coachCardioDone(){
+  try{
+    P().cardio = P().cardio || [];
+    if(!P().cardio.some(c=>c.date===todayKey())){
+      P().cardio.push({date:todayKey(), type:(CO.cardio||{}).n||"유산소", min:Math.round(CO.t/60)});
+      persist();
+    }
+  }catch(e){}
+  CO.phase="done"; if(CO.timer) clearInterval(CO.timer);
+  coachRender();
+}
+function coachCardioSkip(){
+  CO.phase="done"; if(CO.timer) clearInterval(CO.timer);
+  coachRender();
+}
+
 function coachDoneHTML(){
   let sets=0, vol=0;
   for(const id in CO.log) CO.log[id].filter(Boolean).forEach(s=>{ sets++; vol += (s.w||0)*(s.reps||0); });
@@ -2799,7 +2873,7 @@ function coachDoneHTML(){
     <div class="co-fin">🎉</div>
     <div class="co-exname">오늘 운동 완료!</div>
     <div class="co-sum">${CO.plan.exs.length}종목 · ${sets}세트 · 총 ${Math.round(vol).toLocaleString()}kg</div>
-    <div class="co-sub" style="margin:14px 0 18px">이어서 유산소 15분 하면 오늘 50분 완성이에요 🏃</div>
+    <div class="co-sub" style="margin:14px 0 18px">오늘도 해냈어요. 내일 또 만나요 💪</div>
     <button class="co-btn big" id="coFin">기록 저장하고 끝내기</button>
     <button class="co-btn ghost" onclick="coachStop()">닫기</button>
   </div>`;
