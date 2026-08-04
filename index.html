@@ -1950,26 +1950,61 @@ function renderCardioCard(v){
 }
 let cardioT=null, cardioSec=0;
 function openCardioLog(){
+  // 코치가 오늘 유산소를 정해준다 (8/4 대표) — 기존엔 종류·시간·강도를 직접 골라야 했다.
   cardioSec=0; if(cardioT){clearInterval(cardioT); cardioT=null;}
+  let plan = pickCardio();
+  const goalMin = (P().goal||"").includes("체지방") ? 20 : 15;
   const m=el("div","card"); m.id="cardioModal";
-  m.style.cssText="position:fixed;inset:0;z-index:80;margin:0;border-radius:0;overflow:auto;background:var(--bg);padding:20px 16px";
-  m.innerHTML=`<h2>🏃 유산소 기록</h2>
-    <label class="fld">종류</label>
-    <select id="c_type">${CARDIO.map(c=>`<option value="${c.id}">${c.n}</option>`).join("")}</select>
-    <label class="fld">시간 (분)</label><input id="c_min" type="number" inputmode="numeric" placeholder="예: 30">
-    <label class="fld">거리 (km · 선택)</label><input id="c_dist" type="number" inputmode="decimal" placeholder="예: 3.5">
-    <label class="fld">강도</label>
-    <select id="c_int"><option>Zone 2 (저강도)</option><option>중강도</option><option>HIIT (고강도)</option></select>
-    <div class="note" style="margin-top:14px"><div class="row between"><b id="c_tdisp" style="font-size:22px">00:00</b>
-      <button class="btn sm" id="c_tstart">⏱️ 타이머 시작</button></div>
-      <div class="k" style="margin-top:6px">타이머로 재면 시간이 자동 입력돼요</div></div>`;
-  const save=el("button","btn green","저장 (+20 XP)"); save.style.marginTop="16px"; save.onclick=saveCardio;
-  const cancel=el("button","btn sec","취소"); cancel.style.marginTop="8px"; cancel.onclick=()=>{ if(cardioT){clearInterval(cardioT);cardioT=null;} m.remove(); };
-  m.appendChild(save); m.appendChild(cancel); document.body.appendChild(m);
-  $("#c_tstart").onclick=()=>{ const btn=$("#c_tstart");
-    if(cardioT){ clearInterval(cardioT); cardioT=null; btn.textContent="⏱️ 타이머 시작"; $("#c_min").value=Math.max(1,Math.round(cardioSec/60)); return; }
-    btn.textContent="⏸️ 정지 (시간 입력)"; cardioT=setInterval(()=>{ cardioSec++;
-      $("#c_tdisp").textContent=String(Math.floor(cardioSec/60)).padStart(2,'0')+":"+String(cardioSec%60).padStart(2,'0'); },1000); };
+  m.style.cssText="position:fixed;inset:0;z-index:80;margin:0;border-radius:0;overflow:auto;background:var(--bg);padding:20px 16px;display:flex;flex-direction:column;justify-content:center;text-align:center";
+
+  const draw = ()=>{
+    m.innerHTML =
+      '<div style="font-size:15px;font-weight:800;color:#7fd3a8;letter-spacing:.5px">🏃 오늘의 유산소</div>'+
+      '<div style="font-size:26px;font-weight:900;color:#fff;margin:10px 0 4px">'+plan.n+'</div>'+
+      '<div style="font-size:12.5px;color:#7cc4ff;background:rgba(124,196,255,.1);border:1px solid rgba(124,196,255,.24);'+
+        'border-radius:8px;padding:6px 12px;display:inline-block;margin-bottom:14px">'+plan.tip+'</div>'+
+      '<div style="font-size:15px;color:#bcd3e6">목표 <b style="color:#fff;font-size:26px">'+goalMin+'</b>분</div>'+
+      '<div id="c_tdisp" style="font-size:62px;font-weight:900;color:#fff;line-height:1.1;margin:8px 0;font-variant-numeric:tabular-nums">00:00</div>'+
+      '<div id="c_hint" class="k">시작을 누르면 시간이 올라가요</div>';
+    const start=el("button","btn green","▶ 유산소 시작"); start.style.marginTop="16px";
+    const swap=el("button","btn sec","↻ 다른 기구로"); swap.style.marginTop="8px";
+    const save=el("button","btn green","✓ 완료 · 기록 저장"); save.style.marginTop="8px"; save.style.display="none";
+    const cancel=el("button","btn sec","닫기"); cancel.style.marginTop="8px";
+
+    start.onclick=()=>{
+      if(cardioT){ clearInterval(cardioT); cardioT=null; start.textContent="▶ 이어서"; return; }
+      start.textContent="⏸ 일시정지"; swap.style.display="none"; save.style.display="";
+      cardioT=setInterval(()=>{
+        cardioSec++;
+        const d=m.querySelector("#c_tdisp");
+        if(d) d.textContent=String(Math.floor(cardioSec/60)).padStart(2,'0')+":"+String(cardioSec%60).padStart(2,'0');
+        if(cardioSec===goalMin*60){
+          const h=m.querySelector("#c_hint");
+          if(h){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
+          try{ beep(2); }catch(e){}
+        }
+      },1000);
+    };
+    swap.onclick=()=>{
+      const i=CARDIO.findIndex(c=>c.id===plan.id);
+      plan=CARDIO[(i+1)%CARDIO.length];
+      draw();
+    };
+    save.onclick=()=>{
+      const min=Math.max(1,Math.round(cardioSec/60));
+      if(cardioT){ clearInterval(cardioT); cardioT=null; }
+      P().cardio=P().cardio||[];
+      P().cardio.push({date:todayKey(), type:plan.n, min:min, intensity:"Zone 2"});
+      const g=gameStats(); const newB=syncBadges(g); persist();
+      m.remove(); try{ beep(2); }catch(e){}
+      toast(plan.n+" "+min+"분 기록 · +20 XP"+(newB.length?" · 배지 "+newB.length+"개!":""));
+      nav("home");
+    };
+    cancel.onclick=()=>{ if(cardioT){clearInterval(cardioT);cardioT=null;} m.remove(); };
+    m.appendChild(start); m.appendChild(swap); m.appendChild(save); m.appendChild(cancel);
+  };
+  draw();
+  document.body.appendChild(m);
 }
 function saveCardio(){
   const min=+($("#c_min").value||0); if(!min){ toast("시간(분)을 입력하세요"); return; }
