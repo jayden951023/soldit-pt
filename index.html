@@ -127,6 +127,55 @@
   .cele .mv{color:#eaf2fb; font-size:15px; font-weight:700; margin:18px 0 22px; line-height:1.6}
   .cf{position:fixed; top:-20px; width:9px; height:14px; z-index:91; border-radius:2px; animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(105vh) rotate(720deg); opacity:.9}}
+/* 코치 모드 — 세로 전체화면 (8/4 대표) */
+body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on #timerWrap { display:none !important; }
+#coachView{ position:fixed; inset:0; z-index:9999; background:linear-gradient(180deg,#0b1520 0%,#0a1118 100%); overflow:hidden; }
+.co-wrap{ height:100%; display:flex; flex-direction:column; align-items:center; padding:16px 18px calc(20px + env(safe-area-inset-bottom)); text-align:center; }
+.co-top{ width:100%; display:flex; align-items:center; gap:10px; }
+.co-x{ width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:#cfe3f5; font-size:17px; cursor:pointer; }
+.co-prog{ flex:1; font-size:13px; color:#8fa8bd; letter-spacing:.3px; }
+.co-bar{ width:100%; height:5px; border-radius:3px; background:rgba(255,255,255,.08); margin:12px 0 4px; overflow:hidden; }
+.co-bar i{ display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22d3a7); transition:width .35s; }
+
+.co-exname{ font-size:26px; font-weight:900; color:#eaf4ff; margin:14px 0 4px; line-height:1.25; word-break:keep-all; }
+.co-eq{ font-size:12.5px; color:#7cc4ff; background:rgba(124,196,255,.1); border:1px solid rgba(124,196,255,.24); border-radius:8px; padding:4px 10px; display:inline-block; }
+.co-machine{ width:min(72vw,260px); height:120px; margin:10px 0 4px; opacity:.9; }
+
+.co-body{ flex:1; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.co-phase{ font-size:15px; font-weight:800; color:#9fd0a8; letter-spacing:.5px; }
+.co-phase.go{ color:#22d3a7; }
+.co-phase.rest{ color:#ffd479; }
+.co-phase.move{ color:#8ab4ff; }
+.co-target{ font-size:30px; color:#dbe9f7; font-weight:800; letter-spacing:-.5px; }
+.co-target b{ color:#fff; font-size:40px; }
+.co-target small{ font-size:17px; opacity:.75; margin-left:2px; }
+.co-count{ font-size:82px; font-weight:900; color:#fff; line-height:1; letter-spacing:-2px; font-variant-numeric:tabular-nums; margin:6px 0; }
+.co-count.sm{ font-size:46px; color:#cfe3f5; }
+.co-sub{ font-size:14px; color:#8fa8bd; }
+.co-next{ font-size:15px; color:#bcd3e6; }
+.co-next b{ color:#fff; }
+.co-movename{ font-size:22px; font-weight:800; color:#fff; margin:6px 0; }
+
+.co-btn{ width:100%; max-width:420px; padding:16px; border-radius:14px; border:0; cursor:pointer;
+  background:linear-gradient(90deg,#22d3a7,#38bdf8); color:#04212b; font-size:17px; font-weight:900; margin-top:10px; }
+.co-btn.big{ padding:22px; font-size:20px; }
+.co-btn.ghost{ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#dbe9f7; font-weight:700; }
+.co-btn:active{ transform:scale(.98); }
+.co-row{ display:flex; gap:10px; width:100%; max-width:420px; }
+.co-row .co-btn{ margin-top:10px; }
+
+.co-feel{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.co-feel span{ font-size:12.5px; color:#8fa8bd; width:100%; }
+.co-feel button{ font-size:13px; padding:9px 13px; border-radius:10px; cursor:pointer;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#dbe9f7; }
+.co-fin{ font-size:64px; margin-top:40px; }
+.co-sum{ font-size:16px; color:#bcd3e6; margin-top:6px; }
+.co-wrap.done{ justify-content:center; }
+@media(max-height:700px){
+  .co-count{ font-size:62px; } .co-machine{ height:88px; } .co-exname{ font-size:22px; }
+  .co-target b{ font-size:33px; }
+}
+
 </style>
 </head>
 <body>
@@ -1791,20 +1840,21 @@ function celebrate(d){
 }
 
 /* ---------- 유산소 모듈 (아침 공복 · Zone2 중심) ---------- */
+/* 유산소 — 실제 보유 기구 (8/4 대표: 러닝머신·자전거·천국의계단·경사러닝) */
 const CARDIO=[
-  {id:"walk", n:"빠른 걷기", yt:"빠른 걷기 유산소 방법"},
-  {id:"incline", n:"트레드밀 경사 걷기", yt:"트레드밀 경사 걷기 유산소"},
-  {id:"cycle", n:"실내 사이클", yt:"실내 사이클 유산소 방법"},
-  {id:"row", n:"로잉머신", yt:"로잉머신 자세 유산소"},
-  {id:"hiit", n:"HIIT 인터벌", yt:"HIIT 유산소 초보 홈트"},
+  {id:"tread",   n:"러닝머신 (디랙스)",   yt:"러닝머신 유산소 방법", tip:"속도 6~7km/h · 대화되는 정도"},
+  {id:"incline", n:"경사 러닝머신",       yt:"트레드밀 경사 걷기 유산소", tip:"경사 10~12% · 속도 5km/h · 손잡이 잡지 말기"},
+  {id:"stair",   n:"천국의 계단",         yt:"천국의 계단 스텝밀 유산소", tip:"레벨 5~7 · 난간에 기대지 말고 상체 세우기"},
+  {id:"cycle",   n:"실내 자전거",         yt:"실내 사이클 유산소 방법", tip:"저항 중간 · 분당 70~80회전"},
 ];
 function cardioRec(){
   const day=SPLIT[nowKST().getDay()];
   const legDay = day.key==="legs"||day.key==="lower";
   const goal=P().goal||"";
   const cut = goal.includes("체지방");
-  const min = cut? "35~40분" : "30분";
-  let note = `아침 공복 · <b style="color:var(--brand2)">Zone 2</b>(대화되는 강도)로 ${min}. 끝나고 1시간 내 단백질로 근육 보호.`;
+  // 총 50분 안에 근력 35분 + 유산소 15분 (8/4 대표). 체지방 목표면 20분까지.
+  const min = cut? "20분" : "15분";
+  let note = `근력 끝나고 바로 · <b style="color:var(--brand2)">Zone 2</b>(대화되는 강도)로 ${min}. 끝나고 1시간 내 단백질로 근육 보호.`;
   if(legDay) note += " ⚠️ 오늘 하체날 → HIIT 말고 저강도로!";
   const weekN=(P().cardio||[]).filter(c=>c.date>=weekStart()).length;
   const target = cut? 4 : 3;
@@ -1868,6 +1918,12 @@ function recommend(exId){
   const sets = last.sets.filter(s=>s.w!=null||s.reps!=null);
   if(sets.length===0) return {w:ex.start, reps:ex.rep[0], note:"기록 없음"};
   const w = Math.max(...sets.map(s=>+s.w||0));
+  // 지난 세션에 '무거웠다'를 눌렀으면 올리지 않는다 (8/4 대표)
+  const lastFeel = (last.planSets||[]).filter(p=>p.feel).map(p=>p.feel);
+  const feltHeavy = lastFeel.filter(f=>f==="heavy").length >= 1;
+  const feltLight = lastFeel.length>0 && lastFeel.every(f=>f==="light");
+  if(feltHeavy) return {w: w, reps: ex.rep[0], note:"지난번 무겁다고 하셔서 같은 무게로 한 번 더 💪"};
+  if(feltLight) return {w: round(w+ex.inc, ex.inc||1.25), reps:ex.rep[0], note:`가볍다고 하셔서 +${ex.inc}kg 올렸어요 🔼`};
   const allTop = sets.every(s=> (+s.reps||0) >= ex.rep[1]);
   const lowRIR = sets.every(s=> (s.rir==null? true : +s.rir<=1));
   const failed = sets.filter(s=> (+s.reps||0) < ex.rep[0]).length;
@@ -1878,6 +1934,36 @@ function recommend(exId){
 }
 
 function estimate1RM(w,reps){ if(!w||!reps) return 0; return Math.round(w*(1+reps/30)); }
+
+/* 세트별 지시 생성 (8/4 대표 — "오늘 뭘 몇 kg로 할지 다 정해줘")
+   복합운동은 워밍업 2세트를 앞에 붙인다. 본세트는 목표 무게·횟수를 명시.
+   반환: [{w, reps, kind:"warm"|"work", label}] */
+function buildSets(ex, setN, workW, workReps){
+  const out=[];
+  if(workW!=null && ex.type==="comp" && workW >= (ex.inc||2.5)*4){
+    // 워밍업 — 본세트의 50%, 70%
+    const w1 = round(workW*0.5, ex.inc||2.5);
+    const w2 = round(workW*0.7, ex.inc||2.5);
+    out.push({w:w1, reps:Math.min(12, workReps+4), kind:"warm", label:"워밍업 1"});
+    out.push({w:w2, reps:Math.min(10, workReps+2), kind:"warm", label:"워밍업 2"});
+  }
+  for(let i=0;i<setN;i++){
+    out.push({w:workW, reps:workReps, kind:"work", label:"본세트 "+(i+1)});
+  }
+  return out;
+}
+
+/* 세트 사이 무게 조정 — 운동 중 [무거웠다/가벼웠다] 누르면 즉시 반영.
+   heavy: 다음 세트부터 10%↓ · light: 5%↑ · 나머지 세트에 모두 적용 */
+function adjustFrom(planSets, fromIdx, dir, ex){
+  const step = dir==="heavy" ? 0.9 : dir==="light" ? 1.05 : 1;
+  if(step===1) return;
+  for(let i=fromIdx+1;i<planSets.length;i++){
+    if(planSets[i].w==null) continue;
+    planSets[i].w = round(planSets[i].w*step, ex.inc||2.5);
+    planSets[i].adj = dir;
+  }
+}
 
 /* 주차 인덱스 — 첫 기록일 기준 몇 주째인가 (종목 로테이션용) */
 function weekIndex(){
@@ -1903,11 +1989,11 @@ function todayPlan(){
   //   기존엔 풀 앞에서 잘라 PUSH인데 가슴만 6개, UPPER는 PUSH와 동일한 종목이 나왔다.
   //   [정규식, 뽑을 개수] 순서대로 채우고, 모자라면 남은 풀에서 보충한다.
   const QUOTA = {
-    push:  [[/가슴/,3],[/어깨/,2],[/삼두/,1]],
-    pull:  [[/등/,4],[/이두/,2]],
-    legs:  [[/사두|하체/,2],[/햄/,2],[/둔근|내전/,2]],
-    upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/이두|삼두/,1]],
-    lower: [[/둔근|내전/,2],[/햄/,2],[/사두|하체/,1],[/종아리/,1]],
+    push:  [[/가슴/,2],[/어깨/,2],[/삼두/,1]],
+    pull:  [[/등/,3],[/이두/,2]],
+    legs:  [[/사두|하체/,2],[/햄/,2],[/둔근|내전/,1]],
+    upper: [[/등/,2],[/가슴/,2],[/어깨/,1]],
+    lower: [[/둔근|내전/,2],[/햄/,2],[/사두|하체/,1]],
   }[day.key] || [];
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
@@ -1928,11 +2014,12 @@ function todayPlan(){
     chosen.push(...rot(ordered, cnt, qi).filter(x=>!chosen.includes(x)));
   });
   // 쿼터로 못 채웠으면(기구를 꺼둔 경우 등) 남은 풀에서 보충
-  if(chosen.length<5){
-    for(const id of pool){ if(chosen.length>=6) break; if(!chosen.includes(id)) chosen.push(id); }
+  if(chosen.length<4){
+    for(const id of pool){ if(chosen.length>=5) break; if(!chosen.includes(id)) chosen.push(id); }
   }
   // 복합 → 고립 순으로 정렬 (무거운 운동을 앞에)
-  chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,6);
+  //  총 50분 = 근력 35분 + 유산소 15분 (8/4 대표). 6종목이면 근력만 50분이라 5종목으로.
+  chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,5);
   // 오토레귤레이션: 오늘 컨디션
   const r = P().readiness[todayKey()];
   let setMod = 0, wMod = 1, coach="";
@@ -1946,8 +2033,9 @@ function todayPlan(){
     const ex=EX[id]; const rec=recommend(id);
     let setN = ex.type==="comp"? (i===0?4:3) : 3; setN=Math.max(2,setN+setMod);
     const w = rec.w==null? null : round(rec.w*wMod, ex.inc||1.25);
+    const planSets = buildSets(ex, setN, w, rec.reps);
     return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: ex.type==="comp"?90:60, yt:ex.yt,
-            br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[]};
+            br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[], planSets};
   });
   const deloadWk = isDeloadWeek();
   if(deloadWk){ exs.forEach(e=>{ e.sets=Math.max(2,e.sets-1); e.recW = e.recW==null?null:round(e.recW*0.9, EX[e.id].inc||1.25); }); }
@@ -1981,7 +2069,7 @@ function renderHome(){
     return;
   }
   const c=el("div","card");
-  c.innerHTML=`<div class="row between"><b>${plan.day.label}</b><span class="pill">${plan.exs.length}종목 · 약 50분</span></div>
+  c.innerHTML=`<div class="row between"><b>${plan.day.label}</b><span class="pill">${plan.exs.length}종목 · 근력 35분</span></div>
     ${plan.deload? '<div class="chip" style="margin-top:10px">🪫 <b>디로드 주간</b> — 볼륨↓ 회복주</div>':''}
     <div style="margin-top:12px">${plan.exs.map(e=>`<div class="row between" style="padding:7px 0;border-top:1px solid var(--line)">
       <span>${e.name} <span class="k">· ${e.m}</span></span>
@@ -2040,7 +2128,14 @@ function ensureEquipStyle(){
   const st=document.createElement("style"); st.id="equipStyle";
   st.textContent=".equip{font-size:11.5px;color:#7cc4ff;background:rgba(124,196,255,.09);"+
     "border:1px solid rgba(124,196,255,.22);border-radius:6px;padding:3px 7px;margin-top:5px;display:inline-block}"+
-    ".eqgrp{margin:14px 0 6px;font-size:12px;color:#8aa;font-weight:700;letter-spacing:.4px}";
+    ".eqgrp{margin:14px 0 6px;font-size:12px;color:#8aa;font-weight:700;letter-spacing:.4px}"+
+    ".fb{align-items:center;flex-wrap:wrap}"+
+    ".fbq{font-size:11.5px;color:#9ab;margin-right:2px}"+
+    ".fbb{font-size:12px;padding:7px 10px;border-radius:8px;cursor:pointer;"+
+      "background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#dfe8f0}"+
+    ".fbb:active{transform:scale(.96)}"+
+    ".plan-line{font-size:12px;color:#9fd0a8;background:rgba(120,220,150,.08);"+
+      "border:1px solid rgba(120,220,150,.2);border-radius:7px;padding:6px 9px;margin-top:6px}";
   document.head.appendChild(st);
 }
 
@@ -2051,6 +2146,10 @@ function renderWorkout(){
   if(plan.rest){ v.appendChild(el("div","note","오늘은 휴식일이에요 🌙 월~금에 운동이 나옵니다.")); return; }
   curPlan=plan;
   const doneMap = P().done[todayKey()]||{};
+  // 코치 모드 진입 (8/4 대표) — 한 세트씩 카운트다운으로 이끄는 전체화면
+  const go=el("button","btn green","▶ 코치 모드로 시작 (한 세트씩 안내)");
+  go.style.cssText="margin:0 0 10px;padding:16px;font-size:16px;font-weight:800";
+  go.onclick=coachStart; v.appendChild(go);
   v.appendChild(el("div","card",`<div class="row between"><b>${plan.day.label}</b><span class="pill">완료 후 다음날 무게 자동 반영</span></div>`));
   plan.exs.forEach((e,ei)=>{
     const card=el("div","ex"); card.dataset.ex=e.id;
@@ -2062,27 +2161,57 @@ function renderWorkout(){
       <button class="yt" onclick="openYT('${e.yt}')">▶ 운동방법</button></div>`;
     const sets=el("div","sets");
     sets.innerHTML=`<div class="set"><span class="lab">세트</span><span class="lab">무게(kg)</span><span class="lab">횟수</span><span class="lab">RIR</span><span class="lab">✓</span></div>`;
-    for(let i=0;i<e.sets;i++){
+    // 세트별 지시 (8/4 대표) — 워밍업 포함, 각 세트 목표 무게·횟수를 미리 정해준다.
+    //   저장된 조정값이 있으면 그걸 우선 사용(앱을 다시 열어도 조절한 무게 유지)
+    const ps = (saved.planSets && saved.planSets.length) ? saved.planSets
+             : JSON.parse(JSON.stringify(e.planSets||[]));
+    e._live = ps;
+    const rows=[];
+    ps.forEach((psi,i)=>{
       const sv=(saved.sets&&saved.sets[i])||{};
-      const rowW = e.recW!=null? (sv.w??"") : "";
-      const ph = e.recW!=null? e.recW : (e.id==="plank"?"초":"");
+      const ph = psi.w!=null? psi.w : (e.id==="plank"?"초":"");
       const set=el("div","set");
-      set.innerHTML=`<span class="lab">${i+1}</span>
-        <input type="number" inputmode="decimal" placeholder="${ph}" value="${rowW}" data-w>
-        <input type="number" inputmode="numeric" placeholder="${e.recReps}" value="${sv.reps??""}" data-r>
-        <input type="number" inputmode="numeric" placeholder="${e.type==='comp'?2:1}" value="${sv.rir??""}" data-rir style="padding:10px 4px">
+      const warm = psi.kind==="warm";
+      if(warm) set.style.opacity=".72";
+      set.innerHTML=`<span class="lab" style="font-size:10.5px;line-height:1.25">${warm?"🔥":""}${psi.label||(i+1)}</span>
+        <input type="number" inputmode="decimal" placeholder="${ph}" value="${sv.w??""}" data-w>
+        <input type="number" inputmode="numeric" placeholder="${psi.reps}" value="${sv.reps??""}" data-r>
+        <input type="number" inputmode="numeric" placeholder="${warm?"":(e.type==='comp'?2:1)}" value="${sv.rir??""}" data-rir style="padding:10px 4px">
         <button class="chk ${sv.done?'on':''}" data-chk>${sv.done?'✓':''}</button>`;
+      // 세트 완료 후 나타나는 체감 버튼 — 다음 세트 무게를 즉시 조절
+      const fb=el("div","fb");
+      fb.style.cssText="display:none;grid-column:1/-1;gap:6px;margin:2px 0 6px";
+      fb.innerHTML=`<span class="fbq">이 세트 어땠어요?</span>
+        <button class="fbb" data-fb="heavy">😤 무거웠다</button>
+        <button class="fbb" data-fb="ok">👍 딱 좋다</button>
+        <button class="fbb" data-fb="light">🙂 가벼웠다</button>`;
+      fb.querySelectorAll("[data-fb]").forEach(btn=>{
+        btn.onclick=()=>{
+          const dir=btn.dataset.fb;
+          adjustFrom(ps, i, dir, EX[e.id]);
+          psi.feel=dir;
+          saveWorkoutDraft();
+          renderWorkout();   // 다음 세트 무게가 바뀐 걸 바로 보여준다
+          if(dir!=="ok"){
+            const nx=ps[i+1];
+            toast(dir==="heavy" ? ("다음 세트 "+(nx?nx.w+"kg":"")+"로 낮췄어요 👍")
+                                : ("다음 세트 "+(nx?nx.w+"kg":"")+"로 올렸어요 💪"));
+          }
+        };
+      });
       const chk=set.querySelector("[data-chk]");
       chk.onclick=()=>{ const on=!chk.classList.contains("on"); chk.classList.toggle("on",on); chk.textContent=on?'✓':'';
-        if(on){ // 빈 값이면 추천치 자동 채움
+        if(on){ // 빈 값이면 지시한 무게·횟수를 자동으로 채움
           const wi=set.querySelector("[data-w]"), ri=set.querySelector("[data-r]");
-          if(wi.value===""&&e.recW!=null) wi.value=e.recW; if(ri.value==="") ri.value=e.recReps;
+          if(wi.value===""&&psi.w!=null) wi.value=psi.w; if(ri.value==="") ri.value=psi.reps;
           startTimer(e.rest, e.name);
-        }
+          if(!warm && i<ps.length-1) fb.style.display="flex";   // 본세트 뒤에만 체감 질문
+        } else { fb.style.display="none"; }
         saveWorkoutDraft();
       };
-      sets.appendChild(set);
-    }
+      sets.appendChild(set); sets.appendChild(fb);
+      rows.push(set);
+    });
     card.appendChild(sets);
     v.appendChild(card);
   });
@@ -2092,7 +2221,9 @@ function renderWorkout(){
 }
 
 function collectWorkout(){
-  const out={sets_by:{}};
+  const out={sets_by:{}, plan_by:{}};
+  // 운동 중 조절한 무게를 같이 저장 (8/4) — 안 하면 화면 다시 그릴 때 원래 무게로 돌아간다.
+  if(curPlan && curPlan.exs){ curPlan.exs.forEach(e=>{ if(e._live) out.plan_by[e.id]=e._live; }); }
   document.querySelectorAll("#view-workout .ex").forEach(card=>{
     const id=card.dataset.ex; const sets=[];
     card.querySelectorAll(".set").forEach((row,idx)=>{
@@ -2108,7 +2239,9 @@ function collectWorkout(){
 function saveWorkoutDraft(){
   const c=collectWorkout(); const tk=todayKey();
   P().done[tk]=P().done[tk]||{};
-  for(const id in c.sets_by){ P().done[tk][id]={sets:c.sets_by[id]}; }
+  for(const id in c.sets_by){
+    P().done[tk][id]={sets:c.sets_by[id], planSets:(c.plan_by||{})[id]||null};
+  }
   persist();
 }
 function finishWorkout(){
@@ -2116,6 +2249,7 @@ function finishWorkout(){
   for(const id in c.sets_by){
     const sets=c.sets_by[id].filter(s=> s.w!=null||s.reps!=null);
     if(!sets.length) continue; logged++;
+    const livePlan=(c.plan_by||{})[id]||null;
     const ex=EX[id];
     const failed = sets.filter(s=> (s.reps||0) < ex.rep[0]).length>=2;
     // PR 판정 (추정 1RM 최고 갱신)
@@ -2124,7 +2258,7 @@ function finishWorkout(){
     const pr = best>prevBest && best>0;
     if(pr) newPR++;
     P().history[id]=P().history[id]||[];
-    P().history[id].push({date:tk, sets, e1rm:best, failed, pr});
+    P().history[id].push({date:tk, sets, e1rm:best, failed, pr, planSets:livePlan});
   }
   if(logged===0){ toast("기록할 세트가 없어요"); return; }
   // 오늘 볼륨·세트 집계
@@ -2182,7 +2316,7 @@ function coachReply(t){
   const q=t.toLowerCase();
   for(const item of QA){ if(item.k.some(k=>q.includes(k.toLowerCase()))) return item.a; }
   // 기록 관련 즉답
-  if(q.includes("오늘")){ const p=todayPlan(); return p.rest? "오늘은 휴식일이에요 🌙 회복도 훈련입니다.": `오늘은 ${p.day.label} 예정이에요. ${p.exs.length}종목·약 50분. 홈에서 '운동 시작' 누르면 됩니다.`; }
+  if(q.includes("오늘")){ const p=todayPlan(); return p.rest? "오늘은 휴식일이에요 🌙 회복도 훈련입니다.": `오늘은 ${p.day.label} 예정이에요. ${p.exs.length}종목·근력 35분 + 유산소 15분(총 50분). 홈에서 '운동 시작' 누르면 됩니다.`; }
   return "좋은 질문이에요! 지금 베타 코치는 자주 묻는 것(단백질·빈도·증량·근육통·부상·디로드 등)에 과학 근거로 답해요. 곧 클로드 실시간 코치가 붙으면 뭐든 대화할 수 있게 업데이트할게요. 그동안 무게 기록만 꾸준히 남겨주세요 — 프로그램은 제가 알아서 맞춰갑니다. 💪";
 }
 function renderChat(){
@@ -2358,6 +2492,213 @@ function boot(){
   nav("home");
 }
 boot();
+
+/* ═══════════════════════════════════════════════════════════════
+   코치 모드 — 한 화면에 한 세트씩, 카운트다운으로 이끈다 (8/4 대표)
+     "1세트 시작! → 끝 버튼 → 휴식 카운트 → 5초 후 자동 시작
+      운동 끝나면 → 다음 운동 이동 → 이동완료 → 5초 후 시작"
+   무게·횟수는 앱이 정해서 크게 보여준다. 사용자는 [끝] 버튼만 누르면 된다.
+   ═══════════════════════════════════════════════════════════════ */
+let CO = null;   // {plan, ei, si, phase, t, timer}
+// phase: "ready"(5초 카운트다운) | "work"(운동중) | "rest"(휴식) | "move"(다음운동 이동) | "done"
+
+function coachStart(){
+  const plan = todayPlan();
+  if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
+  CO = {plan, ei:0, si:0, phase:"ready", t:5, timer:null, log:{}};
+  document.body.classList.add("coach-on");
+  coachTick();
+  coachRender();
+}
+function coachStop(){
+  if(CO && CO.timer) clearInterval(CO.timer);
+  CO = null;
+  document.body.classList.remove("coach-on");
+  const w = $("#coachView"); if(w) w.remove();
+  renderWorkout();
+}
+function coachEx(){ return CO.plan.exs[CO.ei]; }
+function coachSets(){ const e=coachEx(); return e.planSets && e.planSets.length ? e.planSets : [{w:e.recW, reps:e.recReps, label:"1세트", kind:"work"}]; }
+function coachSet(){ return coachSets()[CO.si]; }
+
+/* 1초 타이머 — ready/rest/move 는 카운트다운, work 는 경과시간 */
+function coachTick(){
+  if(CO.timer) clearInterval(CO.timer);
+  CO.timer = setInterval(()=>{
+    if(!CO) return;
+    if(CO.phase==="work"){ CO.t++; coachPaint(); return; }
+    CO.t--;
+    if(CO.t<=0){
+      if(CO.phase==="ready"){ CO.phase="work"; CO.t=0; beep(2); }
+      else if(CO.phase==="rest"){ CO.phase="ready"; CO.t=5; beep(1); }
+      else if(CO.phase==="move"){ CO.phase="ready"; CO.t=5; beep(1); }
+      coachRender(); return;
+    }
+    if(CO.t<=3 && CO.phase!=="work") beep(0);
+    coachPaint();
+  }, 1000);
+}
+
+/* 짧은 비프 — 카운트다운 체감용 (오디오 파일 없이 WebAudio) */
+function beep(kind){
+  try{
+    const ac = window._ac || (window._ac = new (window.AudioContext||window.webkitAudioContext)());
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.frequency.value = kind===2 ? 880 : kind===1 ? 660 : 440;
+    g.gain.value = 0.07;
+    o.start(); o.stop(ac.currentTime + (kind===2?0.28:0.1));
+  }catch(e){}
+}
+
+/* [끝] — 세트 완료 → 휴식 or 다음 운동 */
+function coachDone(){
+  const e = coachEx(), st = coachSet();
+  CO.log[e.id] = CO.log[e.id] || [];
+  CO.log[e.id][CO.si] = {w:st.w, reps:st.reps, done:true, sec:CO.t};
+  coachSaveDraft();
+  const last = CO.si >= coachSets().length-1;
+  if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; }
+  else if(CO.ei < CO.plan.exs.length-1){ CO.phase="move"; CO.t=20; }
+  else { CO.phase="done"; if(CO.timer) clearInterval(CO.timer); }
+  coachRender();
+}
+/* [이동완료] — 다음 운동으로 */
+function coachMoved(){
+  CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; coachRender();
+}
+/* 세트 체감 — 다음 세트 무게 즉시 조정 */
+function coachFeel(dir){
+  const e = coachEx();
+  adjustFrom(coachSets(), CO.si-1 < 0 ? 0 : CO.si-1, dir, EX[e.id]);
+  const nx = coachSets()[CO.si];
+  toast(dir==="heavy" ? "다음 세트 "+(nx?nx.w+"kg":"")+"로 낮췄어요 👍"
+                      : "다음 세트 "+(nx?nx.w+"kg":"")+"로 올렸어요 💪");
+  coachRender();
+}
+function coachSkipRest(){ CO.t=1; }
+function coachAddRest(){ CO.t+=15; coachPaint(); }
+
+function coachSaveDraft(){
+  const tk = todayKey();
+  P().done[tk] = P().done[tk] || {};
+  for(const id in CO.log){
+    P().done[tk][id] = {sets: CO.log[id].filter(Boolean),
+                        planSets: (CO.plan.exs.find(x=>x.id===id)||{}).planSets || null};
+  }
+  persist();
+}
+
+const mmss = t => Math.floor(t/60)+":"+String(Math.max(0,t%60)).padStart(2,"0");
+
+/* 화면 전체 다시 그리기 */
+function coachRender(){
+  let v = $("#coachView");
+  if(!v){ v = el("div",""); v.id="coachView"; document.body.appendChild(v); }
+  if(CO.phase==="done"){ v.innerHTML = coachDoneHTML(); bindDone(v); return; }
+  const e = coachEx(), sets = coachSets(), st = coachSet();
+  const total = CO.plan.exs.length;
+  const warm = st.kind==="warm";
+  v.innerHTML = `
+   <div class="co-wrap">
+    <div class="co-top">
+      <button class="co-x" onclick="coachStop()">✕</button>
+      <div class="co-prog">${CO.ei+1} / ${total} 운동 · ${CO.si+1} / ${sets.length} 세트</div>
+    </div>
+    <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
+
+    <div class="co-exname">${CO.ei+1}. ${e.name}</div>
+    ${e.br && e.wt!=="free" ? `<div class="co-eq">🏋️ ${e.br}${e.wt==="pin"?" · 핀":e.wt==="plate"?" · 원판":""}${e.no&&e.no!=="—"?" · No."+e.no:""}</div>` : ""}
+    <div class="co-machine">${machineArt(e)}</div>
+
+    <div class="co-body" id="coBody">${coachBodyHTML()}</div>
+   </div>`;
+  coachPaint();
+}
+
+/* 상태별 본문 */
+function coachBodyHTML(){
+  const e = coachEx(), st = coachSet(), sets = coachSets();
+  const warm = st.kind==="warm";
+  if(CO.phase==="ready"){
+    return `<div class="co-phase">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 준비</div>
+      <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
+      <div class="co-count" id="coT">5</div>
+      <div class="co-sub">곧 시작합니다!</div>
+      <button class="co-btn ghost" onclick="CO.t=1">바로 시작 ▶</button>`;
+  }
+  if(CO.phase==="work"){
+    return `<div class="co-phase go">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 진행 중</div>
+      <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
+      <div class="co-count sm" id="coT">0:00</div>
+      <div class="co-sub">${st.reps}회 끝나면 아래 버튼을 눌러주세요</div>
+      <button class="co-btn big" onclick="coachDone()">세트 완료 ✓</button>`;
+  }
+  if(CO.phase==="rest"){
+    const nx = sets[CO.si];
+    return `<div class="co-phase rest">😮‍💨 휴식</div>
+      <div class="co-count" id="coT">${mmss(CO.t)}</div>
+      <div class="co-next">다음 · <b>${nx.w!=null?nx.w+"kg":"맨몸"} × ${nx.reps}회</b></div>
+      <div class="co-feel">
+        <span>방금 세트 어땠어요?</span>
+        <button onclick="coachFeel('heavy')">😤 무거웠다</button>
+        <button onclick="coachFeel('light')">🙂 가벼웠다</button>
+      </div>
+      <div class="co-row">
+        <button class="co-btn ghost" onclick="coachAddRest()">+15초</button>
+        <button class="co-btn" onclick="coachSkipRest()">건너뛰기 ▶</button>
+      </div>`;
+  }
+  if(CO.phase==="move"){
+    const nx = CO.plan.exs[CO.ei+1];
+    return `<div class="co-phase move">🚶 다음 운동으로 이동</div>
+      <div class="co-movename">${nx.name}</div>
+      ${nx.br && nx.wt!=="free" ? `<div class="co-eq">🏋️ ${nx.br}${nx.wt==="pin"?" · 핀":nx.wt==="plate"?" · 원판":""}${nx.no&&nx.no!=="—"?" · No."+nx.no:""}</div>`:""}
+      <div class="co-count sm" id="coT">${mmss(CO.t)}</div>
+      <div class="co-sub">기구로 이동하세요</div>
+      <button class="co-btn big" onclick="coachMoved()">이동 완료 ✓</button>`;
+  }
+  return "";
+}
+
+function coachDoneHTML(){
+  let sets=0, vol=0;
+  for(const id in CO.log) CO.log[id].filter(Boolean).forEach(s=>{ sets++; vol += (s.w||0)*(s.reps||0); });
+  return `<div class="co-wrap done">
+    <div class="co-fin">🎉</div>
+    <div class="co-exname">오늘 운동 완료!</div>
+    <div class="co-sum">${CO.plan.exs.length}종목 · ${sets}세트 · 총 ${Math.round(vol).toLocaleString()}kg</div>
+    <div class="co-sub" style="margin:14px 0 18px">이어서 유산소 15분 하면 오늘 50분 완성이에요 🏃</div>
+    <button class="co-btn big" id="coFin">기록 저장하고 끝내기</button>
+    <button class="co-btn ghost" onclick="coachStop()">닫기</button>
+  </div>`;
+}
+function bindDone(v){
+  const b = v.querySelector("#coFin");
+  if(b) b.onclick = ()=>{ coachSaveDraft(); coachStop(); finishWorkout(); };
+}
+
+/* 숫자만 매초 갱신 (전체 리렌더 없이) */
+function coachPaint(){
+  const t = $("#coT"); if(!t) return;
+  if(CO.phase==="ready") t.textContent = CO.t;
+  else if(CO.phase==="work") t.textContent = mmss(CO.t);
+  else t.textContent = mmss(CO.t);
+}
+
+/* 기구 일러스트 — 실제 사진이 없으므로 부위별 SVG 픽토그램 */
+function machineArt(e){
+  const g = (EX[e.id]||{}).m || "";
+  const c = "#7cc4ff";
+  const box = (inner)=>`<svg viewBox="0 0 120 90" width="100%" height="100%">${inner}</svg>`;
+  if(/등/.test(g)) return box(`<rect x="20" y="12" width="80" height="6" rx="3" fill="${c}"/><path d="M60 18 L60 40" stroke="${c}" stroke-width="3"/><rect x="42" y="40" width="36" height="10" rx="4" fill="${c}" opacity=".85"/><rect x="34" y="60" width="52" height="8" rx="4" fill="${c}" opacity=".5"/><rect x="30" y="70" width="60" height="6" rx="3" fill="${c}" opacity=".3"/>`);
+  if(/가슴/.test(g)) return box(`<rect x="46" y="20" width="28" height="46" rx="6" fill="${c}" opacity=".45"/><rect x="16" y="30" width="24" height="9" rx="4" fill="${c}"/><rect x="80" y="30" width="24" height="9" rx="4" fill="${c}"/><circle cx="28" cy="34" r="7" fill="${c}" opacity=".7"/><circle cx="92" cy="34" r="7" fill="${c}" opacity=".7"/>`);
+  if(/어깨/.test(g)) return box(`<circle cx="60" cy="26" r="10" fill="${c}" opacity=".7"/><rect x="24" y="36" width="18" height="8" rx="4" fill="${c}"/><rect x="78" y="36" width="18" height="8" rx="4" fill="${c}"/><rect x="48" y="40" width="24" height="34" rx="6" fill="${c}" opacity=".4"/>`);
+  if(/이두|삼두|전완/.test(g)) return box(`<rect x="34" y="44" width="52" height="10" rx="5" fill="${c}"/><circle cx="30" cy="49" r="11" fill="${c}" opacity=".7"/><circle cx="90" cy="49" r="11" fill="${c}" opacity=".7"/><rect x="52" y="26" width="16" height="18" rx="4" fill="${c}" opacity=".4"/>`);
+  if(/사두|햄|둔근|하체|종아리|내전/.test(g)) return box(`<rect x="18" y="54" width="84" height="10" rx="5" fill="${c}" opacity=".8"/><rect x="30" y="24" width="60" height="12" rx="6" fill="${c}" opacity=".5"/><path d="M40 36 L40 54 M80 36 L80 54" stroke="${c}" stroke-width="4"/><circle cx="24" cy="59" r="8" fill="${c}" opacity=".6"/><circle cx="96" cy="59" r="8" fill="${c}" opacity=".6"/>`);
+  return box(`<rect x="26" y="40" width="68" height="10" rx="5" fill="${c}"/><circle cx="24" cy="45" r="12" fill="${c}" opacity=".65"/><circle cx="96" cy="45" r="12" fill="${c}" opacity=".65"/>`);
+}
+
 </script>
 </body>
 </html>
