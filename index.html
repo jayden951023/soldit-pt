@@ -264,6 +264,7 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-feel span{ font-size:12.5px; color:#8fa8bd; width:100%; }
 .co-feel button{ font-size:13px; padding:9px 13px; border-radius:10px; cursor:pointer;
   background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:#dbe9f7; }
+.co-feel button.sel{ background:#1f8f5f; border-color:#2ecc87; color:#fff; font-weight:700; }
 .co-fin{ font-size:64px; margin-top:40px; }
 .co-sum{ font-size:16px; color:#bcd3e6; margin-top:6px; }
 .co-wrap.done{ justify-content:center; }
@@ -1661,15 +1662,210 @@ const DEFAULT_EQUIP = GYM.map(m => m.id);   // 기본 = 전부 보유
 const ALL_EQUIP = GYM.map(m => m.id);
 
 /* PPLUL 분할 — 각 부위 주2회 (월화수목금) */
-const SPLIT = {
+/* 주 6일 분할 (8/4 대표) — 미는 날/당기는 날/하체 날을 두 번씩.
+   같은 부위를 주 2번 자극 + 사이에 48시간 회복. 일요일만 휴식.
+   A는 무거운 기본 운동 위주, B는 요일 시드 로테이션으로 다른 기구가 걸린다. */
+const SPLIT6 = {
  "0": {
   "key": "rest",
-  "label": "REST · 휴식",
+  "label": "쉬는 날 (일요일)",
+  "kor": "휴식",
   "pool": []
  },
  "1": {
   "key": "push",
-  "label": "PUSH · 가슴·어깨·삼두",
+  "label": "미는 날 A · 가슴·어깨",
+  "kor": "가슴·어깨",
+  "pool": [
+   "nt_chestpress",
+   "nt_pecdeck",
+   "nt_incline",
+   "gr_widechest",
+   "hs_bench",
+   "hs_decline",
+   "mt_incline",
+   "mt_pecdeck",
+   "sc_pullover",
+   "dx_cable",
+   "bb_bench",
+   "db_incline",
+   "tg_latraise",
+   "tg_shpress",
+   "tg_ps_shpress",
+   "gr_shpress",
+   "nt_latraise",
+   "sp_shpress",
+   "mt_shpress",
+   "red_shpress",
+   "nt_pecdeck",
+   "tg_revfly",
+   "db_latraise",
+   "bb_ohp",
+   "lf_tripress",
+   "hs_triext"
+  ]
+ },
+ "2": {
+  "key": "pull",
+  "label": "당기는 날 A · 등·팔",
+  "kor": "등·팔",
+  "pool": [
+   "sc_pullover",
+   "tg_latpull",
+   "pc_latpull",
+   "ip_vrow",
+   "nt_row",
+   "hs_row",
+   "hs_lowrow",
+   "hs_highrow",
+   "hs_rowpin",
+   "nl_lowrow",
+   "sp_pulldown",
+   "mt_vpull",
+   "mt_highrow",
+   "mt_widepull",
+   "mt_lowrow",
+   "lx_widepull",
+   "lx_assist",
+   "bb_row",
+   "pullup",
+   "lx_assist",
+   "df_armcurl",
+   "lf_bicurl",
+   "nl_bicurl",
+   "db_curl",
+   "db_hammer"
+  ]
+ },
+ "3": {
+  "key": "legs",
+  "label": "하체 날 A · 허벅지·엉덩이",
+  "kor": "하체",
+  "pool": [
+   "ip_legpress",
+   "ip_slegpress",
+   "ip_1legpress",
+   "nl_hack",
+   "nt_legext",
+   "dx_lyingcurl",
+   "dx_seatcurl",
+   "dx_abduction",
+   "lf_adduction",
+   "sp_hippress",
+   "bb_hipthrust",
+   "bb_standabd",
+   "gk_kickback",
+   "gr_calf",
+   "ht_line",
+   "bb_squat",
+   "bb_rdl",
+   "sm_squat",
+   "db_lunge"
+  ]
+ },
+ "4": {
+  "key": "push2",
+  "label": "미는 날 B · 어깨·가슴",
+  "kor": "어깨·가슴",
+  "pool": [
+   "tg_latraise",
+   "tg_shpress",
+   "tg_ps_shpress",
+   "gr_shpress",
+   "nt_latraise",
+   "sp_shpress",
+   "mt_shpress",
+   "red_shpress",
+   "nt_pecdeck",
+   "tg_revfly",
+   "db_latraise",
+   "bb_ohp",
+   "nt_chestpress",
+   "nt_pecdeck",
+   "nt_incline",
+   "gr_widechest",
+   "hs_bench",
+   "hs_decline",
+   "mt_incline",
+   "mt_pecdeck",
+   "sc_pullover",
+   "dx_cable",
+   "bb_bench",
+   "db_incline",
+   "lf_tripress",
+   "hs_triext"
+  ]
+ },
+ "5": {
+  "key": "pull2",
+  "label": "당기는 날 B · 등·팔",
+  "kor": "등·팔",
+  "pool": [
+   "sc_pullover",
+   "tg_latpull",
+   "pc_latpull",
+   "ip_vrow",
+   "nt_row",
+   "hs_row",
+   "hs_lowrow",
+   "hs_highrow",
+   "hs_rowpin",
+   "nl_lowrow",
+   "sp_pulldown",
+   "mt_vpull",
+   "mt_highrow",
+   "mt_widepull",
+   "mt_lowrow",
+   "lx_widepull",
+   "lx_assist",
+   "bb_row",
+   "pullup",
+   "lx_assist",
+   "df_armcurl",
+   "lf_bicurl",
+   "nl_bicurl",
+   "db_curl",
+   "db_hammer"
+  ]
+ },
+ "6": {
+  "key": "legs2",
+  "label": "하체 날 B · 엉덩이·허벅지 뒤",
+  "kor": "하체·엉덩이",
+  "pool": [
+   "ip_legpress",
+   "ip_slegpress",
+   "ip_1legpress",
+   "nl_hack",
+   "nt_legext",
+   "dx_lyingcurl",
+   "dx_seatcurl",
+   "dx_abduction",
+   "lf_adduction",
+   "sp_hippress",
+   "bb_hipthrust",
+   "bb_standabd",
+   "gk_kickback",
+   "gr_calf",
+   "ht_line",
+   "bb_squat",
+   "bb_rdl",
+   "sm_squat",
+   "db_lunge"
+  ]
+ }
+};
+
+/* 주 5일 분할 (아내분 기본) */
+const SPLIT5 = {
+ "0": {
+  "key": "rest",
+  "label": "쉬는 날", "kor": "휴식",
+  "pool": []
+ },
+ "1": {
+  "key": "push",
+  "label": "미는 날 · 가슴·어깨·팔 뒤", "kor": "가슴·어깨",
   "pool": [
    "nt_chestpress",
    "nt_pecdeck",
@@ -1700,7 +1896,7 @@ const SPLIT = {
  },
  "2": {
   "key": "pull",
-  "label": "PULL · 등·이두",
+  "label": "당기는 날 · 등·팔 앞", "kor": "등·팔",
   "pool": [
    "tg_latpull",
    "pc_latpull",
@@ -1730,7 +1926,7 @@ const SPLIT = {
  },
  "3": {
   "key": "legs",
-  "label": "LEGS · 하체·어깨",
+  "label": "하체 날 · 하체·어깨", "kor": "하체·어깨",
   "pool": [
    "ip_legpress",
    "ip_slegpress",
@@ -1766,7 +1962,7 @@ const SPLIT = {
  },
  "4": {
   "key": "upper",
-  "label": "UPPER · 상체 종합",
+  "label": "상체 날 · 가슴·등·어깨", "kor": "상체",
   "pool": [
    "nt_chestpress",
    "nt_pecdeck",
@@ -1821,7 +2017,7 @@ const SPLIT = {
  },
  "5": {
   "key": "lower",
-  "label": "LOWER · 하체·어깨",
+  "label": "하체 날 2 · 하체·어깨", "kor": "하체·어깨",
   "pool": [
    "ip_legpress",
    "ip_slegpress",
@@ -1857,7 +2053,7 @@ const SPLIT = {
  },
  "6": {
   "key": "rest",
-  "label": "REST · 휴식(주말)",
+  "label": "쉬는 날 (주말)", "kor": "휴식",
   "pool": []
  }
 };
@@ -2119,11 +2315,12 @@ function buildSets(ex, setN, workW, workReps){
    heavy: 다음 세트부터 10%↓ · light: 5%↑ · 나머지 세트에 모두 적용 */
 function adjustFrom(planSets, fromIdx, dir, ex){
   const step = dir==="heavy" ? 0.9 : dir==="light" ? 1.05 : 1;
-  if(step===1) return;
   for(let i=fromIdx+1;i<planSets.length;i++){
     if(planSets[i].w==null) continue;
-    planSets[i].w = round(planSets[i].w*step, ex.inc||2.5);
-    planSets[i].adj = dir;
+    // 원래 무게(w0)를 기억해두고 거기서 계산 — 버튼을 여러 번 눌러도 계속 곱해지지 않게 (8/4)
+    if(planSets[i].w0==null) planSets[i].w0 = planSets[i].w;
+    planSets[i].w = round(planSets[i].w0*step, ex.inc||2.5);
+    planSets[i].adj = step===1 ? null : dir;
   }
 }
 
@@ -2137,9 +2334,19 @@ function weekIndex(){
 }
 
 /* ---------- 오늘 프로그램 생성 (50분·오토레귤레이션) ---------- */
-function todayPlan(){
-  const dow = nowKST().getDay();
-  const day = SPLIT[dow];
+/* 프로필별 분할 선택 (8/4 대표 — 대표님 주 6일 / 아내분 주 5일) */
+function activeSplit(p){
+  const q = p || P();
+  return (q && q.days6) ? SPLIT6 : SPLIT5;
+}
+// 기존 코드 곳곳이 SPLIT 을 직접 읽으므로 getter 로 연결 (프로필 바꾸면 즉시 반영)
+Object.defineProperty(window, "SPLIT", { get: activeSplit, configurable: true });
+
+/* dayOffset: 0(없음)=오늘, 1=내일 — 내일 운동 미리 공부하기용 (8/4) */
+function todayPlan(dayOffset){
+  const _d = nowKST(); if(dayOffset) _d.setDate(_d.getDate() + dayOffset);
+  const dow = _d.getDay();
+  const day = activeSplit()[dow];
   if(day.key==="rest") return {rest:true, day};
   const eq = P().equip;
   const avail = id => EX[id].eq.every(t=> eq.includes(t) || t==="");
@@ -2160,6 +2367,17 @@ function todayPlan(){
   const _toneUp = (P().goal||"").includes("체지방") || (P().goal||"").includes("탄탄");
   // 무릎 보호 모드면 사두 대신 둔근·햄스트링 위주로 (고관절 주도 동작)
   const _knee = kneeSafeOn();
+  // 6일 분할 추가 배분 — A는 큰 운동 위주, B는 각도·마무리 위주 (8/4)
+  const _Q6 = {
+    push2: [[/어깨/,3],[/가슴/,2],[/팔 뒤/,1]],
+    pull2: [[/등/,4],[/팔 앞/,2]],
+    legs2: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리|허벅지 앞/,1]],
+  };
+  const _Q6K = {   // 무릎 보호 버전
+    push2: [[/어깨/,3],[/가슴/,2],[/팔 뒤/,1]],
+    pull2: [[/등/,4],[/팔 앞/,1]],
+    legs2: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리/,1]],
+  };
   const QUOTA = (_knee ? {
     push:  [[/가슴/,2],[/어깨/,2],[/팔 뒤/,1]],
     pull:  [[/등/,4],[/팔 앞/,1]],
@@ -2178,7 +2396,7 @@ function todayPlan(){
     legs:  [[/허벅지 앞/,2],[/허벅지 뒤/,2],[/엉덩이|안쪽/,1],[/어깨/,1]],
     upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/팔 앞|팔 뒤/,1]],
     lower: [[/엉덩이|안쪽/,2],[/허벅지 뒤/,1],[/허벅지 앞/,1],[/어깨/,2]],
-  })[day.key] || [];
+  })[day.key] || (_knee ? _Q6K : _Q6)[day.key] || [];
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
   const wk = weekIndex();
@@ -2211,7 +2429,7 @@ function todayPlan(){
   //  총 50분 = 근력 35분 + 유산소 15분 (8/4 대표). 6종목이면 근력만 50분이라 5종목으로.
   chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,6);
   // 오토레귤레이션: 오늘 컨디션
-  const r = P().readiness[todayKey()];
+  const r = dayOffset ? null : P().readiness[todayKey()];   // 내일 미리보기엔 오늘 컨디션 반영 안 함
   let setMod = 0, wMod = 1, coach="";
   if(r){
     const score = (r.sleep+r.energy+(6-r.soreness)+(6-r.stress))/4; // 1~5
@@ -2232,7 +2450,8 @@ function todayPlan(){
       restSec = ex.type==="comp"?45:30;
     }
     const planSets = buildSets(ex, setN, w, reps);
-    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:reps, note:rec.note, rest: restSec,   // 8/4 — 근비대 60/45초 · 체지방 45/30초 yt:ex.yt,
+    // rest: 근비대 60/45초 · 체지방 45/30초 (8/4)
+    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:reps, note:rec.note, rest: restSec, yt:ex.yt,
             br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[], planSets};
   });
   const deloadWk = isDeloadWeek();
@@ -2356,9 +2575,9 @@ function ensureEquipStyle(){
 }
 
 /* 오늘 운동 전체를 한 화면에 (8/4 대표 — 미리 공부용) */
-function showTodayPreview(){
-  const plan = todayPlan();
-  if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
+function showTodayPreview(offset){
+  const plan = todayPlan(offset || 0);
+  if(plan.rest){ toast(offset ? "내일은 쉬는 날이에요 🌙 푹 쉬세요" : "오늘은 쉬는 날이에요 🌙"); return; }
   const w = document.createElement("div");
   w.id = "pvSheet";
   const totalSets = plan.exs.reduce((a,e)=>a+((e.planSets||[]).length||e.sets),0);
@@ -2384,24 +2603,30 @@ function showTodayPreview(){
   }).join("");
   w.innerHTML = '<div class="pv-bg"></div><div class="pv-box">'+
     '<div class="pv-head"><div><b>'+plan.day.label+'</b>'+
-      '<small>'+todayLabel()+' · '+plan.exs.length+'종목 · '+totalSets+'세트</small></div>'+
+      '<small>'+(offset ? '내일 · ' : '')+todayLabel(offset || 0)+' · '+plan.exs.length+'종목 · '+totalSets+'세트</small></div>'+
       '<button class="pv-x" id="pvClose">✕</button></div>'+
     '<div class="pv-list">'+rows+
       '<div class="pv-cardio">🏃 마무리 유산소 '+((P().goal||"").includes("체지방")?20:15)+'분</div>'+
     '</div>'+
-    '<button class="pv-go" id="pvGo">▶ 웨이트 시작</button></div>';
+    (offset ? '<button class="pv-go" id="pvGo" style="background:#28425c">알겠어요, 내일 봐요 👋</button>'
+             : '<button class="pv-go" id="pvGo">▶ 웨이트 시작</button>')+'</div>';
   document.body.appendChild(w);
   const close=()=>w.remove();
   w.querySelector("#pvClose").onclick=close;
   w.querySelector(".pv-bg").onclick=close;
-  w.querySelector("#pvGo").onclick=()=>{ close(); coachStart(); };
+  w.querySelector("#pvGo").onclick=()=>{ close(); if(!offset) coachStart(); };
 }
 
 function renderWorkout(){
   ensureEquipStyle();
   const v=$("#view-workout"); v.innerHTML="";
   const plan=todayPlan();
-  if(plan.rest){ v.appendChild(el("div","note","오늘은 휴식일이에요 🌙 월~금에 운동이 나옵니다.")); return; }
+  if(plan.rest){
+    v.appendChild(el("div","note","오늘은 쉬는 날이에요 🌙 잘 쉬는 것도 운동입니다."));
+    const tmr=el("button","btn sec","🌙 내일 운동 미리 공부하기");
+    tmr.style.cssText="margin-top:10px;padding:14px;font-size:15px;width:100%";
+    tmr.onclick=()=>showTodayPreview(1); v.appendChild(tmr);
+    return; }
   curPlan=plan;
   const doneMap = P().done[todayKey()]||{};
   // 코치 모드 진입 (8/4 대표) — 한 세트씩 카운트다운으로 이끄는 전체화면
@@ -2433,7 +2658,11 @@ function renderWorkout(){
   // 오늘 운동 미리보기 (8/4 대표 — 미리 공부하려고)
   const pv=el("button","btn sec","📋 오늘 운동 한눈에 보기");
   pv.style.cssText="margin:0 0 10px;padding:14px;font-size:15px";
-  pv.onclick=showTodayPreview; v.appendChild(pv);
+  pv.onclick=()=>showTodayPreview(0); v.appendChild(pv);
+  // 내일 운동 미리 공부 (8/4 대표 — 저녁 9시 알림 받고 보라고)
+  const pv2=el("button","btn sec","🌙 내일 운동 미리 공부하기");
+  pv2.style.cssText="margin:0 0 10px;padding:12px;font-size:14px";
+  pv2.onclick=()=>showTodayPreview(1); v.appendChild(pv2);
   v.appendChild(el("div","card",`<div class="row between"><b>${plan.day.label}</b><span class="pill">완료 후 다음날 무게 자동 반영</span></div>`));
   plan.exs.forEach((e,ei)=>{
     const card=el("div","ex"); card.dataset.ex=e.id;
@@ -2442,7 +2671,7 @@ function renderWorkout(){
       <div class="m">${e.m} · ${e.sets}세트 × ${e.rep[0]}-${e.rep[1]}회 · 휴식 ${e.rest}초</div>
       ${equipBadge(e)}
       <div class="rec" style="text-align:left;margin-top:4px">💡 ${e.note}</div></div>
-      <button class="yt" onclick="openYT('${e.yt}')">▶ 운동방법</button></div>`;
+      <button class="yt" onclick="openYT('${String(e.yt||e.name).replace(/'/g,"")}')">▶ 운동방법</button></div>`;
     const sets=el("div","sets");
     sets.innerHTML=`<div class="set"><span class="lab">세트</span><span class="lab">무게(kg)</span><span class="lab">횟수</span><span class="lab">여유</span><span class="lab">✓</span></div>`;
     // 세트별 지시 (8/4 대표) — 워밍업 포함, 각 세트 목표 무게·횟수를 미리 정해준다.
@@ -2791,6 +3020,19 @@ function renderSettings(){
   rf.appendChild(rfb);
   v.appendChild(rf);
 
+  // 주 6일 (8/4 대표) — 미는/당기는/하체 2회전
+  const d6 = el("div","card");
+  const on6 = !!P().days6;
+  d6.innerHTML = `<h3>일주일에 몇 번 운동하세요? <span class="pill">${on6 ? "주 6일" : "주 5일"}</span></h3>
+    <p class="k" style="margin:6px 0 10px">${on6
+      ? "월 가슴·어깨 → 화 등·팔 → 수 하체 → 목 어깨·가슴 → 금 등·팔 → 토 하체·엉덩이 → 일 휴식"
+      : "월 가슴·어깨 → 화 등·팔 → 수 하체·어깨 → 목 상체 → 금 하체·어깨 → 주말 휴식"}</p>`;
+  const b6 = el("button", on6 ? "btn sec" : "btn green", on6 ? "주 5일로 바꾸기" : "🔥 주 6일로 바꾸기");
+  b6.onclick = ()=>{ P().days6 = !P().days6; persist(); renderSettings();
+    toast(P().days6 ? "주 6일로 바꿨어요! 토요일에도 만나요 🔥" : "주 5일로 바꿨어요"); };
+  d6.appendChild(b6);
+  v.appendChild(d6);
+
   // 무릎 보호 (8/4 대표) — 무릎이 약한 사람용
   const kn=el("div","card");
   const kOn = !!P().kneeSafe;
@@ -2889,6 +3131,8 @@ function migrateEquip(){
     let fixed = 0;
     for(const k in S.profiles){
       const p = S.profiles[k];
+      // 대표님(성규)은 주 6일이 기본 — 설정에서 바꾼 적이 없을 때만 (8/4)
+      if(p.days6 === undefined && /성규/.test(p.name || "")){ p.days6 = true; fixed++; }
       const eq = Array.isArray(p.equip) ? p.equip : [];
       const valid = eq.filter(x => ids.has(x));
       // 하나도 안 맞거나 절반 이상이 옛 형식이면 전체 기구로 복구
@@ -2988,6 +3232,7 @@ function coachDone(){
   CO.log[e.id][CO.si] = {w:st.w, reps:st.reps, done:true, sec:CO.t};
   coachSaveDraft();
   const last = CO.si >= coachSets().length-1;
+  CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; }
   else if(CO.ei < CO.plan.exs.length-1){ CO.phase="move"; CO.t=20; }
   else { CO.phase="cardio"; CO.t=0; }   // 근력 끝 → 유산소 (8/4 대표)
@@ -3060,9 +3305,7 @@ function calRender(v){
 
     const cell = el("div","cal-cell"+(isToday?" today":"")+(rest?" rest":"")+(done?" done":""));
     // 한글로 (8/4 대표) — PUSH 대신 '가슴·어깨'
-    const KOR = {push:"가슴·어깨", pull:"등·이두", legs:"하체", upper:"상체", lower:"하체·어깨",
-                 push2:"어깨·가슴", pull2:"등·이두", legs2:"하체·둔근"};
-    const tag = rest ? "휴식" : (KOR[sp.key] || sp.label.split("·")[0].trim());
+    const tag = rest ? "휴식" : (sp.kor || sp.label.split("·")[0].trim());
     cell.innerHTML = '<div class="cal-d">'+d+'</div>'+
       '<div class="cal-tag">'+tag+'</div>'+
       (done ? '<div class="cal-mark">✓'+(didCardio?'🏃':'')+'</div>'
@@ -3088,8 +3331,8 @@ function calRender(v){
 }
 
 /* 오늘 날짜·요일 (8/4 대표 — 코치 모드 상단에 표시) */
-function todayLabel(){
-  const d = nowKST();
+function todayLabel(offset){
+  const d = nowKST(); if(offset) d.setDate(d.getDate() + offset);
   const w = ["일","월","화","수","목","금","토"][d.getDay()];
   return (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + w + ")";
 }
@@ -3127,13 +3370,19 @@ function coachNudge(dir){
   coachRender();
 }
 
-/* 세트 체감 — 다음 세트 무게 즉시 조정 */
+/* 세트 체감 — 다음 세트 무게 즉시 조정
+   8/4 수정: ① 누른 버튼에 선택 표시가 남게 (CO.feel)
+            ② '1~2개'(딱 좋음)는 무게 유지 안내 — 전엔 "올렸어요"라는 엉뚱한 알림이 떴다
+            ③ 맨몸 운동(무게 없음)도 안내가 나오게 */
 function coachFeel(dir){
   const e = coachEx();
+  CO.feel = dir;
   adjustFrom(coachSets(), CO.si-1 < 0 ? 0 : CO.si-1, dir, EX[e.id]);
   const nx = coachSets()[CO.si];
-  toast(dir==="heavy" ? "다음 세트 "+(nx?nx.w+"kg":"")+"로 낮췄어요 👍"
-                      : "다음 세트 "+(nx?nx.w+"kg":"")+"로 올렸어요 💪");
+  const hasW = nx && nx.w!=null;
+  toast(dir==="ok"    ? "딱 좋은 무게예요! 그대로 갑니다 👍"
+      : dir==="heavy" ? (hasW ? "다음 세트 "+nx.w+"kg로 낮췄어요 👍" : "다음 세트는 횟수를 조금 줄여도 돼요 👍")
+      :                 (hasW ? "다음 세트 "+nx.w+"kg로 올렸어요 💪" : "좋아요! 다음 세트도 힘내요 💪"));
   coachRender();
 }
 function coachSkipRest(){ CO.t=1; }
@@ -3212,9 +3461,9 @@ function coachBodyHTML(){
       <div class="co-next">다음 · <b>${nx.w!=null?nx.w+"kg":"맨몸"} × ${nx.reps}회</b></div>
       <div class="co-feel">
         <span>방금 세트, 몇 번 더 할 수 있었어요?</span>
-        <button onclick="coachFeel('heavy')">😤 못 채웠다</button>
-        <button onclick="coachFeel('ok')">👍 1~2개</button>
-        <button onclick="coachFeel('light')">🙂 3개 이상</button>
+        <button class="${CO.feel==='heavy'?'sel':''}" onclick="coachFeel('heavy')">😤 못 채웠다</button>
+        <button class="${CO.feel==='ok'?'sel':''}" onclick="coachFeel('ok')">👍 1~2개</button>
+        <button class="${CO.feel==='light'?'sel':''}" onclick="coachFeel('light')">🙂 3개 이상</button>
       </div>
       <div class="co-row">
         <button class="co-btn ghost" onclick="coachAddRest()">+15초</button>
@@ -3254,7 +3503,7 @@ function coachBodyHTML(){
 /* 유산소 종목 선택 (8/4) — 요일별로 돌려 지루하지 않게. 하체날은 저강도 우선. */
 function pickCardio(){
   const dow = nowKST().getDay();
-  const legDay = SPLIT[dow] && (SPLIT[dow].key==="legs" || SPLIT[dow].key==="lower");
+  const legDay = SPLIT[dow] && ["legs","lower","legs2"].includes(SPLIT[dow].key);
   // 하체날엔 천국의 계단·경사러닝 제외(다리 부담) → 러닝머신·자전거만
   const pool = legDay ? CARDIO.filter(c=>c.id==="tread"||c.id==="cycle") : CARDIO;
   const wk = weekIndex();
@@ -3748,7 +3997,11 @@ async function notiFire(cfg){
       if(!label){ title="🌙 내일은 휴식일"; body="푹 쉬고 모레 다시 만나요"; }
       else{
         title = "📅 내일은 " + label.split("·")[0].trim();
-        body = label + " · 근력 35분 + 유산소 15분. 준비물 챙겨두세요!";
+        let names = "";
+        try{ const p = todayPlan(1);
+          if(!p.rest && p.exs.length) names = " — " + p.exs.slice(0,3).map(e=>e.name).join(", ") + (p.exs.length>3 ? " 외" : "");
+        }catch(e){}
+        body = label + names + ". 앱에서 '내일 운동 미리 공부하기'를 눌러보세요!";
       }
     } else {
       const label = planLabelFor(now);
