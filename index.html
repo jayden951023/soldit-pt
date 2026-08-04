@@ -2405,6 +2405,20 @@ function renderWorkout(){
   curPlan=plan;
   const doneMap = P().done[todayKey()]||{};
   // 코치 모드 진입 (8/4 대표) — 한 세트씩 카운트다운으로 이끄는 전체화면
+  // 종목이 0개면 시작 자체가 안 되므로 원인을 알려준다 (8/4)
+  if(!plan.rest && (!plan.exs || plan.exs.length === 0)){
+    const warn = el("div","card");
+    warn.style.cssText = "border:1px solid rgba(255,150,150,.35);background:rgba(255,120,120,.08)";
+    warn.innerHTML = '<div style="font-size:15px;color:#ffc9c9;margin-bottom:8px">'+
+      '⚠️ <b>오늘 운동을 만들지 못했어요</b><br>'+
+      '<span class="k">설정에서 기구가 모두 꺼져 있는 것 같아요.</span></div>';
+    const fix = el("button","btn green","기구 전체 켜기");
+    fix.onclick = ()=>{ P().equip = GYM.map(m=>m.id); persist(); toast("기구를 다시 켰어요"); renderWorkout(); };
+    warn.appendChild(fix);
+    v.appendChild(warn);
+    return;
+  }
+
   const go=el("button","btn green","▶ 웨이트 시작");
   go.style.cssText="margin:0 0 8px;padding:16px;font-size:17px;font-weight:800";
   go.onclick=()=>{
@@ -2865,7 +2879,33 @@ document.querySelectorAll("nav button").forEach(b=> b.onclick=()=>nav(b.dataset.
 
 function updateStreak(){ $("#streakPill").textContent="🔥 "+streakCount()+"일"; }
 
+/* 옛 버전 데이터 자동 복구 (8/4)
+   예전엔 기구를 "바벨","덤벨" 같은 이름으로 저장했는데 지금은 id(ip_legpress)를 쓴다.
+   그대로 두면 쓸 수 있는 기구가 0개가 되어 '0종목'이 뜨고 운동이 시작되지 않는다.
+   → 앱을 열 때 형식이 안 맞으면 전체 기구로 되돌린다. (기록은 건드리지 않음) */
+function migrateEquip(){
+  try{
+    const ids = new Set(GYM.map(m => m.id));
+    let fixed = 0;
+    for(const k in S.profiles){
+      const p = S.profiles[k];
+      const eq = Array.isArray(p.equip) ? p.equip : [];
+      const valid = eq.filter(x => ids.has(x));
+      // 하나도 안 맞거나 절반 이상이 옛 형식이면 전체 기구로 복구
+      if(valid.length === 0 || valid.length < eq.length / 2){
+        p.equip = GYM.map(m => m.id);
+        fixed++;
+      } else if(valid.length !== eq.length){
+        p.equip = valid;   // 일부만 이상하면 그것만 정리
+        fixed++;
+      }
+    }
+    if(fixed){ persist(); console.log('[복구] 기구 목록 정리', fixed, '개 프로필'); }
+  }catch(e){ console.log('[복구] 실패', e); }
+}
+
 function boot(){
+  migrateEquip();
   if(!S.current){ $("#app").classList.add("hidden"); $("#onboard").classList.remove("hidden"); renderProfiles(); return; }
   $("#onboard").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#whoBtn").textContent=P().name[0]||"나";
