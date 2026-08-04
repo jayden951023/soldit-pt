@@ -2104,6 +2104,8 @@ if(!S.profiles){
   };
   DB.save(S);
 }
+// 기구 자동복구: equip에 유효 기구가 하나도 없으면(옛 버전이 오염/삭제) 전체(62)로 복원
+try{ for(const _k in S.profiles){ const _p=S.profiles[_k]; if(!Array.isArray(_p.equip) || !_p.equip.some(id=>GYM_BY[id])) _p.equip=[...DEFAULT_EQUIP]; } DB.save(S); }catch(e){}
 const P = ()=> S.profiles[S.current] || S.profiles[Object.keys(S.profiles)[0]];
 const persist = ()=> DB.save(S);
 
