@@ -221,6 +221,15 @@ const EX = {
   calf:        {name:"카프 레이즈", m:"종아리", eq:["레그프레스"], type:"iso", rep:[12,20], inc:5, start:40, yt:"카프 레이즈 자세"},
   plank:       {name:"플랭크", m:"코어", eq:[], type:"iso", rep:[30,60], inc:0, start:null, yt:"플랭크 정확한 자세"},
   hangleg:     {name:"행잉 레그레이즈", m:"복근", eq:["풀업바"], type:"iso", rep:[10,15], inc:0, start:null, yt:"행잉 레그레이즈 자세"},
+  // 맨몸 운동(기구 없어도 되는 대체) — 기구 부족 시 프로그램이 비지 않게
+  bwsquat:     {name:"맨몸 스쿼트", m:"하체 전체", eq:[], type:"comp", rep:[15,25], inc:0, start:null, yt:"맨몸 스쿼트 정확한 자세"},
+  bwlunge:     {name:"맨몸 런지", m:"하체/둔근", eq:[], type:"comp", rep:[10,15], inc:0, start:null, yt:"맨몸 런지 자세"},
+  bridge:      {name:"힙 브릿지", m:"둔근/햄스트링", eq:[], type:"iso", rep:[15,20], inc:0, start:null, yt:"힙 브릿지 운동 자세"},
+  bwcalf:      {name:"맨몸 카프 레이즈", m:"종아리", eq:[], type:"iso", rep:[15,25], inc:0, start:null, yt:"맨몸 카프 레이즈"},
+  pushup:      {name:"푸시업", m:"가슴/삼두", eq:[], type:"comp", rep:[8,20], inc:0, start:null, yt:"푸시업 정확한 자세"},
+  pikepush:    {name:"파이크 푸시업", m:"어깨", eq:[], type:"comp", rep:[6,15], inc:0, start:null, yt:"파이크 푸시업 자세"},
+  superman:    {name:"슈퍼맨", m:"등/척추기립근", eq:[], type:"iso", rep:[12,20], inc:0, start:null, yt:"슈퍼맨 운동 자세"},
+  crunch:      {name:"크런치", m:"복근", eq:[], type:"iso", rep:[15,25], inc:0, start:null, yt:"크런치 자세"},
 };
 
 /* 기본 기구 세트 (일반 헬스장) — 설정에서 수정 가능 */
@@ -236,6 +245,14 @@ const SPLIT = {
   5:{key:"lower",label:"LOWER · 하체 종합",     pool:["legpress","rdl","hacksquat","legcurl","legext","hipthrust","calf","plank"]},
   0:{key:"rest", label:"REST · 휴식",          pool:[]},
   6:{key:"rest", label:"REST · 휴식(주말)",     pool:[]},
+};
+/* 기구 부족 시 부위별 맨몸 대체 — 프로그램이 최소 5종목은 나오게 */
+const BW = {
+  push:["pushup","pikepush","dips","crunch"],
+  pull:["pullup","superman","hangleg"],
+  legs:["bwsquat","bwlunge","bridge","bwcalf"],
+  lower:["bwsquat","bwlunge","bridge","bwcalf","plank"],
+  upper:["pushup","pikepush","superman","crunch"],
 };
 
 /* ---------- 저장소 ---------- */
@@ -457,6 +474,11 @@ function todayPlan(){
   const comp = pool.filter(id=>EX[id].type==="comp");
   const iso = pool.filter(id=>EX[id].type==="iso");
   const chosen = [...comp.slice(0,3), ...iso.slice(0,3)].slice(0,6);
+  // 최소 5종목 보장 — 기구 부족으로 비면 부위별 맨몸 운동으로 채움 (플랭크 1개만 나오는 사고 방지)
+  if(chosen.length<5){
+    const extra=(BW[day.key]||["bwsquat","pushup","superman","bridge","plank"]).filter(id=> EX[id] && avail(id) && okPref(id) && !chosen.includes(id));
+    for(const id of extra){ if(chosen.length>=5) break; chosen.push(id); }
+  }
   // 오토레귤레이션: 오늘 컨디션
   const r = P().readiness[todayKey()];
   let setMod = 0, wMod = 1, coach="";
