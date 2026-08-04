@@ -145,6 +145,11 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-bar i{ display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22d3a7); transition:width .35s; }
 
 .co-exname{ font-size:26px; font-weight:900; color:#eaf4ff; margin:14px 0 4px; line-height:1.25; word-break:keep-all; }
+.co-photo{ width:100%; height:100%; object-fit:contain; border-radius:12px; }
+.co-btnrow{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; justify-content:center; }
+.co-cam{ padding:9px 14px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:700;
+  background:rgba(124,196,255,.12); border:1px solid rgba(124,196,255,.32); color:#9fd0ff; }
+.co-cam:active{ transform:scale(.97); }
 .co-skip{ font-size:11.5px; padding:7px 10px; border-radius:9px; cursor:pointer; white-space:nowrap;
   background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.13); color:#9fb4c7; }
 .co-skip:active{ transform:scale(.96); }
@@ -2780,7 +2785,10 @@ function coachRender(){
     <div class="co-exname">${CO.ei+1}. ${e.name}</div>
     ${e.br && e.wt!=="free" ? `<div class="co-eq">🏋️ ${e.br}${e.wt==="pin"?" · 핀":e.wt==="plate"?" · 원판":""}${e.no&&e.no!=="—"?" · No."+e.no:""}</div>` : ""}
     <div class="co-machine">${machineArt(e)}</div>
-    <button class="co-yt" onclick="openYT('${(e.yt||e.name).replace(/'/g,"")}')">▶ 운동방법 보기</button>
+    <div class="co-btnrow">
+      <button class="co-yt" onclick="openYT('${(e.yt||e.name).replace(/'/g,"")}')">▶ 운동방법 보기</button>
+      <button class="co-cam" onclick="photoPick('${e.id}', coachRender)">${photoOf(e.id)?"📸 사진 바꾸기":"📸 기구 사진 찍기"}</button>
+    </div>
 
     <div class="co-body" id="coBody">${coachBodyHTML()}</div>
    </div>`;
@@ -2907,9 +2915,58 @@ function coachPaint(){
   else t.textContent = mmss(CO.t);
 }
 
+/* ═══ 기구 사진 (8/4 대표) ═══
+   헬스장에서 직접 찍은 사진을 기기에 저장해 쓴다.
+   구글 이미지는 저작권 문제가 있고 이 앱은 공개 주소라 직접 촬영이 안전하다.
+   저장: localStorage 'soldpt_photos' = { 종목id: dataURL }
+   용량 절약을 위해 640px 로 줄이고 JPEG 0.7 로 압축한다. */
+function photoLoad(){
+  try{ return JSON.parse(localStorage.getItem("soldpt_photos")||"{}"); }catch(e){ return {}; }
+}
+function photoOf(exId){ return photoLoad()[exId] || null; }
+function photoSave(exId, dataUrl){
+  const m = photoLoad(); m[exId] = dataUrl;
+  try{ localStorage.setItem("soldpt_photos", JSON.stringify(m)); }
+  catch(e){ toast("저장 공간이 부족해요. 설정에서 사진 일부를 지워주세요"); }
+}
+function photoDel(exId){
+  const m = photoLoad(); delete m[exId];
+  localStorage.setItem("soldpt_photos", JSON.stringify(m));
+}
+
+/* 촬영/선택 → 축소 → 저장 */
+function photoPick(exId, after){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0];
+    if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 640;
+        const sc = Math.min(1, max/Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(img.width*sc); cv.height = Math.round(img.height*sc);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        photoSave(exId, cv.toDataURL("image/jpeg", 0.7));
+        toast("사진을 저장했어요 📸");
+        if(after) after();
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  };
+  inp.click();
+}
+
 /* 기구 일러스트 — 운동 종류별 픽토그램 (8/4 대표)
    실제 사진이 없으므로 SVG로 그린다. 종목 id·이름으로 형태를 고른다. */
 function machineArt(e){
+  // 직접 찍은 사진이 있으면 그걸 보여준다 (8/4 대표)
+  const ph = photoOf(e.id);
+  if(ph) return '<img src="'+ph+'" alt="'+(e.name||"")+'" class="co-photo">';
   const C="#7cc4ff", G="#22d3a7", D="rgba(124,196,255,.28)";
   const svg = inner => '<svg viewBox="0 0 140 100" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">'+inner+'</svg>';
   const nm = (e.name||"") + " " + (e.id||"");
