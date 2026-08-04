@@ -60,12 +60,12 @@
   .ex-h{padding:14px 16px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
   .ex-h .t{font-weight:800; font-size:17px}
   .ex-h .m{font-size:12px; color:var(--sub); margin-top:3px}
-  .yt{background:#ff2d3722; color:#ff8a92; border:1px solid #ff2d3744; border-radius:10px; padding:8px 10px; font-size:12px; font-weight:700; white-space:nowrap}
+  .yt{background:#ff2d3722; color:#ff8a92; border:1px solid #ff2d3744; border-radius:10px; padding:13px 14px; min-height:44px; font-size:12px; font-weight:700; white-space:nowrap}
   .sets{padding:0 12px 12px}
   .set{display:grid; grid-template-columns:34px 1fr 1fr 46px 40px; gap:8px; align-items:center; padding:7px 4px; border-top:1px solid var(--line)}
   .set .lab{font-size:12px; color:var(--sub); text-align:center}
   .set input{padding:10px; text-align:center; font-size:16px}
-  .set .chk{width:34px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line); font-size:16px; display:flex;align-items:center;justify-content:center}
+  .set .chk{width:46px;height:46px;border-radius:11px;background:var(--panel2);border:1px solid var(--line); font-size:16px; display:flex;align-items:center;justify-content:center}
   .set .chk.on{background:var(--brand2); color:#04121e; border-color:var(--brand2)}
   .rec{font-size:11px;color:var(--brand2); text-align:center}
   .hint{font-size:12px;color:var(--sub); padding:6px 6px 0}
@@ -89,7 +89,7 @@
   .stat .b .l{font-size:11px; color:var(--sub)}
   .bar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:6px}
   .bar>i{display:block;height:100%;background:linear-gradient(90deg,#2ea8ee,#12d18e)}
-  .chip{display:inline-block; background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:6px 10px; margin:4px 4px 0 0; font-size:12px}
+  .chip{display:inline-block; background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:11px 13px; min-height:40px; margin:4px 4px 0 0; font-size:12px}
   .chip b{color:var(--brand2)}
   svg{display:block;width:100%}
   .tag{font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px}
@@ -100,7 +100,7 @@
   .tag.lower{background:#ff7a5922;color:#ffab93}
   .tag.rest{background:#61728822;color:#9db1c7}
   .seg{display:flex; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:4px; gap:4px}
-  .seg button{flex:1; padding:9px; border-radius:9px; font-size:13px; color:var(--sub); background:none; font-weight:700}
+  .seg button{flex:1; padding:13px 9px; min-height:44px; border-radius:9px; font-size:13px; color:var(--sub); background:none; font-weight:700}
   .seg button.on{background:var(--brand); color:#04121e}
   .note{background:linear-gradient(135deg,#18222f,#1f2c3c); border:1px solid var(--line); border-radius:14px; padding:14px; font-size:14px; line-height:1.6}
   .note .h{font-weight:800; color:var(--brand2); margin-bottom:6px}
@@ -173,6 +173,9 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-skip{ font-size:11.5px; padding:7px 10px; border-radius:9px; cursor:pointer; white-space:nowrap;
   background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.13); color:#9fb4c7; }
 .co-skip:active{ transform:scale(.96); }
+.co-guide{ font-size:13px; color:#9fd0a8; background:rgba(120,220,150,.08);
+  border:1px solid rgba(120,220,150,.2); border-radius:8px; padding:7px 12px; margin:2px 0 4px; }
+.co-guide b{ color:#c8f0d8; }
 .co-adj{ display:flex; align-items:center; gap:14px; margin-top:4px; }
 .co-adj span{ font-size:12px; color:#8fa8bd; }
 .co-adj button{ width:46px; height:46px; border-radius:14px; cursor:pointer; font-size:24px; font-weight:800;
@@ -2805,6 +2808,18 @@ function coachSkipEx(){
 function coachMoved(){
   CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; coachRender();
 }
+/* 이 세트를 '어느 정도 무게로' 해야 하는지 한 줄 설명 (8/4 대표)
+   근비대는 목표 횟수에서 1~2개 남기는 무게(RIR 1~2)가 맞다.
+   마지막 세트는 더 못 할 때까지 — 그래야 다음 세션 증량 판단이 선다. */
+function weightGuide(st, sets, idx){
+  if(st.w == null) return "자세를 정확히 · 반복수 채우기";
+  if(st.kind === "warm") return "가볍게 · 폼만 확인 (힘 빼지 마세요)";
+  const workSets = sets.filter(x=>x.kind === "work");
+  const isLast = sets.indexOf(st) === sets.lastIndexOf(workSets[workSets.length-1]);
+  if(isLast) return "마지막 세트 · <b>더 못 할 때까지</b> 밀어붙이기";
+  return "<b>" + st.reps + "회 하고 1~2개 더 될 정도</b>의 무게";
+}
+
 /* 준비 화면에서 무게 ± (8/4) — 첫 세션 추천치는 추정값이라 실제와 다를 수 있다.
    지금 세트부터 뒤 세트까지 같이 바뀐다. 워밍업에서 바꾸면 본세트도 비율대로 따라간다. */
 function coachNudge(dir){
@@ -2889,6 +2904,7 @@ function coachBodyHTML(){
   if(CO.phase==="ready"){
     return `<div class="co-phase">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 준비</div>
       <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
+      <div class="co-guide">${weightGuide(st, sets, CO.si)}</div>
       ${st.w!=null ? '<div class="co-adj"><button onclick="coachNudge(-1)">−</button><span>무게 조절</span><button onclick="coachNudge(1)">＋</button></div>' : ''}
       <div class="co-count" id="coT">5</div>
       <div class="co-sub">곧 시작합니다!</div>
@@ -2898,6 +2914,7 @@ function coachBodyHTML(){
     return `<div class="co-phase go">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 진행 중</div>
       <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
       <div class="co-count sm" id="coT">0:00</div>
+      <div class="co-guide">${weightGuide(st, sets, CO.si)}</div>
       <div class="co-sub">${st.reps}회 끝나면 아래 버튼을 눌러주세요</div>
       <button class="co-btn big" onclick="coachDone()">세트 완료 ✓</button>`;
   }
@@ -2907,9 +2924,10 @@ function coachBodyHTML(){
       <div class="co-count" id="coT">${mmss(CO.t)}</div>
       <div class="co-next">다음 · <b>${nx.w!=null?nx.w+"kg":"맨몸"} × ${nx.reps}회</b></div>
       <div class="co-feel">
-        <span>방금 세트 어땠어요?</span>
-        <button onclick="coachFeel('heavy')">😤 무거웠다</button>
-        <button onclick="coachFeel('light')">🙂 가벼웠다</button>
+        <span>방금 세트, 몇 개 더 할 수 있었나요?</span>
+        <button onclick="coachFeel('heavy')">😤 못 채웠다</button>
+        <button onclick="coachFeel('ok')">👍 1~2개</button>
+        <button onclick="coachFeel('light')">🙂 3개 이상</button>
       </div>
       <div class="co-row">
         <button class="co-btn ghost" onclick="coachAddRest()">+15초</button>
