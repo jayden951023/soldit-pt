@@ -7,6 +7,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>SOLD PT · AI 트레이너</title>
+  <!-- PWA (8/4 대표) — 홈화면에 앱처럼 설치 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1520">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SOLD PT">
 <style>
   :root{
     --bg:#0f1620; --panel:#18222f; --panel2:#1f2c3c; --line:#2a3a4e;
@@ -138,6 +145,9 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-bar i{ display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22d3a7); transition:width .35s; }
 
 .co-exname{ font-size:26px; font-weight:900; color:#eaf4ff; margin:14px 0 4px; line-height:1.25; word-break:keep-all; }
+.co-yt{ margin-top:8px; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:700;
+  background:rgba(255,80,80,.13); border:1px solid rgba(255,110,110,.35); color:#ff9b9b; }
+.co-yt:active{ transform:scale(.97); }
 .co-eq{ font-size:12.5px; color:#7cc4ff; background:rgba(124,196,255,.1); border:1px solid rgba(124,196,255,.24); border-radius:8px; padding:4px 10px; display:inline-block; }
 .co-machine{ width:min(72vw,260px); height:120px; margin:10px 0 4px; opacity:.9; }
 
@@ -176,6 +186,36 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
   .co-target b{ font-size:33px; }
 }
 
+
+/* 설치 안내 바 */
+#installBar{position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;
+  background:rgba(18,32,46,.97);border:1px solid rgba(124,196,255,.28);box-shadow:0 8px 28px rgba(0,0,0,.45)}
+#installBar span{flex:1;font-size:13.5px;color:#dbe9f7}
+#installBar button{padding:9px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:800;font-size:13px}
+#installBar #instYes{background:linear-gradient(90deg,#22d3a7,#38bdf8);color:#04212b}
+#installBar #instNo{background:rgba(255,255,255,.08);color:#9fb4c7}
+
+/* 계정 전환 시트 */
+#acctSheet{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center}
+.acct-bg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.acct-box{position:relative;width:100%;max-width:460px;background:#111e2b;border-radius:20px 20px 0 0;
+  padding:18px 16px calc(20px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.1)}
+.acct-t{font-size:15px;font-weight:800;color:#eaf4ff;margin:2px 0 12px;text-align:center}
+.acct-row{width:100%;display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:9px;
+  border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
+  color:#dbe9f7;cursor:pointer;text-align:left}
+.acct-row.on{border-color:#22d3a7;background:rgba(34,211,167,.1)}
+.acct-av{width:42px;height:42px;border-radius:50%;flex:0 0 42px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#22d3a7,#38bdf8);color:#04212b;font-weight:900;font-size:17px}
+.acct-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.acct-info b{font-size:16px;color:#fff}
+.acct-info small{font-size:12px;color:#8fa8bd}
+.acct-now{font-size:11.5px;color:#22d3a7;font-weight:800}
+.acct-go{font-size:19px;color:#5f7f9b}
+.acct-add,.acct-close{width:100%;padding:13px;border-radius:12px;cursor:pointer;font-size:14px;margin-top:8px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#cfe3f5}
+.acct-close{background:transparent;border:0;color:#8fa8bd}
 </style>
 </head>
 <body>
@@ -1940,12 +1980,10 @@ function estimate1RM(w,reps){ if(!w||!reps) return 0; return Math.round(w*(1+rep
    반환: [{w, reps, kind:"warm"|"work", label}] */
 function buildSets(ex, setN, workW, workReps){
   const out=[];
+  // 워밍업 1세트만 (8/4 대표 — 아침엔 시간이 없다). 본세트의 60%로 관절만 풀고 바로 진입.
   if(workW!=null && ex.type==="comp" && workW >= (ex.inc||2.5)*4){
-    // 워밍업 — 본세트의 50%, 70%
-    const w1 = round(workW*0.5, ex.inc||2.5);
-    const w2 = round(workW*0.7, ex.inc||2.5);
-    out.push({w:w1, reps:Math.min(12, workReps+4), kind:"warm", label:"워밍업 1"});
-    out.push({w:w2, reps:Math.min(10, workReps+2), kind:"warm", label:"워밍업 2"});
+    const w1 = round(workW*0.6, ex.inc||2.5);
+    out.push({w:w1, reps:Math.min(10, workReps+2), kind:"warm", label:"워밍업"});
   }
   for(let i=0;i<setN;i++){
     out.push({w:workW, reps:workReps, kind:"work", label:"본세트 "+(i+1)});
@@ -2034,7 +2072,7 @@ function todayPlan(){
     let setN = ex.type==="comp"? (i===0?4:3) : 3; setN=Math.max(2,setN+setMod);
     const w = rec.w==null? null : round(rec.w*wMod, ex.inc||1.25);
     const planSets = buildSets(ex, setN, w, rec.reps);
-    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: ex.type==="comp"?90:60, yt:ex.yt,
+    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: ex.type==="comp"?60:45,   // 8/4 대표 — 아침에 빨리 끝내야 해서 단축 yt:ex.yt,
             br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[], planSets};
   });
   const deloadWk = isDeloadWeek();
@@ -2487,7 +2525,7 @@ function boot(){
   if(!S.current){ $("#app").classList.add("hidden"); $("#onboard").classList.remove("hidden"); renderProfiles(); return; }
   $("#onboard").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#whoBtn").textContent=P().name[0]||"나";
-  $("#whoBtn").onclick=()=>nav("settings");
+  $("#whoBtn").onclick=switchAccount;   // 8/4 대표 — 아바타 누르면 바로 계정 전환
   updateStreak();
   nav("home");
 }
@@ -2507,6 +2545,7 @@ function coachStart(){
   if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
   CO = {plan, ei:0, si:0, phase:"ready", t:5, timer:null, log:{}};
   document.body.classList.add("coach-on");
+  keepAwake(true);   // 운동 중 화면 꺼짐 방지 (8/4)
   coachTick();
   coachRender();
 }
@@ -2514,6 +2553,7 @@ function coachStop(){
   if(CO && CO.timer) clearInterval(CO.timer);
   CO = null;
   document.body.classList.remove("coach-on");
+  keepAwake(false);
   const w = $("#coachView"); if(w) w.remove();
   renderWorkout();
 }
@@ -2610,6 +2650,7 @@ function coachRender(){
     <div class="co-exname">${CO.ei+1}. ${e.name}</div>
     ${e.br && e.wt!=="free" ? `<div class="co-eq">🏋️ ${e.br}${e.wt==="pin"?" · 핀":e.wt==="plate"?" · 원판":""}${e.no&&e.no!=="—"?" · No."+e.no:""}</div>` : ""}
     <div class="co-machine">${machineArt(e)}</div>
+    <button class="co-yt" onclick="openYT('${(e.yt||e.name).replace(/'/g,"")}')">▶ 운동방법 보기</button>
 
     <div class="co-body" id="coBody">${coachBodyHTML()}</div>
    </div>`;
@@ -2686,17 +2727,198 @@ function coachPaint(){
   else t.textContent = mmss(CO.t);
 }
 
-/* 기구 일러스트 — 실제 사진이 없으므로 부위별 SVG 픽토그램 */
+/* 기구 일러스트 — 운동 종류별 픽토그램 (8/4 대표)
+   실제 사진이 없으므로 SVG로 그린다. 종목 id·이름으로 형태를 고른다. */
 function machineArt(e){
-  const g = (EX[e.id]||{}).m || "";
-  const c = "#7cc4ff";
-  const box = (inner)=>`<svg viewBox="0 0 120 90" width="100%" height="100%">${inner}</svg>`;
-  if(/등/.test(g)) return box(`<rect x="20" y="12" width="80" height="6" rx="3" fill="${c}"/><path d="M60 18 L60 40" stroke="${c}" stroke-width="3"/><rect x="42" y="40" width="36" height="10" rx="4" fill="${c}" opacity=".85"/><rect x="34" y="60" width="52" height="8" rx="4" fill="${c}" opacity=".5"/><rect x="30" y="70" width="60" height="6" rx="3" fill="${c}" opacity=".3"/>`);
-  if(/가슴/.test(g)) return box(`<rect x="46" y="20" width="28" height="46" rx="6" fill="${c}" opacity=".45"/><rect x="16" y="30" width="24" height="9" rx="4" fill="${c}"/><rect x="80" y="30" width="24" height="9" rx="4" fill="${c}"/><circle cx="28" cy="34" r="7" fill="${c}" opacity=".7"/><circle cx="92" cy="34" r="7" fill="${c}" opacity=".7"/>`);
-  if(/어깨/.test(g)) return box(`<circle cx="60" cy="26" r="10" fill="${c}" opacity=".7"/><rect x="24" y="36" width="18" height="8" rx="4" fill="${c}"/><rect x="78" y="36" width="18" height="8" rx="4" fill="${c}"/><rect x="48" y="40" width="24" height="34" rx="6" fill="${c}" opacity=".4"/>`);
-  if(/이두|삼두|전완/.test(g)) return box(`<rect x="34" y="44" width="52" height="10" rx="5" fill="${c}"/><circle cx="30" cy="49" r="11" fill="${c}" opacity=".7"/><circle cx="90" cy="49" r="11" fill="${c}" opacity=".7"/><rect x="52" y="26" width="16" height="18" rx="4" fill="${c}" opacity=".4"/>`);
-  if(/사두|햄|둔근|하체|종아리|내전/.test(g)) return box(`<rect x="18" y="54" width="84" height="10" rx="5" fill="${c}" opacity=".8"/><rect x="30" y="24" width="60" height="12" rx="6" fill="${c}" opacity=".5"/><path d="M40 36 L40 54 M80 36 L80 54" stroke="${c}" stroke-width="4"/><circle cx="24" cy="59" r="8" fill="${c}" opacity=".6"/><circle cx="96" cy="59" r="8" fill="${c}" opacity=".6"/>`);
-  return box(`<rect x="26" y="40" width="68" height="10" rx="5" fill="${c}"/><circle cx="24" cy="45" r="12" fill="${c}" opacity=".65"/><circle cx="96" cy="45" r="12" fill="${c}" opacity=".65"/>`);
+  const C="#7cc4ff", G="#22d3a7", D="rgba(124,196,255,.28)";
+  const svg = inner => '<svg viewBox="0 0 140 100" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">'+inner+'</svg>';
+  const nm = (e.name||"") + " " + (e.id||"");
+  const seat = (x,y) => '<rect x="'+x+'" y="'+y+'" width="34" height="7" rx="3" fill="'+D+'"/>'+
+                        '<rect x="'+(x+12)+'" y="'+(y+7)+'" width="10" height="14" rx="3" fill="'+D+'"/>';
+
+  // 랫 풀다운 / 풀다운 계열 — 위에서 바를 당긴다
+  if(/풀다운|랫|pulldown|latpull|widepull|vpull/i.test(nm)) return svg(
+    '<rect x="14" y="10" width="112" height="6" rx="3" fill="'+D+'"/>'+          // 상단 프레임
+    '<path d="M70 16 L70 30" stroke="'+C+'" stroke-width="3"/>'+                  // 케이블
+    '<rect x="44" y="28" width="52" height="7" rx="3.5" fill="'+C+'"/>'+          // 와이드 바
+    '<path d="M48 35 L44 44 M92 35 L96 44" stroke="'+C+'" stroke-width="3" stroke-linecap="round"/>'+
+    '<circle cx="70" cy="52" r="8" fill="'+G+'"/>'+                                // 머리
+    '<rect x="62" y="61" width="16" height="20" rx="5" fill="'+G+'" opacity=".8"/>'+ // 몸통
+    seat(53,84)+
+    '<rect x="112" y="24" width="16" height="46" rx="4" fill="'+D+'"/>'+          // 웨이트 스택
+    '<rect x="112" y="24" width="16" height="16" rx="4" fill="'+C+'" opacity=".65"/>'
+  );
+  // 로우 계열 — 앞에서 당긴다
+  if(/로우|row/i.test(nm)) return svg(
+    '<rect x="10" y="46" width="18" height="34" rx="4" fill="'+D+'"/>'+
+    '<rect x="10" y="46" width="18" height="13" rx="4" fill="'+C+'" opacity=".65"/>'+
+    '<path d="M28 58 L58 58" stroke="'+C+'" stroke-width="3"/>'+
+    '<rect x="58" y="54" width="8" height="9" rx="3" fill="'+C+'"/>'+
+    '<circle cx="86" cy="44" r="8" fill="'+G+'"/>'+
+    '<rect x="78" y="53" width="16" height="22" rx="5" fill="'+G+'" opacity=".8"/>'+
+    seat(70,78)
+  );
+  // 체스트 프레스 / 벤치 / 인클라인 — 앞으로 민다
+  if(/체스트|벤치|프레스|press|bench|incline|decline/i.test(nm) && /가슴/.test(e.m||"")) return svg(
+    '<rect x="52" y="26" width="20" height="48" rx="6" fill="'+D+'"/>'+            // 등받이
+    '<circle cx="62" cy="20" r="7" fill="'+G+'"/>'+
+    '<rect x="16" y="40" width="30" height="8" rx="4" fill="'+C+'"/>'+             // 좌 핸들
+    '<rect x="78" y="40" width="30" height="8" rx="4" fill="'+C+'"/>'+             // 우 핸들
+    '<circle cx="22" cy="44" r="9" fill="'+C+'" opacity=".7"/>'+
+    '<circle cx="104" cy="44" r="9" fill="'+C+'" opacity=".7"/>'+
+    '<rect x="46" y="74" width="32" height="7" rx="3" fill="'+D+'"/>'
+  );
+  // 숄더 프레스 — 위로 민다
+  if(/숄더|어깨|ohp|shpress/i.test(nm)) return svg(
+    '<circle cx="70" cy="60" r="8" fill="'+G+'"/>'+
+    '<rect x="62" y="69" width="16" height="18" rx="5" fill="'+G+'" opacity=".8"/>'+
+    '<rect x="34" y="26" width="26" height="8" rx="4" fill="'+C+'"/>'+
+    '<rect x="80" y="26" width="26" height="8" rx="4" fill="'+C+'"/>'+
+    '<path d="M56 34 L62 54 M84 34 L78 54" stroke="'+C+'" stroke-width="3" stroke-linecap="round"/>'+
+    '<circle cx="40" cy="30" r="9" fill="'+C+'" opacity=".7"/>'+
+    '<circle cx="100" cy="30" r="9" fill="'+C+'" opacity=".7"/>'
+  );
+  // 래터럴 레이즈 — 옆으로 벌린다
+  if(/래터럴|레이즈|latraise|사이드/i.test(nm)) return svg(
+    '<circle cx="70" cy="30" r="9" fill="'+G+'"/>'+
+    '<rect x="62" y="40" width="16" height="28" rx="5" fill="'+G+'" opacity=".8"/>'+
+    '<path d="M62 46 L28 40 M78 46 L112 40" stroke="'+C+'" stroke-width="4" stroke-linecap="round"/>'+
+    '<circle cx="22" cy="39" r="10" fill="'+C+'" opacity=".75"/>'+
+    '<circle cx="118" cy="39" r="10" fill="'+C+'" opacity=".75"/>'+
+    '<rect x="60" y="70" width="20" height="16" rx="4" fill="'+D+'"/>'
+  );
+  // 레그 프레스 / 핵스쿼트
+  if(/레그 ?프레스|핵|스쿼트|legpress|hack|squat/i.test(nm)) return svg(
+    '<rect x="86" y="18" width="40" height="10" rx="4" fill="'+C+'"/>'+            // 발판
+    '<path d="M86 28 L58 52" stroke="'+D+'" stroke-width="7" stroke-linecap="round"/>'+ // 다리
+    '<circle cx="46" cy="60" r="8" fill="'+G+'"/>'+
+    '<rect x="20" y="62" width="34" height="9" rx="4" fill="'+D+'"/>'+             // 시트
+    '<rect x="14" y="70" width="16" height="14" rx="4" fill="'+D+'"/>'+
+    '<rect x="112" y="30" width="14" height="34" rx="4" fill="'+C+'" opacity=".5"/>'
+  );
+  // 레그 컬 / 익스텐션
+  if(/레그컬|익스텐션|legcurl|legext|curl.*leg/i.test(nm)) return svg(
+    '<rect x="30" y="44" width="52" height="9" rx="4" fill="'+D+'"/>'+             // 시트
+    '<circle cx="34" cy="36" r="8" fill="'+G+'"/>'+
+    '<path d="M82 48 L104 62" stroke="'+D+'" stroke-width="7" stroke-linecap="round"/>'+
+    '<rect x="98" y="58" width="24" height="8" rx="4" fill="'+C+'"/>'+             // 롤러패드
+    '<circle cx="104" cy="62" r="7" fill="'+C+'" opacity=".7"/>'+
+    '<rect x="18" y="54" width="14" height="30" rx="4" fill="'+D+'"/>'
+  );
+  // 힙 쓰러스트 / 둔근
+  if(/힙|둔근|글루트|hip|thrust|kickback|abduct|adduct/i.test(nm)) return svg(
+    '<rect x="24" y="34" width="44" height="8" rx="4" fill="'+D+'"/>'+             // 등판
+    '<circle cx="30" cy="28" r="7" fill="'+G+'"/>'+
+    '<path d="M68 42 L92 42" stroke="'+D+'" stroke-width="9" stroke-linecap="round"/>'+
+    '<rect x="58" y="24" width="34" height="9" rx="4" fill="'+C+'"/>'+             // 바
+    '<circle cx="62" cy="28" r="8" fill="'+C+'" opacity=".7"/>'+
+    '<circle cx="98" cy="28" r="8" fill="'+C+'" opacity=".7"/>'+
+    '<path d="M92 42 L104 66" stroke="'+D+'" stroke-width="7" stroke-linecap="round"/>'
+  );
+  // 이두 / 삼두
+  if(/이두|삼두|컬|트라이|바이셉|curl|tri/i.test(nm)) return svg(
+    '<rect x="42" y="48" width="56" height="9" rx="4" fill="'+C+'"/>'+
+    '<circle cx="36" cy="52" r="11" fill="'+C+'" opacity=".72"/>'+
+    '<circle cx="104" cy="52" r="11" fill="'+C+'" opacity=".72"/>'+
+    '<circle cx="70" cy="26" r="8" fill="'+G+'"/>'+
+    '<rect x="62" y="34" width="16" height="14" rx="4" fill="'+G+'" opacity=".8"/>'+
+    '<rect x="52" y="70" width="36" height="8" rx="4" fill="'+D+'"/>'
+  );
+  // 케이블
+  if(/케이블|풀리|cable/i.test(nm)) return svg(
+    '<rect x="12" y="12" width="10" height="72" rx="4" fill="'+D+'"/>'+
+    '<rect x="118" y="12" width="10" height="72" rx="4" fill="'+D+'"/>'+
+    '<path d="M22 22 L60 46 M118 22 L80 46" stroke="'+C+'" stroke-width="3"/>'+
+    '<circle cx="70" cy="34" r="8" fill="'+G+'"/>'+
+    '<rect x="62" y="44" width="16" height="24" rx="5" fill="'+G+'" opacity=".8"/>'+
+    '<rect x="52" y="70" width="36" height="8" rx="4" fill="'+D+'"/>'
+  );
+  // 풀 오버 / 기타
+  return svg(
+    '<rect x="34" y="44" width="72" height="10" rx="5" fill="'+C+'"/>'+
+    '<circle cx="28" cy="49" r="12" fill="'+C+'" opacity=".68"/>'+
+    '<circle cx="112" cy="49" r="12" fill="'+C+'" opacity=".68"/>'+
+    '<circle cx="70" cy="24" r="8" fill="'+G+'"/>'
+  );
+}
+
+
+
+/* ═══ PWA (8/4 대표) ═══ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW 등록 실패', e));
+  });
+}
+
+/* 운동 중 화면 꺼짐 방지 — 코치 모드에서 특히 필요 */
+let _wake = null;
+async function keepAwake(on){
+  try{
+    if(on){ if(!_wake && 'wakeLock' in navigator) _wake = await navigator.wakeLock.request('screen'); }
+    else if(_wake){ await _wake.release(); _wake = null; }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && typeof CO!=='undefined' && CO) keepAwake(true);
+});
+
+/* 홈화면 설치 안내 — 아직 설치 안 했으면 한 번만 띄운다 */
+let _installEvt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault(); _installEvt = e;
+  if(localStorage.getItem('soldpt_install_dismissed')) return;
+  const bar = document.createElement('div');
+  bar.id = 'installBar';
+  bar.innerHTML = '<span>📲 홈 화면에 추가하면 앱처럼 쓸 수 있어요</span>'+
+    '<button id="instYes">설치</button><button id="instNo">나중에</button>';
+  document.body.appendChild(bar);
+  bar.querySelector('#instYes').onclick = async ()=>{
+    bar.remove(); if(_installEvt){ _installEvt.prompt(); _installEvt = null; }
+  };
+  bar.querySelector('#instNo').onclick = ()=>{
+    bar.remove(); localStorage.setItem('soldpt_install_dismissed','1');
+  };
+});
+
+/* ═══ 계정 전환 (8/4 대표) ═══ */
+function switchAccount(){
+  const wrap = document.createElement('div');
+  wrap.id = 'acctSheet';
+  const rows = Object.keys(S.profiles).map(k=>{
+    const p = S.profiles[k];
+    const on = k === S.current;
+    return '<button class="acct-row'+(on?' on':'')+'" data-k="'+k+'">'+
+      '<span class="acct-av">'+(p.name[0]||'나')+'</span>'+
+      '<span class="acct-info"><b>'+p.name+'</b><small>'+p.goal+' · 운동 '+(p.logdays||[]).length+'회</small></span>'+
+      (on?'<span class="acct-now">사용중</span>':'<span class="acct-go">→</span>')+
+      '</button>';
+  }).join('');
+  wrap.innerHTML = '<div class="acct-bg"></div><div class="acct-box">'+
+    '<div class="acct-t">계정 선택</div>'+ rows +
+    '<button class="acct-add" id="acctAdd">＋ 새 프로필 추가</button>'+
+    '<button class="acct-add" id="acctRename">✏️ 지금 계정 이름 바꾸기</button>'+
+    '<button class="acct-close" id="acctClose">닫기</button></div>';
+  document.body.appendChild(wrap);
+  const close = ()=> wrap.remove();
+  wrap.querySelector('.acct-bg').onclick = close;
+  wrap.querySelector('#acctClose').onclick = close;
+  wrap.querySelectorAll('.acct-row').forEach(b=>{
+    b.onclick = ()=>{ S.current = b.dataset.k; persist(); close(); boot(); toast(P().name+'님으로 전환했어요'); };
+  });
+  wrap.querySelector('#acctAdd').onclick = ()=>{
+    const nm = prompt('새 프로필 이름을 입력하세요');
+    if(!nm || !nm.trim()) return;
+    const key = 'u' + Date.now();
+    S.profiles[key] = {name:nm.trim(), goal:'근비대', exp:'초급',
+      equip:[...DEFAULT_EQUIP], history:{}, logdays:[], readiness:{}, done:{}};
+    S.current = key; persist(); close(); boot(); toast(nm.trim()+'님 프로필을 만들었어요');
+  };
+  wrap.querySelector('#acctRename').onclick = ()=>{
+    const nm = prompt('이름을 바꿀까요?', P().name);
+    if(!nm || !nm.trim()) return;
+    P().name = nm.trim(); persist(); close(); boot(); toast('이름을 바꿨어요');
+  };
 }
 
 </script>
