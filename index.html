@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#0f1620" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>SOLD PT · AI 트레이너</title>
+<title>JAYNA PT · AI 트레이너</title>
   <!-- PWA (8/4 대표) — 홈화면에 앱처럼 설치 -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1520">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SOLD PT">
+  <meta name="apple-mobile-web-app-title" content="JAYNA PT">
 <style>
   :root{
     --bg:#0f1620; --panel:#18222f; --panel2:#1f2c3c; --line:#2a3a4e;
@@ -140,7 +140,30 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 .co-wrap{ height:100%; display:flex; flex-direction:column; align-items:center; padding:16px 18px calc(20px + env(safe-area-inset-bottom)); text-align:center; }
 .co-top{ width:100%; display:flex; align-items:center; gap:10px; }
 .co-x{ width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:#cfe3f5; font-size:17px; cursor:pointer; }
-.co-prog{ flex:1; font-size:13px; color:#8fa8bd; letter-spacing:.3px; }
+.co-prog{ flex:1; font-size:13px; color:#8fa8bd; letter-spacing:.3px; line-height:1.4; }
+.co-knee{font-size:11.5px;color:#9fc0ff;background:rgba(138,180,255,.1);
+  border:1px solid rgba(138,180,255,.24);border-radius:8px;padding:5px 10px;margin-top:4px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head b{font-size:16px;color:#eaf4ff}
+.cal-nav{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);color:#cfe3f5;font-size:18px;cursor:pointer}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px}
+.cal-dow span{text-align:center;font-size:11.5px;color:#8fa8bd;font-weight:700}
+.cal-dow .sun{color:#ff9b9b} .cal-dow .sat{color:#9fc0ff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1/1.15;border-radius:8px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);padding:3px 2px;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;gap:1px;overflow:hidden}
+.cal-cell.empty{background:none;border:0}
+.cal-cell.rest{opacity:.4}
+.cal-cell.today{border-color:#22d3a7;background:rgba(34,211,167,.1)}
+.cal-cell.done{background:rgba(34,211,167,.14);border-color:rgba(34,211,167,.3)}
+.cal-d{font-size:12.5px;font-weight:800;color:#dbe9f7;line-height:1.1}
+.cal-tag{font-size:8.5px;color:#7f97ab;line-height:1.05;text-align:center;word-break:keep-all}
+.cal-mark{font-size:10px;color:#22d3a7;line-height:1}
+.cal-mark.miss{color:#5f7f9b}
+.cal-sum{margin-top:12px;font-size:13px;color:#9fb4c7;text-align:center}
+.co-date{ display:block; font-size:11.5px; color:#5f7f9b; }
 .co-bar{ width:100%; height:5px; border-radius:3px; background:rgba(255,255,255,.08); margin:12px 0 4px; overflow:hidden; }
 .co-bar i{ display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22d3a7); transition:width .35s; }
 
@@ -261,7 +284,7 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 <!-- ===== ONBOARD / PROFILE ===== -->
 <div id="onboard" class="hidden">
   <div style="padding:48px 4px 8px">
-    <div class="logo grad" style="font-size:34px">SOLD PT</div>
+    <div class="logo grad" style="font-size:34px">JAYNA PT</div>
     <p class="muted" style="margin-top:8px">과학 기반 AI 트레이너 · 베타</p>
   </div>
   <div class="card">
@@ -274,7 +297,7 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 <!-- ===== APP ===== -->
 <div id="app" class="hidden">
   <header>
-    <div class="logo grad">SOLD PT</div>
+    <div class="logo grad">JAYNA PT</div>
     <div class="row">
       <span id="streakPill" class="pill">🔥 0일</span>
       <button class="avatar" id="whoBtn">나</button>
@@ -305,7 +328,7 @@ body.coach-on > .app, body.coach-on > nav, body.coach-on .tabbar, body.coach-on 
 
 <script>
 /* ============================================================
-   SOLD PT — 과학 기반 개인 트레이너 (베타, 클라이언트 전용/localStorage)
+   JAYNA PT — 과학 기반 개인 트레이너 (베타, 클라이언트 전용/localStorage)
    - 무게/횟수/RIR 영구 기록 → 점진적 과부하 자동 반영
    - PPLUL 분할, 오토레귤레이션(컨디션 반영), 6주 디로드
    - 운동방법 → 유튜브, 세트 완료 → 쉬는시간 타이머
@@ -1601,23 +1624,6 @@ const EX = {
   "wt": "free",
   "no": "",
   "c": 0
- },
- "plank": {
-  "name": "플랭크",
-  "m": "코어",
-  "eq": [],
-  "type": "iso",
-  "rep": [
-   30,
-   60
-  ],
-  "inc": 0,
-  "start": null,
-  "yt": "플랭크 정확한 자세",
-  "br": "",
-  "wt": "free",
-  "no": "",
-  "c": 0
  }
 };
 /* 실제 보유 기구 62종 (2026-08-04 실사 기준)
@@ -1697,7 +1703,7 @@ const SPLIT = {
  },
  "3": {
   "key": "legs",
-  "label": "LEGS · 하체",
+  "label": "LEGS · 하체·어깨",
   "pool": [
    "ip_legpress",
    "ip_slegpress",
@@ -1718,7 +1724,17 @@ const SPLIT = {
    "bb_rdl",
    "sm_squat",
    "db_lunge",
-   "plank"
+   "tg_latraise",
+   "tg_shpress",
+   "tg_ps_shpress",
+   "gr_shpress",
+   "nt_latraise",
+   "sp_shpress",
+   "mt_shpress",
+   "red_shpress",
+   "tg_revfly",
+   "db_latraise",
+   "bb_ohp"
   ]
  },
  "4": {
@@ -1778,7 +1794,7 @@ const SPLIT = {
  },
  "5": {
   "key": "lower",
-  "label": "LOWER · 하체 종합",
+  "label": "LOWER · 하체·어깨",
   "pool": [
    "ip_legpress",
    "ip_slegpress",
@@ -1799,7 +1815,17 @@ const SPLIT = {
    "bb_rdl",
    "sm_squat",
    "db_lunge",
-   "plank"
+   "tg_latraise",
+   "tg_shpress",
+   "tg_ps_shpress",
+   "gr_shpress",
+   "nt_latraise",
+   "sp_shpress",
+   "mt_shpress",
+   "red_shpress",
+   "tg_revfly",
+   "db_latraise",
+   "bb_ohp"
   ]
  },
  "6": {
@@ -1808,8 +1834,6 @@ const SPLIT = {
   "pool": []
  }
 };
-
-/* ---------- 저장소 ---------- */
 const DB = {
   load(){ try{ return JSON.parse(localStorage.getItem("soldpt")||"{}"); }catch(e){ return {}; } },
   save(d){ localStorage.setItem("soldpt", JSON.stringify(d)); },
@@ -2093,6 +2117,8 @@ function todayPlan(){
   const eq = P().equip;
   const avail = id => EX[id].eq.every(t=> eq.includes(t) || t==="");
   let pool = day.pool.filter(avail);
+  // 무릎 보호가 켜져 있으면 무릎 부담 큰 종목을 뺀다 (8/4)
+  if(kneeSafeOn()) pool = pool.filter(id => !isKneeRisk(id));
   // 부족하면 다른 요일 풀에서 같은 성격 보충
   if(pool.length<5){ for(const k in SPLIT){ for(const id of SPLIT[k].pool){ if(pool.length>=6) break; if(avail(id)&&!pool.includes(id)) pool.push(id);} } }
   // 복합 먼저, 고립 뒤 — 5~6개 (50분)
@@ -2105,18 +2131,26 @@ function todayPlan(){
   //   ⚠️ 팔(이두/삼두)은 매일 1개씩 — 기존엔 주 3세트뿐이라 등(26세트) 대비 8배 차이였다.
   // 목표별 쿼터 (8/4 대표) — 체지방·탄탄은 둔근/하체 비중을 높인다.
   const _toneUp = (P().goal||"").includes("체지방") || (P().goal||"").includes("탄탄");
-  const QUOTA = (_toneUp ? {
+  // 무릎 보호 모드면 사두 대신 둔근·햄스트링 위주로 (고관절 주도 동작)
+  const _knee = kneeSafeOn();
+  const QUOTA = (_knee ? {
+    push:  [[/가슴/,2],[/어깨/,2],[/삼두/,1]],
+    pull:  [[/등/,4],[/이두/,1]],
+    legs:  [[/둔근|내전/,3],[/햄/,2],[/어깨/,1]],
+    upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/이두|삼두/,1]],
+    lower: [[/둔근|내전/,3],[/햄/,2],[/어깨/,1]],
+  } : _toneUp ? {
     push:  [[/가슴/,2],[/어깨/,2],[/삼두/,1],[/코어/,1]],
     pull:  [[/등/,3],[/이두/,1],[/어깨\(후면\)/,1]],
-    legs:  [[/둔근|내전/,2],[/대퇴사두/,1],[/햄/,2],[/종아리/,1]],
+    legs:  [[/둔근|내전/,2],[/대퇴사두/,1],[/햄/,1],[/어깨/,2]],
     upper: [[/등/,2],[/가슴/,1],[/어깨/,2],[/이두|삼두/,1]],
-    lower: [[/둔근|내전/,3],[/햄/,2],[/대퇴사두/,1]],
+    lower: [[/둔근|내전/,2],[/햄/,1],[/대퇴사두/,1],[/어깨/,2]],
   } : {
     push:  [[/가슴/,2],[/어깨/,2],[/삼두/,2]],
     pull:  [[/등/,4],[/이두/,2]],
-    legs:  [[/대퇴사두/,2],[/햄/,2],[/하체 전체|하체\(/,1],[/종아리/,1]],
+    legs:  [[/대퇴사두/,2],[/햄/,2],[/둔근|내전/,1],[/어깨/,1]],
     upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/이두|삼두/,1]],
-    lower: [[/둔근|내전/,3],[/햄/,1],[/대퇴사두/,1],[/종아리/,1]],
+    lower: [[/둔근|내전/,2],[/햄/,1],[/대퇴사두/,1],[/어깨/,2]],
   })[day.key] || [];
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
@@ -2545,7 +2579,7 @@ async function sendChat(){
 let progTab="strength";
 function renderProgress(){
   const v=$("#view-progress"); v.innerHTML="";
-  const seg=el("div","seg"); seg.innerHTML=`<button data-p="strength" class="${progTab==='strength'?'on':''}">근력 추이</button><button data-p="log" class="${progTab==='log'?'on':''}">운동 일지</button>`;
+  const seg=el("div","seg"); seg.innerHTML=`<button data-p="cal" class="${progTab==='cal'?'on':''}">캘린더</button><button data-p="strength" class="${progTab==='strength'?'on':''}">근력 추이</button><button data-p="log" class="${progTab==='log'?'on':''}">운동 일지</button>`;
   seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{progTab=b.dataset.p; renderProgress();});
   v.appendChild(seg);
 
@@ -2557,6 +2591,7 @@ function renderProgress(){
     <div class="b"><div class="n">${(totalVol/1000).toFixed(1)}t</div><div class="l">누적 볼륨(무게×횟수)</div></div>`;
   v.appendChild(st);
 
+  if(progTab==="cal"){ calRender(v); return; }
   if(progTab==="strength"){
     const exsWith=Object.keys(P().history).filter(id=>(P().history[id]||[]).length>0);
     if(!exsWith.length){ v.appendChild(el("div","note","아직 기록이 없어요. 운동을 완료하면 종목별 추정 1RM(최대중량) 그래프가 여기 그려집니다 📈")); return; }
@@ -2642,6 +2677,18 @@ function renderSettings(){
     eq.appendChild(box);
   });
   v.appendChild(eq);
+
+  // 무릎 보호 (8/4 대표) — 무릎이 약한 사람용
+  const kn=el("div","card");
+  const kOn = !!P().kneeSafe;
+  kn.innerHTML=`<h3>무릎 보호 <span class="pill">${kOn?"켜짐":"꺼짐"}</span></h3>
+    <p class="k" style="margin:6px 0 10px">무릎에 부담되는 종목(스쿼트·레그익스텐션·런지·레그프레스)을 빼고<br>
+      둔근·햄스트링 위주 고관절 운동으로 짜드려요.</p>`;
+  const kb=el("button", kOn?"btn sec":"btn green", kOn?"무릎 보호 끄기":"🦵 무릎 보호 켜기");
+  kb.onclick=()=>{ P().kneeSafe = !P().kneeSafe; persist(); renderSettings();
+    toast(P().kneeSafe ? "무릎에 부담 적은 운동으로 짜드릴게요" : "무릎 보호를 껐어요"); };
+  kn.appendChild(kb);
+  v.appendChild(kn);
 
   // 운동 알림 (8/4 대표) — 저녁 9시 내일 예고 · 오전 7:50 오늘 시작
   const noti=el("div","card");
@@ -2822,6 +2869,89 @@ function coachSkipEx(){
 function coachMoved(){
   CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; coachRender();
 }
+/* ═══ 무릎 보호 (8/4 대표 — 아내분 무릎이 약함) ═══
+   무릎 부담이 큰 종목: 깊은 무릎 굴곡 + 대퇴사두 단독 부하
+     · 스쿼트류(바벨/스미스/핵) — 무릎이 깊게 접히고 전단력이 큼
+     · 레그 익스텐션 — 개방형 사슬이라 슬개대퇴 압박이 가장 큼
+     · 런지 — 앞무릎에 체중이 실림
+     · 레그 프레스 — 가동범위에 따라 부담. 안전하게 제외
+   대신 쓰는 것: 고관절 주도(힙 힌지)·둔근/햄스트링 타겟 종목 */
+const KNEE_RISK = ["bb_squat","sm_squat","nl_hack","nt_legext","db_lunge",
+                   "ip_legpress","ip_slegpress","ip_1legpress"];
+function kneeSafeOn(){ return !!(P() && P().kneeSafe); }
+function isKneeRisk(exId){ return KNEE_RISK.includes(exId); }
+
+/* ═══ 운동 캘린더 (8/4 대표) ═══
+   월간 달력에 요일별 분할과 운동 완료 여부를 함께 보여준다.
+   지난 날 = 실제 기록 · 오늘 이후 = 예정 프로그램 */
+let calMonth = null;   // {y, m} — null 이면 이번 달
+
+function calRender(v){
+  const now = nowKST();
+  if(!calMonth) calMonth = {y: now.getFullYear(), m: now.getMonth()};
+  const {y, m} = calMonth;
+  const first = new Date(y, m, 1);
+  const days = new Date(y, m+1, 0).getDate();
+  const startDow = first.getDay();
+  const logdays = new Set(P().logdays || []);
+  const cardio = new Set((P().cardio || []).map(c => c.date));
+  const todayK = todayKey();
+
+  const c = el("div","card");
+  const monLabel = y + "년 " + (m+1) + "월";
+  c.innerHTML = '<div class="cal-head">'+
+      '<button class="cal-nav" id="calPrev">‹</button>'+
+      '<b>'+monLabel+'</b>'+
+      '<button class="cal-nav" id="calNext">›</button>'+
+    '</div>'+
+    '<div class="cal-dow">'+["일","월","화","수","목","금","토"].map((d,i)=>
+      '<span class="'+(i===0?"sun":i===6?"sat":"")+'">'+d+'</span>').join("")+'</div>';
+
+  const grid = el("div","cal-grid");
+  for(let i=0;i<startDow;i++) grid.appendChild(el("div","cal-cell empty"));
+  for(let d=1; d<=days; d++){
+    const date = new Date(y, m, d);
+    const key = y + "-" + String(m+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+    const sp = SPLIT[date.getDay()];
+    const rest = !sp || sp.key === "rest";
+    const done = logdays.has(key);
+    const didCardio = cardio.has(key);
+    const isToday = key === todayK;
+    const past = key < todayK;
+
+    const cell = el("div","cal-cell"+(isToday?" today":"")+(rest?" rest":"")+(done?" done":""));
+    const tag = rest ? "휴식" : sp.label.split("·")[0].trim();
+    cell.innerHTML = '<div class="cal-d">'+d+'</div>'+
+      '<div class="cal-tag">'+tag+'</div>'+
+      (done ? '<div class="cal-mark">✓'+(didCardio?'🏃':'')+'</div>'
+            : (past && !rest ? '<div class="cal-mark miss">·</div>' : ''));
+    grid.appendChild(cell);
+  }
+  c.appendChild(grid);
+
+  // 이번 달 통계
+  const monthDays = [...logdays].filter(k => k.startsWith(y+"-"+String(m+1).padStart(2,"0")));
+  const planned = Array.from({length:days},(_,i)=>new Date(y,m,i+1))
+    .filter(d => { const sp=SPLIT[d.getDay()]; return sp && sp.key!=="rest"; }).length;
+  c.appendChild(el("div","cal-sum",
+    "이번 달 "+monthDays.length+"회 운동 · 예정 "+planned+"일"));
+
+  c.querySelector("#calPrev").onclick = ()=>{
+    calMonth = m===0 ? {y:y-1, m:11} : {y, m:m-1}; renderProgress();
+  };
+  c.querySelector("#calNext").onclick = ()=>{
+    calMonth = m===11 ? {y:y+1, m:0} : {y, m:m+1}; renderProgress();
+  };
+  v.appendChild(c);
+}
+
+/* 오늘 날짜·요일 (8/4 대표 — 코치 모드 상단에 표시) */
+function todayLabel(){
+  const d = nowKST();
+  const w = ["일","월","화","수","목","금","토"][d.getDay()];
+  return (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + w + ")";
+}
+
 /* 이 세트를 '어느 정도 무게로' 해야 하는지 한 줄 설명 (8/4 대표)
    근비대는 목표 횟수에서 1~2개 남기는 무게(RIR 1~2)가 맞다.
    마지막 세트는 더 못 할 때까지 — 그래야 다음 세션 증량 판단이 선다. */
@@ -2891,7 +3021,7 @@ function coachRender(){
    <div class="co-wrap">
     <div class="co-top">
       <button class="co-x" onclick="coachStop()">✕</button>
-      <div class="co-prog">${CO.ei+1} / ${total} 운동 · ${CO.si+1} / ${sets.length} 세트</div>
+      <div class="co-prog"><span class="co-date">${todayLabel()}</span>${CO.ei+1} / ${total} 운동 · ${CO.si+1} / ${sets.length} 세트</div>
       <button class="co-skip" onclick="coachSkipEx()">이 운동 건너뛰기 ⏭</button>
     </div>
     <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
@@ -2919,6 +3049,7 @@ function coachBodyHTML(){
     return `<div class="co-phase">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 준비</div>
       <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
       <div class="co-guide">${weightGuide(st, sets, CO.si)}</div>
+      ${kneeSafeOn() ? '<div class="co-knee">🦵 무릎 보호 모드 · 통증이 오면 바로 멈추세요</div>' : ''}
       ${st.w!=null ? '<div class="co-adj"><button onclick="coachNudge(-1)">−</button><span>무게 조절</span><button onclick="coachNudge(1)">＋</button></div>' : ''}
       <div class="co-count" id="coT">5</div>
       <div class="co-sub">곧 시작합니다!</div>
