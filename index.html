@@ -193,49 +193,1493 @@ const toast = (m)=>{const t=el('div','toast',m); document.body.appendChild(t); s
 
 /* ---------- 운동 DB (근거: 부위 주2회 빈도, 6~15렙 다양화, RIR 관리) ---------- */
 // eq: 필요한 기구 태그 / yt: 유튜브 검색어 / type: comp(복합)·iso(고립) / start:초보 시작무게(kg,바벨/머신 총중량 기준)·null이면 맨몸
+/* 운동 종목 — 실제 헬스장 보유 기구 기준으로 생성 (8/4 대표)
+   eq: 필요한 기구 id. 설정에서 기구를 끄면 그 종목은 자동 제외된다.
+   br/wt/no: 브랜드 / 핀·원판 / 안내판 번호 — 헬스장에서 바로 찾으라고 카드에 표시 */
 const EX = {
-  bench:       {name:"바벨 벤치프레스", m:"가슴", eq:["바벨","벤치"], type:"comp", rep:[6,10], inc:2.5, start:40, yt:"바벨 벤치프레스 정확한 자세"},
-  chestpress:  {name:"체스트프레스 머신", m:"가슴", eq:["체스트프레스머신"], type:"comp", rep:[8,12], inc:2.5, start:25, yt:"체스트프레스 머신 자세"},
-  inclinedb:   {name:"인클라인 덤벨프레스", m:"가슴(상부)", eq:["덤벨","인클라인벤치"], type:"comp", rep:[8,12], inc:2, start:12, yt:"인클라인 덤벨프레스 자세"},
-  cablefly:    {name:"케이블 플라이", m:"가슴", eq:["케이블"], type:"iso", rep:[12,15], inc:2.5, start:10, yt:"케이블 플라이 자세"},
-  ohp:         {name:"바벨 오버헤드프레스", m:"어깨", eq:["바벨"], type:"comp", rep:[6,10], inc:2.5, start:20, yt:"오버헤드프레스 자세"},
-  shpress:     {name:"숄더프레스 머신", m:"어깨", eq:["숄더프레스머신"], type:"comp", rep:[8,12], inc:2.5, start:15, yt:"숄더프레스 머신 자세"},
-  latraise:    {name:"사이드 레터럴 레이즈", m:"어깨(측면)", eq:["덤벨"], type:"iso", rep:[12,20], inc:1, start:6, yt:"사이드 레터럴 레이즈 자세"},
-  facepull:    {name:"페이스풀", m:"어깨(후면)", eq:["케이블"], type:"iso", rep:[15,20], inc:2.5, start:12, yt:"페이스풀 자세"},
-  pushdown:    {name:"케이블 삼두 푸시다운", m:"삼두", eq:["케이블"], type:"iso", rep:[10,15], inc:2.5, start:15, yt:"삼두 푸시다운 자세"},
-  dips:        {name:"딥스", m:"가슴/삼두", eq:["딥스바"], type:"comp", rep:[6,12], inc:0, start:null, yt:"딥스 정확한 자세"},
-  pullup:      {name:"풀업(턱걸이)", m:"등", eq:["풀업바"], type:"comp", rep:[5,10], inc:0, start:null, yt:"풀업 정확한 자세"},
-  latpull:     {name:"랫풀다운", m:"등(광배)", eq:["랫풀다운"], type:"comp", rep:[8,12], inc:2.5, start:35, yt:"랫풀다운 자세"},
-  barrow:      {name:"바벨 로우", m:"등", eq:["바벨"], type:"comp", rep:[6,10], inc:2.5, start:30, yt:"바벨 로우 자세"},
-  seatedrow:   {name:"시티드 케이블 로우", m:"등(중앙)", eq:["시티드로우","케이블"], type:"comp", rep:[8,12], inc:2.5, start:30, yt:"시티드 로우 자세"},
-  dbcurl:      {name:"덤벨 컬", m:"이두", eq:["덤벨"], type:"iso", rep:[8,12], inc:2, start:8, yt:"덤벨 컬 자세"},
-  hammer:      {name:"해머 컬", m:"이두/전완", eq:["덤벨"], type:"iso", rep:[10,14], inc:2, start:8, yt:"해머 컬 자세"},
-  squat:       {name:"바벨 스쿼트", m:"하체 전체", eq:["바벨"], type:"comp", rep:[5,8], inc:5, start:40, yt:"바벨 스쿼트 정확한 자세"},
-  hacksquat:   {name:"핵 스쿼트", m:"대퇴사두", eq:["핵스쿼트"], type:"comp", rep:[8,12], inc:5, start:40, yt:"핵 스쿼트 자세"},
-  legpress:    {name:"레그프레스", m:"하체 전체", eq:["레그프레스"], type:"comp", rep:[10,15], inc:5, start:60, yt:"레그프레스 자세"},
-  rdl:         {name:"루마니안 데드리프트", m:"햄스트링/둔근", eq:["바벨"], type:"comp", rep:[8,12], inc:5, start:40, yt:"루마니안 데드리프트 자세"},
-  legcurl:     {name:"레그컬", m:"햄스트링", eq:["레그컬"], type:"iso", rep:[10,15], inc:2.5, start:25, yt:"레그컬 자세"},
-  legext:      {name:"레그 익스텐션", m:"대퇴사두", eq:["레그익스텐션"], type:"iso", rep:[12,15], inc:2.5, start:25, yt:"레그 익스텐션 자세"},
-  hipthrust:   {name:"힙 쓰러스트", m:"둔근", eq:["바벨","벤치"], type:"comp", rep:[8,12], inc:5, start:40, yt:"힙 쓰러스트 자세"},
-  lunge:       {name:"덤벨 런지", m:"하체/둔근", eq:["덤벨"], type:"comp", rep:[10,12], inc:2, start:10, yt:"덤벨 런지 자세"},
-  calf:        {name:"카프 레이즈", m:"종아리", eq:["레그프레스"], type:"iso", rep:[12,20], inc:5, start:40, yt:"카프 레이즈 자세"},
-  plank:       {name:"플랭크", m:"코어", eq:[], type:"iso", rep:[30,60], inc:0, start:null, yt:"플랭크 정확한 자세"},
-  hangleg:     {name:"행잉 레그레이즈", m:"복근", eq:["풀업바"], type:"iso", rep:[10,15], inc:0, start:null, yt:"행잉 레그레이즈 자세"},
+ "tg_latraise": {
+  "name": "래터럴 레이즈",
+  "m": "어깨(측면)",
+  "eq": [
+   "tg_latraise"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   20
+  ],
+  "inc": 2.5,
+  "start": 10,
+  "yt": "래터럴 레이즈 자세",
+  "br": "테크노짐",
+  "wt": "pin",
+  "no": "1",
+  "c": 0
+ },
+ "tg_shpress": {
+  "name": "숄더 프레스",
+  "m": "어깨",
+  "eq": [
+   "tg_shpress"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 20,
+  "yt": "숄더 프레스 자세",
+  "br": "테크노짐",
+  "wt": "pin",
+  "no": "2",
+  "c": 0
+ },
+ "tg_ps_shpress": {
+  "name": "Pure Strength 숄더 프레스",
+  "m": "어깨",
+  "eq": [
+   "tg_ps_shpress"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 5,
+  "start": 20,
+  "yt": "Pure Strength 숄더 프레스 자세",
+  "br": "테크노짐",
+  "wt": "plate",
+  "no": "28",
+  "c": 1
+ },
+ "gr_shpress": {
+  "name": "숄더 프레스 (Active 330)",
+  "m": "어깨",
+  "eq": [
+   "gr_shpress"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 20,
+  "yt": "숄더 프레스 (Active 330) 자세",
+  "br": "짐레코",
+  "wt": "pin",
+  "no": "8",
+  "c": 0
+ },
+ "nt_latraise": {
+  "name": "스탠딩 래터럴 레이즈",
+  "m": "어깨(측면)",
+  "eq": [
+   "nt_latraise"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   20
+  ],
+  "inc": 2.5,
+  "start": 10,
+  "yt": "스탠딩 래터럴 레이즈 자세",
+  "br": "뉴텍",
+  "wt": "plate",
+  "no": "11",
+  "c": 0
+ },
+ "sp_shpress": {
+  "name": "Super Multi 숄더 프레스",
+  "m": "어깨",
+  "eq": [
+   "sp_shpress"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 5,
+  "start": 20,
+  "yt": "Super Multi 숄더 프레스 자세",
+  "br": "Super",
+  "wt": "plate",
+  "no": "27",
+  "c": 0
+ },
+ "mt_shpress": {
+  "name": "M-Torture 숄더 프레스",
+  "m": "어깨",
+  "eq": [
+   "mt_shpress"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 5,
+  "start": 20,
+  "yt": "M-Torture 숄더 프레스 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "30",
+  "c": 0
+ },
+ "red_shpress": {
+  "name": "숄더 프레스 (레드)",
+  "m": "어깨",
+  "eq": [
+   "red_shpress"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 20,
+  "yt": "숄더 프레스 (레드) 자세",
+  "br": "미상",
+  "wt": "plate",
+  "no": "15",
+  "c": 0
+ },
+ "nt_chestpress": {
+  "name": "시티드 체스트 프레스",
+  "m": "가슴",
+  "eq": [
+   "nt_chestpress"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "시티드 체스트 프레스 자세",
+  "br": "뉴텍",
+  "wt": "plate",
+  "no": "10",
+  "c": 0
+ },
+ "nt_pecdeck": {
+  "name": "펙덱 플라이 & 리어 델트",
+  "m": "가슴/후면",
+  "eq": [
+   "nt_pecdeck"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   15
+  ],
+  "inc": 5,
+  "start": 15,
+  "yt": "펙덱 플라이 & 리어 델트 자세",
+  "br": "뉴텍",
+  "wt": "plate",
+  "no": "7",
+  "c": 0
+ },
+ "nt_incline": {
+  "name": "인클라인 프레스",
+  "m": "가슴(상부)",
+  "eq": [
+   "nt_incline"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "인클라인 프레스 자세",
+  "br": "뉴텍",
+  "wt": "plate",
+  "no": "32",
+  "c": 0
+ },
+ "gr_widechest": {
+  "name": "와이드 체스트 (Active 326)",
+  "m": "가슴",
+  "eq": [
+   "gr_widechest"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 25,
+  "yt": "와이드 체스트 (Active 326) 자세",
+  "br": "짐레코",
+  "wt": "pin",
+  "no": "9",
+  "c": 0
+ },
+ "hs_bench": {
+  "name": "아이소래터럴 벤치 프레스",
+  "m": "가슴",
+  "eq": [
+   "hs_bench"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "아이소래터럴 벤치 프레스 자세",
+  "br": "해머스트렝스",
+  "wt": "plate",
+  "no": "14",
+  "c": 0
+ },
+ "hs_decline": {
+  "name": "아이소래터럴 디클라인",
+  "m": "가슴(하부)",
+  "eq": [
+   "hs_decline"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "아이소래터럴 디클라인 자세",
+  "br": "해머스트렝스",
+  "wt": "plate",
+  "no": "51",
+  "c": 0
+ },
+ "mt_incline": {
+  "name": "M-Torture 인클라인 프레스",
+  "m": "가슴(상부)",
+  "eq": [
+   "mt_incline"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "M-Torture 인클라인 프레스 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "31",
+  "c": 0
+ },
+ "mt_pecdeck": {
+  "name": "M-Torture 펙덱 플라이",
+  "m": "가슴",
+  "eq": [
+   "mt_pecdeck"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   15
+  ],
+  "inc": 5,
+  "start": 15,
+  "yt": "M-Torture 펙덱 플라이 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "33",
+  "c": 0
+ },
+ "sc_pullover": {
+  "name": "풀 오버",
+  "m": "가슴/광배",
+  "eq": [
+   "sc_pullover"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 20,
+  "yt": "풀 오버 자세",
+  "br": "신코",
+  "wt": "pin",
+  "no": "43",
+  "c": 0
+ },
+ "tg_latpull": {
+  "name": "Selection 랫 풀다운",
+  "m": "등(광배)",
+  "eq": [
+   "tg_latpull"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 35,
+  "yt": "Selection 랫 풀다운 자세",
+  "br": "테크노짐",
+  "wt": "pin",
+  "no": "4",
+  "c": 1
+ },
+ "tg_revfly": {
+  "name": "리버스 플라이",
+  "m": "어깨(후면)",
+  "eq": [
+   "tg_revfly"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   20
+  ],
+  "inc": 2.5,
+  "start": 15,
+  "yt": "리버스 플라이 자세",
+  "br": "테크노짐",
+  "wt": "pin",
+  "no": "3",
+  "c": 0
+ },
+ "pc_latpull": {
+  "name": "다이버징 랫 풀다운",
+  "m": "등(광배)",
+  "eq": [
+   "pc_latpull"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 35,
+  "yt": "다이버징 랫 풀다운 자세",
+  "br": "프리코",
+  "wt": "pin",
+  "no": "5",
+  "c": 0
+ },
+ "ip_vrow": {
+  "name": "버티컬 로우",
+  "m": "등",
+  "eq": [
+   "ip_vrow"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 30,
+  "yt": "버티컬 로우 자세",
+  "br": "임펄스",
+  "wt": "pin",
+  "no": "6",
+  "c": 0
+ },
+ "nt_row": {
+  "name": "어드저스터블 로우 폴리",
+  "m": "등(중앙)",
+  "eq": [
+   "nt_row"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 30,
+  "yt": "어드저스터블 로우 폴리 자세",
+  "br": "뉴텍",
+  "wt": "pin",
+  "no": "12",
+  "c": 0
+ },
+ "hs_row": {
+  "name": "아이소래터럴 로우",
+  "m": "등",
+  "eq": [
+   "hs_row"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "아이소래터럴 로우 자세",
+  "br": "해머스트렝스",
+  "wt": "plate",
+  "no": "16",
+  "c": 0
+ },
+ "hs_lowrow": {
+  "name": "아이소래터럴 로우 로우",
+  "m": "등(하부)",
+  "eq": [
+   "hs_lowrow"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "아이소래터럴 로우 로우 자세",
+  "br": "해머스트렝스",
+  "wt": "plate",
+  "no": "17",
+  "c": 0
+ },
+ "hs_highrow": {
+  "name": "아이소래터럴 하이 로우",
+  "m": "등(상부)",
+  "eq": [
+   "hs_highrow"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "아이소래터럴 하이 로우 자세",
+  "br": "해머스트렝스",
+  "wt": "plate",
+  "no": "18",
+  "c": 0
+ },
+ "hs_rowpin": {
+  "name": "로우 (셀렉토라이즈)",
+  "m": "등",
+  "eq": [
+   "hs_rowpin"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 30,
+  "yt": "로우 (셀렉토라이즈) 자세",
+  "br": "해머스트렝스",
+  "wt": "pin",
+  "no": "39",
+  "c": 0
+ },
+ "nl_lowrow": {
+  "name": "멀티 스테이션 로우 로우",
+  "m": "등(하부)",
+  "eq": [
+   "nl_lowrow"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2.5,
+  "start": 30,
+  "yt": "멀티 스테이션 로우 로우 자세",
+  "br": "너틸러스",
+  "wt": "pin",
+  "no": "52",
+  "c": 0
+ },
+ "sp_pulldown": {
+  "name": "Super Leverage 풀다운",
+  "m": "등(광배)",
+  "eq": [
+   "sp_pulldown"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "Super Leverage 풀다운 자세",
+  "br": "Super",
+  "wt": "plate",
+  "no": "53",
+  "c": 0
+ },
+ "mt_vpull": {
+  "name": "M-Torture 버티컬 풀다운",
+  "m": "등(광배)",
+  "eq": [
+   "mt_vpull"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "M-Torture 버티컬 풀다운 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "54",
+  "c": 0
+ },
+ "mt_highrow": {
+  "name": "M-Torture 하이 로우",
+  "m": "등(상부)",
+  "eq": [
+   "mt_highrow"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "M-Torture 하이 로우 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "55",
+  "c": 0
+ },
+ "mt_widepull": {
+  "name": "M-Torture 와이드 풀다운",
+  "m": "등(광배)",
+  "eq": [
+   "mt_widepull"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "M-Torture 와이드 풀다운 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "56",
+  "c": 0
+ },
+ "mt_lowrow": {
+  "name": "M-Torture 로우 로우",
+  "m": "등(하부)",
+  "eq": [
+   "mt_lowrow"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "M-Torture 로우 로우 자세",
+  "br": "M-Torture",
+  "wt": "plate",
+  "no": "58",
+  "c": 0
+ },
+ "lx_widepull": {
+  "name": "와이드 풀다운 (LP-305)",
+  "m": "등(광배)",
+  "eq": [
+   "lx_widepull"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "와이드 풀다운 (LP-305) 자세",
+  "br": "렉스코",
+  "wt": "plate",
+  "no": "60",
+  "c": 0
+ },
+ "lx_assist": {
+  "name": "친/딥 어시스트 (LPS-114)",
+  "m": "등/이두",
+  "eq": [
+   "lx_assist"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   12
+  ],
+  "inc": 5,
+  "start": 30,
+  "yt": "친/딥 어시스트 (LPS-114) 자세",
+  "br": "렉스코",
+  "wt": "pin",
+  "no": "57",
+  "c": 0
+ },
+ "df_armcurl": {
+  "name": "암 컬",
+  "m": "이두",
+  "eq": [
+   "df_armcurl"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 15,
+  "yt": "암 컬 자세",
+  "br": "델타피트니스",
+  "wt": "pin",
+  "no": "34",
+  "c": 0
+ },
+ "lf_bicurl": {
+  "name": "바이셉스 컬",
+  "m": "이두",
+  "eq": [
+   "lf_bicurl"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 15,
+  "yt": "바이셉스 컬 자세",
+  "br": "라이프피트니스",
+  "wt": "pin",
+  "no": "35",
+  "c": 0
+ },
+ "nl_bicurl": {
+  "name": "바이셉스 컬 (화이트)",
+  "m": "이두",
+  "eq": [
+   "nl_bicurl"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 15,
+  "yt": "바이셉스 컬 (화이트) 자세",
+  "br": "너틸러스",
+  "wt": "pin",
+  "no": "37",
+  "c": 0
+ },
+ "lf_tripress": {
+  "name": "트라이셉스 프레스",
+  "m": "삼두",
+  "eq": [
+   "lf_tripress"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 20,
+  "yt": "트라이셉스 프레스 자세",
+  "br": "라이프피트니스",
+  "wt": "pin",
+  "no": "36",
+  "c": 1
+ },
+ "hs_triext": {
+  "name": "트라이셉스 익스텐션",
+  "m": "삼두",
+  "eq": [
+   "hs_triext"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 20,
+  "yt": "트라이셉스 익스텐션 자세",
+  "br": "해머스트렝스",
+  "wt": "pin",
+  "no": "38",
+  "c": 0
+ },
+ "ip_legpress": {
+  "name": "레그 프레스 / 카프",
+  "m": "하체 전체",
+  "eq": [
+   "ip_legpress"
+  ],
+  "type": "comp",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 10,
+  "start": 60,
+  "yt": "레그 프레스 / 카프 자세",
+  "br": "임펄스",
+  "wt": "plate",
+  "no": "40",
+  "c": 0
+ },
+ "ip_slegpress": {
+  "name": "시티드 레그 프레스",
+  "m": "하체 전체",
+  "eq": [
+   "ip_slegpress"
+  ],
+  "type": "comp",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 5,
+  "start": 50,
+  "yt": "시티드 레그 프레스 자세",
+  "br": "임펄스",
+  "wt": "pin",
+  "no": "—",
+  "c": 0
+ },
+ "ip_1legpress": {
+  "name": "원 레그 프레스 (편측)",
+  "m": "하체(편측)",
+  "eq": [
+   "ip_1legpress"
+  ],
+  "type": "comp",
+  "rep": [
+   10,
+   12
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "원 레그 프레스 (편측) 자세",
+  "br": "임펄스",
+  "wt": "pin",
+  "no": "—",
+  "c": 0
+ },
+ "nl_hack": {
+  "name": "핵 스쿼트",
+  "m": "대퇴사두",
+  "eq": [
+   "nl_hack"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 10,
+  "start": 40,
+  "yt": "핵 스쿼트 자세",
+  "br": "너틸러스",
+  "wt": "plate",
+  "no": "24",
+  "c": 0
+ },
+ "nt_legext": {
+  "name": "레그 익스텐션",
+  "m": "대퇴사두",
+  "eq": [
+   "nt_legext"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   15
+  ],
+  "inc": 5,
+  "start": 25,
+  "yt": "레그 익스텐션 자세",
+  "br": "뉴텍",
+  "wt": "plate",
+  "no": "48",
+  "c": 0
+ },
+ "dx_lyingcurl": {
+  "name": "라잉 레그컬",
+  "m": "햄스트링",
+  "eq": [
+   "dx_lyingcurl"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 25,
+  "yt": "라잉 레그컬 자세",
+  "br": "디랙스",
+  "wt": "pin",
+  "no": "—",
+  "c": 0
+ },
+ "dx_seatcurl": {
+  "name": "시티드 레그컬",
+  "m": "햄스트링",
+  "eq": [
+   "dx_seatcurl"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 2.5,
+  "start": 25,
+  "yt": "시티드 레그컬 자세",
+  "br": "디랙스",
+  "wt": "pin",
+  "no": "—",
+  "c": 0
+ },
+ "dx_abduction": {
+  "name": "시티드 아웃타이 (외전)",
+  "m": "둔근(외전)",
+  "eq": [
+   "dx_abduction"
+  ],
+  "type": "iso",
+  "rep": [
+   15,
+   20
+  ],
+  "inc": 2.5,
+  "start": 25,
+  "yt": "시티드 아웃타이 (외전) 자세",
+  "br": "디랙스",
+  "wt": "pin",
+  "no": "45",
+  "c": 0
+ },
+ "lf_adduction": {
+  "name": "힙 어덕션 (이너타이)",
+  "m": "내전근",
+  "eq": [
+   "lf_adduction"
+  ],
+  "type": "iso",
+  "rep": [
+   15,
+   20
+  ],
+  "inc": 2.5,
+  "start": 25,
+  "yt": "힙 어덕션 (이너타이) 자세",
+  "br": "라이프피트니스",
+  "wt": "pin",
+  "no": "44",
+  "c": 1
+ },
+ "sp_hippress": {
+  "name": "Super Hip Press",
+  "m": "둔근",
+  "eq": [
+   "sp_hippress"
+  ],
+  "type": "comp",
+  "rep": [
+   10,
+   15
+  ],
+  "inc": 10,
+  "start": 40,
+  "yt": "Super Hip Press 자세",
+  "br": "Super",
+  "wt": "plate",
+  "no": "21",
+  "c": 0
+ },
+ "bb_hipthrust": {
+  "name": "힙 쓰러스트 머신",
+  "m": "둔근",
+  "eq": [
+   "bb_hipthrust"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 10,
+  "start": 40,
+  "yt": "힙 쓰러스트 머신 자세",
+  "br": "부티빌더",
+  "wt": "plate",
+  "no": "22",
+  "c": 0
+ },
+ "bb_standabd": {
+  "name": "스탠딩 어브덕터",
+  "m": "둔근(외전)",
+  "eq": [
+   "bb_standabd"
+  ],
+  "type": "iso",
+  "rep": [
+   15,
+   20
+  ],
+  "inc": 2.5,
+  "start": 15,
+  "yt": "스탠딩 어브덕터 자세",
+  "br": "부티빌더",
+  "wt": "pin",
+  "no": "42",
+  "c": 0
+ },
+ "gk_kickback": {
+  "name": "글루트 킥백",
+  "m": "둔근",
+  "eq": [
+   "gk_kickback"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   15
+  ],
+  "inc": 5,
+  "start": 15,
+  "yt": "글루트 킥백 자세",
+  "br": "미상",
+  "wt": "plate",
+  "no": "20",
+  "c": 0
+ },
+ "gr_calf": {
+  "name": "동키 카프 레이즈",
+  "m": "종아리",
+  "eq": [
+   "gr_calf"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   20
+  ],
+  "inc": 10,
+  "start": 40,
+  "yt": "동키 카프 레이즈 자세",
+  "br": "짐레코",
+  "wt": "plate",
+  "no": "19",
+  "c": 0
+ },
+ "ht_line": {
+  "name": "힙 쓰러스트 라인 (3~4대)",
+  "m": "둔근",
+  "eq": [
+   "ht_line"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 10,
+  "start": 40,
+  "yt": "힙 쓰러스트 라인 (3~4대) 자세",
+  "br": "미상",
+  "wt": "plate",
+  "no": "61",
+  "c": 0
+ },
+ "dx_cable": {
+  "name": "듀얼 풀리 케이블 크로스오버",
+  "m": "가슴/전신",
+  "eq": [
+   "dx_cable"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   15
+  ],
+  "inc": 2.5,
+  "start": 10,
+  "yt": "듀얼 풀리 케이블 크로스오버 자세",
+  "br": "디랙스",
+  "wt": "pin",
+  "no": "13",
+  "c": 1
+ },
+ "bb_bench": {
+  "name": "바벨 벤치프레스",
+  "m": "가슴",
+  "eq": [
+   "barbell",
+   "bench",
+   "rack"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 2.5,
+  "start": 40,
+  "yt": "바벨 벤치프레스 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "db_incline": {
+  "name": "인클라인 덤벨프레스",
+  "m": "가슴(상부)",
+  "eq": [
+   "dumbbell",
+   "bench"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2,
+  "start": 12,
+  "yt": "인클라인 덤벨프레스 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "db_latraise": {
+  "name": "덤벨 사이드 레이즈",
+  "m": "어깨(측면)",
+  "eq": [
+   "dumbbell"
+  ],
+  "type": "iso",
+  "rep": [
+   12,
+   20
+  ],
+  "inc": 1,
+  "start": 6,
+  "yt": "덤벨 사이드 레이즈 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "bb_ohp": {
+  "name": "바벨 오버헤드프레스",
+  "m": "어깨",
+  "eq": [
+   "barbell",
+   "rack"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 2.5,
+  "start": 20,
+  "yt": "바벨 오버헤드프레스 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "bb_row": {
+  "name": "바벨 로우",
+  "m": "등",
+  "eq": [
+   "barbell"
+  ],
+  "type": "comp",
+  "rep": [
+   6,
+   10
+  ],
+  "inc": 2.5,
+  "start": 30,
+  "yt": "바벨 로우 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "db_curl": {
+  "name": "덤벨 컬",
+  "m": "이두",
+  "eq": [
+   "dumbbell"
+  ],
+  "type": "iso",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 2,
+  "start": 8,
+  "yt": "덤벨 컬 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "db_hammer": {
+  "name": "해머 컬",
+  "m": "이두/전완",
+  "eq": [
+   "dumbbell"
+  ],
+  "type": "iso",
+  "rep": [
+   10,
+   14
+  ],
+  "inc": 2,
+  "start": 8,
+  "yt": "해머 컬 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "bb_squat": {
+  "name": "바벨 스쿼트",
+  "m": "하체 전체",
+  "eq": [
+   "barbell",
+   "rack"
+  ],
+  "type": "comp",
+  "rep": [
+   5,
+   8
+  ],
+  "inc": 5,
+  "start": 40,
+  "yt": "바벨 스쿼트 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "bb_rdl": {
+  "name": "루마니안 데드리프트",
+  "m": "햄스트링/둔근",
+  "eq": [
+   "barbell"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 40,
+  "yt": "루마니안 데드리프트 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "sm_squat": {
+  "name": "스미스 스쿼트",
+  "m": "대퇴사두",
+  "eq": [
+   "dx_smith"
+  ],
+  "type": "comp",
+  "rep": [
+   8,
+   12
+  ],
+  "inc": 5,
+  "start": 40,
+  "yt": "스미스 스쿼트 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "db_lunge": {
+  "name": "덤벨 런지",
+  "m": "하체/둔근",
+  "eq": [
+   "dumbbell"
+  ],
+  "type": "comp",
+  "rep": [
+   10,
+   12
+  ],
+  "inc": 2,
+  "start": 10,
+  "yt": "덤벨 런지 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "pullup": {
+  "name": "풀업(턱걸이)",
+  "m": "등",
+  "eq": [
+   "lx_assist"
+  ],
+  "type": "comp",
+  "rep": [
+   5,
+   10
+  ],
+  "inc": 0,
+  "start": null,
+  "yt": "풀업(턱걸이) 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ },
+ "plank": {
+  "name": "플랭크",
+  "m": "코어",
+  "eq": [],
+  "type": "iso",
+  "rep": [
+   30,
+   60
+  ],
+  "inc": 0,
+  "start": null,
+  "yt": "플랭크 정확한 자세",
+  "br": "",
+  "wt": "free",
+  "no": "",
+  "c": 0
+ }
 };
-
-/* 기본 기구 세트 (일반 헬스장) — 설정에서 수정 가능 */
-const DEFAULT_EQUIP = ["바벨","덤벨","벤치","인클라인벤치","케이블","랫풀다운","시티드로우","체스트프레스머신","숄더프레스머신","레그프레스","레그익스텐션","레그컬","핵스쿼트","풀업바","딥스바"];
-const ALL_EQUIP = ["바벨","덤벨","벤치","인클라인벤치","케이블","랫풀다운","시티드로우","체스트프레스머신","숄더프레스머신","레그프레스","레그익스텐션","레그컬","핵스쿼트","풀업바","딥스바","케틀벨","이지바","스미스머신"];
+/* 실제 보유 기구 62종 (2026-08-04 실사 기준)
+   b=브랜드 · w=pin(핀)/plate(원판)/free(프리) · g=부위 · no=안내판 번호 · c=1이면 QR/명판 확정 */
+const GYM = [{"id":"tg_latraise","n":"래터럴 레이즈","b":"테크노짐","w":"pin","g":"어깨","no":"1"},{"id":"tg_shpress","n":"숄더 프레스","b":"테크노짐","w":"pin","g":"어깨","no":"2"},{"id":"tg_ps_shpress","n":"Pure Strength 숄더 프레스","b":"테크노짐","w":"plate","g":"어깨","no":"28","c":1},{"id":"gr_shpress","n":"숄더 프레스 (Active 330)","b":"짐레코","w":"pin","g":"어깨","no":"8"},{"id":"nt_latraise","n":"스탠딩 래터럴 레이즈","b":"뉴텍","w":"plate","g":"어깨","no":"11"},{"id":"sp_shpress","n":"Super Multi 숄더 프레스","b":"Super","w":"plate","g":"어깨","no":"27"},{"id":"mt_shpress","n":"M-Torture 숄더 프레스","b":"M-Torture","w":"plate","g":"어깨","no":"30"},{"id":"red_shpress","n":"숄더 프레스 (레드)","b":"미상","w":"plate","g":"어깨","no":"15"},{"id":"nt_chestpress","n":"시티드 체스트 프레스","b":"뉴텍","w":"plate","g":"가슴","no":"10"},{"id":"nt_pecdeck","n":"펙덱 플라이 & 리어 델트","b":"뉴텍","w":"plate","g":"가슴","no":"7"},{"id":"nt_incline","n":"인클라인 프레스","b":"뉴텍","w":"plate","g":"가슴","no":"32"},{"id":"gr_widechest","n":"와이드 체스트 (Active 326)","b":"짐레코","w":"pin","g":"가슴","no":"9"},{"id":"hs_bench","n":"아이소래터럴 벤치 프레스","b":"해머스트렝스","w":"plate","g":"가슴","no":"14"},{"id":"hs_decline","n":"아이소래터럴 디클라인","b":"해머스트렝스","w":"plate","g":"가슴","no":"51"},{"id":"mt_incline","n":"M-Torture 인클라인 프레스","b":"M-Torture","w":"plate","g":"가슴","no":"31"},{"id":"mt_pecdeck","n":"M-Torture 펙덱 플라이","b":"M-Torture","w":"plate","g":"가슴","no":"33"},{"id":"sc_pullover","n":"풀 오버","b":"신코","w":"pin","g":"가슴","no":"43"},{"id":"tg_latpull","n":"Selection 랫 풀다운","b":"테크노짐","w":"pin","g":"등","no":"4","c":1},{"id":"tg_revfly","n":"리버스 플라이","b":"테크노짐","w":"pin","g":"등","no":"3"},{"id":"pc_latpull","n":"다이버징 랫 풀다운","b":"프리코","w":"pin","g":"등","no":"5"},{"id":"ip_vrow","n":"버티컬 로우","b":"임펄스","w":"pin","g":"등","no":"6"},{"id":"nt_row","n":"어드저스터블 로우 폴리","b":"뉴텍","w":"pin","g":"등","no":"12"},{"id":"hs_row","n":"아이소래터럴 로우","b":"해머스트렝스","w":"plate","g":"등","no":"16"},{"id":"hs_lowrow","n":"아이소래터럴 로우 로우","b":"해머스트렝스","w":"plate","g":"등","no":"17"},{"id":"hs_highrow","n":"아이소래터럴 하이 로우","b":"해머스트렝스","w":"plate","g":"등","no":"18"},{"id":"hs_rowpin","n":"로우 (셀렉토라이즈)","b":"해머스트렝스","w":"pin","g":"등","no":"39"},{"id":"nl_lowrow","n":"멀티 스테이션 로우 로우","b":"너틸러스","w":"pin","g":"등","no":"52"},{"id":"sp_pulldown","n":"Super Leverage 풀다운","b":"Super","w":"plate","g":"등","no":"53"},{"id":"mt_vpull","n":"M-Torture 버티컬 풀다운","b":"M-Torture","w":"plate","g":"등","no":"54"},{"id":"mt_highrow","n":"M-Torture 하이 로우","b":"M-Torture","w":"plate","g":"등","no":"55"},{"id":"mt_widepull","n":"M-Torture 와이드 풀다운","b":"M-Torture","w":"plate","g":"등","no":"56"},{"id":"mt_lowrow","n":"M-Torture 로우 로우","b":"M-Torture","w":"plate","g":"등","no":"58"},{"id":"lx_widepull","n":"와이드 풀다운 (LP-305)","b":"렉스코","w":"plate","g":"등","no":"60"},{"id":"lx_assist","n":"친/딥 어시스트 (LPS-114)","b":"렉스코","w":"pin","g":"등","no":"57"},{"id":"df_armcurl","n":"암 컬","b":"델타피트니스","w":"pin","g":"팔","no":"34"},{"id":"lf_bicurl","n":"바이셉스 컬","b":"라이프피트니스","w":"pin","g":"팔","no":"35"},{"id":"nl_bicurl","n":"바이셉스 컬 (화이트)","b":"너틸러스","w":"pin","g":"팔","no":"37"},{"id":"lf_tripress","n":"트라이셉스 프레스","b":"라이프피트니스","w":"pin","g":"팔","no":"36","c":1},{"id":"hs_triext","n":"트라이셉스 익스텐션","b":"해머스트렝스","w":"pin","g":"팔","no":"38"},{"id":"ip_legpress","n":"레그 프레스 / 카프","b":"임펄스","w":"plate","g":"하체","no":"40"},{"id":"ip_slegpress","n":"시티드 레그 프레스","b":"임펄스","w":"pin","g":"하체","no":"—"},{"id":"ip_1legpress","n":"원 레그 프레스 (편측)","b":"임펄스","w":"pin","g":"하체","no":"—"},{"id":"nl_hack","n":"핵 스쿼트","b":"너틸러스","w":"plate","g":"하체","no":"24"},{"id":"nt_legext","n":"레그 익스텐션","b":"뉴텍","w":"plate","g":"하체","no":"48"},{"id":"dx_lyingcurl","n":"라잉 레그컬","b":"디랙스","w":"pin","g":"하체","no":"—"},{"id":"dx_seatcurl","n":"시티드 레그컬","b":"디랙스","w":"pin","g":"하체","no":"—"},{"id":"dx_abduction","n":"시티드 아웃타이 (외전)","b":"디랙스","w":"pin","g":"하체","no":"45"},{"id":"lf_adduction","n":"힙 어덕션 (이너타이)","b":"라이프피트니스","w":"pin","g":"하체","no":"44","c":1},{"id":"sp_hippress","n":"Super Hip Press","b":"Super","w":"plate","g":"하체","no":"21"},{"id":"bb_hipthrust","n":"힙 쓰러스트 머신","b":"부티빌더","w":"plate","g":"하체","no":"22"},{"id":"bb_standabd","n":"스탠딩 어브덕터","b":"부티빌더","w":"pin","g":"하체","no":"42"},{"id":"gk_kickback","n":"글루트 킥백","b":"미상","w":"plate","g":"하체","no":"20"},{"id":"gr_calf","n":"동키 카프 레이즈","b":"짐레코","w":"plate","g":"하체","no":"19"},{"id":"ht_line","n":"힙 쓰러스트 라인 (3~4대)","b":"미상","w":"plate","g":"하체","no":"61"},{"id":"dx_cable","n":"듀얼 풀리 케이블 크로스오버","b":"디랙스","w":"pin","g":"케이블","no":"13","c":1},{"id":"rack","n":"파워랙 / 스쿼트랙","b":"미상","w":"free","g":"프리","no":"49"},{"id":"platform","n":"리프팅 플랫폼","b":"EiGRO","w":"free","g":"프리","no":"49"},{"id":"dx_smith","n":"스미스 머신","b":"디랙스","w":"free","g":"프리","no":"50"},{"id":"barbell","n":"올림픽 바벨 · 원판","b":"—","w":"free","g":"프리","no":"—"},{"id":"dumbbell","n":"덤벨","b":"—","w":"free","g":"프리","no":"—"},{"id":"bench","n":"조절식 벤치","b":"—","w":"free","g":"프리","no":"—"},{"id":"dx_tread","n":"트레드밀","b":"디랙스","w":"free","g":"유산소","no":"64"}];
+const GYM_BY = Object.fromEntries(GYM.map(m => [m.id, m]));
+const DEFAULT_EQUIP = GYM.map(m => m.id);   // 기본 = 전부 보유
+const ALL_EQUIP = GYM.map(m => m.id);
 
 /* PPLUL 분할 — 각 부위 주2회 (월화수목금) */
 const SPLIT = {
-  1:{key:"push", label:"PUSH · 가슴·어깨·삼두", pool:["bench","chestpress","inclinedb","ohp","shpress","latraise","pushdown","cablefly","dips","facepull"]},
-  2:{key:"pull", label:"PULL · 등·이두",       pool:["pullup","latpull","barrow","seatedrow","facepull","dbcurl","hammer","hangleg"]},
-  3:{key:"legs", label:"LEGS · 하체",          pool:["squat","hacksquat","legpress","rdl","legcurl","legext","hipthrust","calf"]},
-  4:{key:"upper",label:"UPPER · 상체 종합",     pool:["bench","latpull","shpress","seatedrow","inclinedb","latraise","pushdown","dbcurl"]},
-  5:{key:"lower",label:"LOWER · 하체 종합",     pool:["legpress","rdl","hacksquat","legcurl","legext","hipthrust","calf","plank"]},
-  0:{key:"rest", label:"REST · 휴식",          pool:[]},
-  6:{key:"rest", label:"REST · 휴식(주말)",     pool:[]},
+ "0": {
+  "key": "rest",
+  "label": "REST · 휴식",
+  "pool": []
+ },
+ "1": {
+  "key": "push",
+  "label": "PUSH · 가슴·어깨·삼두",
+  "pool": [
+   "nt_chestpress",
+   "nt_pecdeck",
+   "nt_incline",
+   "gr_widechest",
+   "hs_bench",
+   "hs_decline",
+   "mt_incline",
+   "mt_pecdeck",
+   "sc_pullover",
+   "dx_cable",
+   "bb_bench",
+   "db_incline",
+   "tg_latraise",
+   "tg_shpress",
+   "tg_ps_shpress",
+   "gr_shpress",
+   "nt_latraise",
+   "sp_shpress",
+   "mt_shpress",
+   "red_shpress",
+   "tg_revfly",
+   "db_latraise",
+   "bb_ohp",
+   "lf_tripress",
+   "hs_triext"
+  ]
+ },
+ "2": {
+  "key": "pull",
+  "label": "PULL · 등·이두",
+  "pool": [
+   "tg_latpull",
+   "pc_latpull",
+   "ip_vrow",
+   "nt_row",
+   "hs_row",
+   "hs_lowrow",
+   "hs_highrow",
+   "hs_rowpin",
+   "nl_lowrow",
+   "sp_pulldown",
+   "mt_vpull",
+   "mt_highrow",
+   "mt_widepull",
+   "mt_lowrow",
+   "lx_widepull",
+   "lx_assist",
+   "bb_row",
+   "pullup",
+   "lx_assist",
+   "df_armcurl",
+   "lf_bicurl",
+   "nl_bicurl",
+   "db_curl",
+   "db_hammer"
+  ]
+ },
+ "3": {
+  "key": "legs",
+  "label": "LEGS · 하체",
+  "pool": [
+   "ip_legpress",
+   "ip_slegpress",
+   "ip_1legpress",
+   "nl_hack",
+   "nt_legext",
+   "dx_lyingcurl",
+   "dx_seatcurl",
+   "dx_abduction",
+   "lf_adduction",
+   "sp_hippress",
+   "bb_hipthrust",
+   "bb_standabd",
+   "gk_kickback",
+   "gr_calf",
+   "ht_line",
+   "bb_squat",
+   "bb_rdl",
+   "sm_squat",
+   "db_lunge",
+   "plank"
+  ]
+ },
+ "4": {
+  "key": "upper",
+  "label": "UPPER · 상체 종합",
+  "pool": [
+   "nt_chestpress",
+   "nt_pecdeck",
+   "nt_incline",
+   "gr_widechest",
+   "hs_bench",
+   "hs_decline",
+   "mt_incline",
+   "mt_pecdeck",
+   "sc_pullover",
+   "dx_cable",
+   "bb_bench",
+   "db_incline",
+   "tg_latpull",
+   "pc_latpull",
+   "ip_vrow",
+   "nt_row",
+   "hs_row",
+   "hs_lowrow",
+   "hs_highrow",
+   "hs_rowpin",
+   "nl_lowrow",
+   "sp_pulldown",
+   "mt_vpull",
+   "mt_highrow",
+   "mt_widepull",
+   "mt_lowrow",
+   "lx_widepull",
+   "lx_assist",
+   "bb_row",
+   "pullup",
+   "tg_latraise",
+   "tg_shpress",
+   "tg_ps_shpress",
+   "gr_shpress",
+   "nt_latraise",
+   "sp_shpress",
+   "mt_shpress",
+   "red_shpress",
+   "tg_revfly",
+   "db_latraise",
+   "bb_ohp",
+   "lx_assist",
+   "df_armcurl",
+   "lf_bicurl",
+   "nl_bicurl",
+   "db_curl",
+   "db_hammer",
+   "lf_tripress",
+   "hs_triext"
+  ]
+ },
+ "5": {
+  "key": "lower",
+  "label": "LOWER · 하체 종합",
+  "pool": [
+   "ip_legpress",
+   "ip_slegpress",
+   "ip_1legpress",
+   "nl_hack",
+   "nt_legext",
+   "dx_lyingcurl",
+   "dx_seatcurl",
+   "dx_abduction",
+   "lf_adduction",
+   "sp_hippress",
+   "bb_hipthrust",
+   "bb_standabd",
+   "gk_kickback",
+   "gr_calf",
+   "ht_line",
+   "bb_squat",
+   "bb_rdl",
+   "sm_squat",
+   "db_lunge",
+   "plank"
+  ]
+ },
+ "6": {
+  "key": "rest",
+  "label": "REST · 휴식(주말)",
+  "pool": []
+ }
 };
 
 /* ---------- 저장소 ---------- */
@@ -435,6 +1879,15 @@ function recommend(exId){
 
 function estimate1RM(w,reps){ if(!w||!reps) return 0; return Math.round(w*(1+reps/30)); }
 
+/* 주차 인덱스 — 첫 기록일 기준 몇 주째인가 (종목 로테이션용) */
+function weekIndex(){
+  const days = P().logdays;
+  if(!days || !days.length) return 0;
+  const first = new Date(days[0] + "T00:00:00+09:00");
+  const diff = Math.floor((nowKST() - first) / 86400000);
+  return Math.max(0, Math.floor(diff / 7));
+}
+
 /* ---------- 오늘 프로그램 생성 (50분·오토레귤레이션) ---------- */
 function todayPlan(){
   const dow = nowKST().getDay();
@@ -446,9 +1899,40 @@ function todayPlan(){
   // 부족하면 다른 요일 풀에서 같은 성격 보충
   if(pool.length<5){ for(const k in SPLIT){ for(const id of SPLIT[k].pool){ if(pool.length>=6) break; if(avail(id)&&!pool.includes(id)) pool.push(id);} } }
   // 복합 먼저, 고립 뒤 — 5~6개 (50분)
-  const comp = pool.filter(id=>EX[id].type==="comp");
-  const iso = pool.filter(id=>EX[id].type==="iso");
-  const chosen = [...comp.slice(0,3), ...iso.slice(0,3)].slice(0,6);
+  // 부위 쿼터 (8/4) — 요일 성격에 맞게 부위를 배분한다.
+  //   기존엔 풀 앞에서 잘라 PUSH인데 가슴만 6개, UPPER는 PUSH와 동일한 종목이 나왔다.
+  //   [정규식, 뽑을 개수] 순서대로 채우고, 모자라면 남은 풀에서 보충한다.
+  const QUOTA = {
+    push:  [[/가슴/,3],[/어깨/,2],[/삼두/,1]],
+    pull:  [[/등/,4],[/이두/,2]],
+    legs:  [[/사두|하체/,2],[/햄/,2],[/둔근|내전/,2]],
+    upper: [[/등/,2],[/가슴/,2],[/어깨/,1],[/이두|삼두/,1]],
+    lower: [[/둔근|내전/,2],[/햄/,2],[/사두|하체/,1],[/종아리/,1]],
+  }[day.key] || [];
+
+  // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
+  const wk = weekIndex();
+  const rot = (arr, take, seed) => {
+    if(!arr.length) return [];
+    const out=[]; for(let i=0;i<take && i<arr.length;i++) out.push(arr[(wk*take + i + seed) % arr.length]);
+    return out;
+  };
+
+  let chosen = [];
+  QUOTA.forEach(([re, cnt], qi)=>{
+    // 복합 먼저 채우고 부족하면 고립으로 — 큰 근육을 앞에 두기 위함
+    const hit = pool.filter(id=>re.test(EX[id].m) && !chosen.includes(id));
+    const c = hit.filter(id=>EX[id].type==="comp");
+    const iso = hit.filter(id=>EX[id].type==="iso");
+    const ordered = [...c, ...iso];
+    chosen.push(...rot(ordered, cnt, qi).filter(x=>!chosen.includes(x)));
+  });
+  // 쿼터로 못 채웠으면(기구를 꺼둔 경우 등) 남은 풀에서 보충
+  if(chosen.length<5){
+    for(const id of pool){ if(chosen.length>=6) break; if(!chosen.includes(id)) chosen.push(id); }
+  }
+  // 복합 → 고립 순으로 정렬 (무거운 운동을 앞에)
+  chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,6);
   // 오토레귤레이션: 오늘 컨디션
   const r = P().readiness[todayKey()];
   let setMod = 0, wMod = 1, coach="";
@@ -462,7 +1946,8 @@ function todayPlan(){
     const ex=EX[id]; const rec=recommend(id);
     let setN = ex.type==="comp"? (i===0?4:3) : 3; setN=Math.max(2,setN+setMod);
     const w = rec.w==null? null : round(rec.w*wMod, ex.inc||1.25);
-    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: ex.type==="comp"?90:60, yt:ex.yt};
+    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: ex.type==="comp"?90:60, yt:ex.yt,
+            br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[]};
   });
   const deloadWk = isDeloadWeek();
   if(deloadWk){ exs.forEach(e=>{ e.sets=Math.max(2,e.sets-1); e.recW = e.recW==null?null:round(e.recW*0.9, EX[e.id].inc||1.25); }); }
@@ -539,7 +2024,28 @@ function ensureReadiness(cb){
 
 /* ---------- 렌더: 운동 ---------- */
 let curPlan=null;
+/* 기구 배지 — 헬스장에서 어떤 기구를 쓰는지 바로 알아보게 (8/4 대표)
+   브랜드 · 핀/원판 · 안내판 번호를 한 줄로. 프리웨이트는 배지를 생략한다. */
+function equipBadge(e){
+  if(!e.br || e.wt==="free") return "";
+  const wtLabel = e.wt==="pin" ? "핀" : e.wt==="plate" ? "원판" : "";
+  const parts = [e.br];
+  if(wtLabel) parts.push(wtLabel);
+  if(e.no && e.no!=="—") parts.push("No."+e.no);
+  return '<div class="equip">🏋️ '+parts.join(" · ")+'</div>';
+}
+
+function ensureEquipStyle(){
+  if(document.getElementById("equipStyle")) return;
+  const st=document.createElement("style"); st.id="equipStyle";
+  st.textContent=".equip{font-size:11.5px;color:#7cc4ff;background:rgba(124,196,255,.09);"+
+    "border:1px solid rgba(124,196,255,.22);border-radius:6px;padding:3px 7px;margin-top:5px;display:inline-block}"+
+    ".eqgrp{margin:14px 0 6px;font-size:12px;color:#8aa;font-weight:700;letter-spacing:.4px}";
+  document.head.appendChild(st);
+}
+
 function renderWorkout(){
+  ensureEquipStyle();
   const v=$("#view-workout"); v.innerHTML="";
   const plan=todayPlan();
   if(plan.rest){ v.appendChild(el("div","note","오늘은 휴식일이에요 🌙 월~금에 운동이 나옵니다.")); return; }
@@ -551,6 +2057,7 @@ function renderWorkout(){
     const saved = doneMap[e.id]||{};
     card.innerHTML=`<div class="ex-h"><div><div class="t">${ei+1}. ${e.name}</div>
       <div class="m">${e.m} · ${e.sets}세트 × ${e.rep[0]}-${e.rep[1]}회 · 휴식 ${e.rest}초</div>
+      ${equipBadge(e)}
       <div class="rec" style="text-align:left;margin-top:4px">💡 ${e.note}</div></div>
       <button class="yt" onclick="openYT('${e.yt}')">▶ 운동방법</button></div>`;
     const sets=el("div","sets");
@@ -757,6 +2264,7 @@ function spark(pts,max){
 
 /* ---------- 렌더: 설정 ---------- */
 function renderSettings(){
+  ensureEquipStyle();
   const v=$("#view-settings"); v.innerHTML="";
   const p=P();
   const c=el("div","card");
@@ -773,11 +2281,35 @@ function renderSettings(){
   c.appendChild(save); v.appendChild(c);
 
   const eq=el("div","card");
-  eq.innerHTML=`<h3>보유 기구</h3><p class="k" style="margin:6px 0 10px">체크한 기구로만 프로그램을 짜요. (헬스장 기구 그대로 맞춰주세요)</p>`;
-  const box=el("div"); box.style.cssText="display:flex;flex-wrap:wrap;gap:8px";
-  ALL_EQUIP.forEach(t=>{ const on=p.equip.includes(t); const chip=el("button","chip"); chip.style.cssText="cursor:pointer;"+(on?"border-color:var(--brand2);color:var(--brand2)":"");
-    chip.textContent=(on?"✓ ":"")+t; chip.onclick=()=>{ if(p.equip.includes(t)) p.equip=p.equip.filter(x=>x!==t); else p.equip.push(t); persist(); renderSettings(); }; box.appendChild(chip); });
-  eq.appendChild(box); v.appendChild(eq);
+  const onCnt=p.equip.length;
+  eq.innerHTML=`<h3>보유 기구 <span class="pill">${onCnt}/${GYM.length}</span></h3>
+    <p class="k" style="margin:6px 0 4px">체크한 기구로만 프로그램을 짜요. 고장·점검 중인 기구는 꺼두세요.</p>`;
+  // 전체 켜기/끄기 (62개를 하나씩 누르지 않게)
+  const bulk=el("div"); bulk.style.cssText="display:flex;gap:8px;margin:8px 0 4px";
+  const allOn=el("button","btn sec sm","전체 켜기"); allOn.onclick=()=>{ p.equip=GYM.map(m=>m.id); persist(); renderSettings(); };
+  const allOff=el("button","btn sec sm","전체 끄기"); allOff.onclick=()=>{ p.equip=[]; persist(); renderSettings(); };
+  bulk.appendChild(allOn); bulk.appendChild(allOff); eq.appendChild(bulk);
+  // 부위별로 묶어 표시 — id가 아니라 실제 기구명·브랜드를 보여준다
+  const GRP=["어깨","가슴","등","팔","하체","케이블","프리","유산소"];
+  GRP.forEach(g=>{
+    const items=GYM.filter(m=>m.g===g);
+    if(!items.length) return;
+    const cnt=items.filter(m=>p.equip.includes(m.id)).length;
+    eq.appendChild(el("div","eqgrp", g+" ("+cnt+"/"+items.length+")"));
+    const box=el("div"); box.style.cssText="display:flex;flex-wrap:wrap;gap:8px";
+    items.forEach(m=>{
+      const on=p.equip.includes(m.id);
+      const chip=el("button","chip");
+      chip.style.cssText="cursor:pointer;"+(on?"border-color:var(--brand2);color:var(--brand2)":"opacity:.55");
+      const wtL = m.w==="pin"?"핀":m.w==="plate"?"원판":"";
+      chip.textContent=(on?"✓ ":"")+m.n+(m.b&&m.b!=="—"&&m.b!=="미상"?" · "+m.b:"")+(wtL?" · "+wtL:"");
+      chip.title = m.no && m.no!=="—" ? "안내판 No."+m.no : "";
+      chip.onclick=()=>{ if(p.equip.includes(m.id)) p.equip=p.equip.filter(x=>x!==m.id); else p.equip.push(m.id); persist(); renderSettings(); };
+      box.appendChild(chip);
+    });
+    eq.appendChild(box);
+  });
+  v.appendChild(eq);
 
   const danger=el("div","card");
   danger.innerHTML=`<h3>기타</h3>`;
