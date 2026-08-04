@@ -3584,6 +3584,12 @@ function coachStart(){
   const plan = todayPlan();
   if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
   CO = {plan, ei:0, si:0, phase:"ready", t:5, timer:null, log:{}};
+  // 이미 한 세트 복원 — 나갔다 와도 처음부터 안 하고 이어서 (대표 지시 8/4)
+  try{
+    const _dm=(P().done[todayKey()])||{};
+    plan.exs.forEach(e=>{ const sv=_dm[e.id]; if(sv && Array.isArray(sv.sets) && sv.sets.length){ CO.log[e.id]=sv.sets.filter(s=>s&&(s.done||s.w!=null||s.reps!=null)).map(s=>({w:s.w,reps:s.reps,done:s.done!==false,sec:s.sec||0})); } });
+    for(let _ei=0; _ei<plan.exs.length; _ei++){ const _e=plan.exs[_ei]; const _n=(_e.planSets&&_e.planSets.length)?_e.planSets.length:1; const _done=(CO.log[_e.id]||[]).filter(x=>x&&x.done).length; if(_done<_n){ CO.ei=_ei; CO.si=_done; break; } }
+  }catch(e){}
   document.body.classList.add("coach-on");
   keepAwake(true);   // 운동 중 화면 꺼짐 방지 (8/4)
   coachTick();
