@@ -470,7 +470,7 @@ function todayPlan(){
     const ex=EX[id]; const rec=recommend(id);
     let setN = ex.type==="comp"? (i===0?4:3) : 3; setN=Math.max(1,setN+setMod+(pf.setDelta||0));
     const w = rec.w==null? null : round(rec.w*wMod, ex.inc||1.25);
-    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: (pf.restSec>0? pf.restSec : (ex.type==="comp"?90:60)), yt:ex.yt};
+    return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:rec.reps, note:rec.note, rest: (pf.restSec>0? pf.restSec : (ex.type==="comp"?90:60)), yt:ex.yt, warm: (ex.type==="comp" && w!=null)?2:0};
   });
   const deloadWk = isDeloadWeek();
   if(deloadWk){ exs.forEach(e=>{ e.sets=Math.max(2,e.sets-1); e.recW = e.recW==null?null:round(e.recW*0.9, EX[e.id].inc||1.25); }); }
@@ -558,11 +558,28 @@ function renderWorkout(){
     const card=el("div","ex"); card.dataset.ex=e.id;
     const saved = doneMap[e.id]||{};
     card.innerHTML=`<div class="ex-h"><div><div class="t">${ei+1}. ${e.name}</div>
-      <div class="m">${e.m} · ${e.sets}세트 × ${e.rep[0]}-${e.rep[1]}회 · 휴식 ${e.rest}초</div>
+      <div class="m">${e.m} · ${e.warm>0?`워밍업 ${e.warm} + `:''}${e.sets}세트 × ${e.rep[0]}-${e.rep[1]}회 · 휴식 ${e.rest}초</div>
       <div class="rec" style="text-align:left;margin-top:4px">💡 ${e.note}</div></div>
       <button class="yt" onclick="openYT('${e.yt}')">▶ 운동방법</button></div>`;
     const sets=el("div","sets");
     sets.innerHTML=`<div class="set"><span class="lab">세트</span><span class="lab">무게(kg)</span><span class="lab">횟수</span><span class="lab">RIR</span><span class="lab">✓</span></div>`;
+    // 워밍업 세트 (복합운동) — 추천무게의 50%·70%. 기록/점진과부하엔 미포함.
+    if(e.warm>0 && e.recW!=null){
+      const wf=[0.5,0.7];
+      for(let wi=0; wi<e.warm; wi++){
+        const ww=Math.max(EX[e.id].inc||2.5, round(e.recW*(wf[wi]!=null?wf[wi]:0.6), 1.25));
+        const wset=el("div","set"); wset.dataset.warm="1"; wset.style.opacity="0.75";
+        wset.innerHTML=`<span class="lab" style="color:var(--warn);font-weight:800">🔥W${wi+1}</span>
+          <input type="number" inputmode="decimal" placeholder="${ww}" data-w>
+          <input type="number" inputmode="numeric" placeholder="10" data-r>
+          <input type="number" inputmode="numeric" placeholder="-" data-rir style="padding:10px 4px" disabled>
+          <button class="chk" data-chk></button>`;
+        const wchk=wset.querySelector("[data-chk]");
+        wchk.onclick=()=>{ const on=!wchk.classList.contains("on"); wchk.classList.toggle("on",on); wchk.textContent=on?'✓':'';
+          if(on){ const wii=wset.querySelector("[data-w]"); if(wii.value==="") wii.value=ww; startTimer(30, e.name+" 워밍업"); } };
+        sets.appendChild(wset);
+      }
+    }
     for(let i=0;i<e.sets;i++){
       const sv=(saved.sets&&saved.sets[i])||{};
       const rowW = e.recW!=null? (sv.w??"") : "";
@@ -598,6 +615,7 @@ function collectWorkout(){
     const id=card.dataset.ex; const sets=[];
     card.querySelectorAll(".set").forEach((row,idx)=>{
       if(idx===0) return; // header
+      if(row.dataset.warm) return; // 워밍업은 기록/진행에 미포함
       const w=row.querySelector("[data-w]"), r=row.querySelector("[data-r]"), rir=row.querySelector("[data-rir]"), chk=row.querySelector("[data-chk]");
       if(!w) return;
       sets.push({w:w.value===""?null:+w.value, reps:r.value===""?null:+r.value, rir:rir.value===""?null:+rir.value, done:chk.classList.contains("on")});
