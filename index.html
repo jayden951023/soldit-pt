@@ -2983,23 +2983,41 @@ function finishWorkout(){
 
 /* ---------- 타이머 ---------- */
 let timerInt=null;
-function startTimer(sec, label){
+let _timerWake=null;
+async function startTimer(sec, label){
   clearInterval(timerInt);
   const wrap=$("#timerWrap"); wrap.classList.remove("hidden");
-  let left=sec||60;
-  const draw=()=>{ wrap.innerHTML=`<div class="inner"><div><div style="font-size:12px;opacity:.8">쉬는 시간 · ${label||''}</div>
+  const total=sec||60; let endAt=Date.now()+total*1000;
+  // 백그라운드/화면꺼짐에도 타이머·소리 동작 — 쉬는 동안 화면 유지(잠금 방지)
+  try{ if('wakeLock' in navigator){ if(_timerWake){try{_timerWake.release();}catch(e){}} _timerWake=await navigator.wakeLock.request('screen'); } }catch(e){}
+  const draw=(left)=>{ wrap.innerHTML=`<div class="inner"><div><div style="font-size:12px;opacity:.8">쉬는 시간 · ${label||''}</div>
     <div class="big">${String(Math.floor(left/60)).padStart(1,'0')}:${String(left%60).padStart(2,'0')}</div></div>
     <div class="row"><button onclick="addTimer(15)">+15초</button><button onclick="stopTimer()">건너뛰기</button></div></div>`; };
-  draw();
-  timerInt=setInterval(()=>{ left--; if(left<=0){ clearInterval(timerInt); beep(); wrap.innerHTML=`<div class="inner"><b>💪 다음 세트 준비!</b><button onclick="stopTimer()">닫기</button></div>`;
-    setTimeout(stopTimer,4000); return;} draw(); },1000);
-  window._tleft=()=>left; window._tset=(n)=>left=n;
+  const tick=()=>{ const left=Math.max(0,Math.ceil((endAt-Date.now())/1000)); if(left<=0){ clearInterval(timerInt); _timerFinish(label); return; } draw(left); };
+  draw(total); timerInt=setInterval(tick,500);
+  window._tleft=()=>Math.max(0,Math.ceil((endAt-Date.now())/1000)); window._tset=(n)=>{endAt=Date.now()+n*1000;}; window._tadd=(n)=>{endAt+=n*1000;};
 }
-function addTimer(n){ window._tset(window._tleft()+n); }
-function stopTimer(){ clearInterval(timerInt); $("#timerWrap").classList.add("hidden"); }
-function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(); const g=a.createGain();
-  o.connect(g); g.connect(a.destination); o.frequency.value=880; o.start(); g.gain.setValueAtTime(.25,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.5); o.stop(a.currentTime+.5);}catch(e){}
-  if(navigator.vibrate) navigator.vibrate([200,80,200]); }
+function _timerFinish(label){
+  const wrap=$("#timerWrap"); if(wrap) wrap.innerHTML=`<div class="inner"><b>💪 다음 세트 준비!</b><button onclick="stopTimer()">닫기</button></div>`;
+  alarm();
+  try{ if("serviceWorker" in navigator && window.Notification && Notification.permission==="granted"){
+    navigator.serviceWorker.getRegistration().then(reg=>{ if(reg&&reg.showNotification) reg.showNotification("💪 쉬는 시간 끝!",{body:"다음 세트 준비하세요"+(label?" · "+label:""),icon:"icon-192.png",badge:"icon-192.png",tag:"soldpt-rest",renotify:true,vibrate:[500,150,500,150,600],data:{url:"./"}}); }); } }catch(e){}
+  setTimeout(stopTimer,6000);
+}
+function addTimer(n){ if(window._tadd) window._tadd(n); }
+function stopTimer(){ clearInterval(timerInt); const w=$("#timerWrap"); if(w) w.classList.add("hidden"); try{ if(_timerWake){ _timerWake.release(); _timerWake=null; } }catch(e){} }
+/* 크고 강한 알림음 — 쉬는시간 끝(삐-삐-삐-삐 반복 + 강한 진동) */
+function alarm(){ try{
+  const ac = window._ac || (window._ac = new (window.AudioContext||window.webkitAudioContext)());
+  if(ac.state==="suspended"){ try{ ac.resume(); }catch(e){} }
+  const t0=ac.currentTime;
+  for(let i=0;i<4;i++){ const o=ac.createOscillator(), g=ac.createGain();
+    o.type="square"; o.frequency.value=(i%2===0)?988:1319;
+    o.connect(g); g.connect(ac.destination);
+    const s=t0+i*0.26; g.gain.setValueAtTime(0.0001,s); g.gain.exponentialRampToValueAtTime(0.95,s+0.015); g.gain.exponentialRampToValueAtTime(0.0001,s+0.2);
+    o.start(s); o.stop(s+0.22); }
+}catch(e){}
+  if(navigator.vibrate) navigator.vibrate([500,150,500,150,700]); }
 
 function openYT(q){ window.open("https://www.youtube.com/results?search_query="+encodeURIComponent(q),"_blank"); }
 
@@ -3610,7 +3628,7 @@ function beep(kind){
     const o = ac.createOscillator(), g = ac.createGain();
     o.connect(g); g.connect(ac.destination);
     o.frequency.value = kind===2 ? 880 : kind===1 ? 660 : 440;
-    g.gain.value = 0.07;
+    g.gain.value = (kind===1||kind===2) ? 0.6 : 0.07;
     o.start(); o.stop(ac.currentTime + (kind===2?0.28:0.1));
   }catch(e){}
 }
