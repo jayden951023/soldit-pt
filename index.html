@@ -2561,6 +2561,36 @@ const _Q6 = {
     return {id, name:ex.name, m:ex.m, type:ex.type, rep:ex.rep, sets:setN, recW:w, recReps:reps, note:rec.note, rest: restSec, yt:ex.yt,
             br:ex.br||"", wt:ex.wt||"", no:ex.no||"", eq:ex.eq||[], planSets};
   });
+  /* (8/4 대표 지적) 정해둔 시간 안에 들어오게 조절한다.
+     지방 뺄 시간·유산소도 남겨야 하므로, 넘치면 뒤쪽 고립운동부터 덜어낸다.
+     큰 운동(복합)은 성장의 핵심이라 마지막까지 남긴다. 최소 4종목은 유지. */
+  {
+    const budget = timeBudget();
+    const cardioMin = (P().goal||"").includes("체지방") ? 20 : 15;
+    const strengthBudget = Math.max(20, budget - cardioMin - 3);  // 코어 마무리 3분 확보
+    let guard = 0;
+    while(exs.length > 4 && estimateMinutes(exs) > strengthBudget && guard++ < 6){
+      // 뒤에서부터 고립운동을 먼저 뺀다. 고립이 없으면 마지막 종목을 뺀다.
+      let idx = -1;
+      for(let k=exs.length-1; k>=0; k--){ if(exs[k].type==="iso"){ idx=k; break; } }
+      exs.splice(idx>=0 ? idx : exs.length-1, 1);
+    }
+    // 그래도 넘치면 세트를 한 개씩 줄인다 (최소 2세트)
+    guard = 0;
+    while(estimateMinutes(exs) > strengthBudget && guard++ < 3){
+      let cut = false;
+      for(let k=exs.length-1; k>=0; k--){
+        const ps = exs[k].planSets||[];
+        const work = ps.filter(x=>x.kind!=="warm");
+        if(work.length > 2){
+          const at = ps.lastIndexOf(work[work.length-1]);
+          ps.splice(at,1); exs[k].sets = Math.max(2, (exs[k].sets||3)-1); cut = true; break;
+        }
+      }
+      if(!cut) break;
+    }
+  }
+
   const deloadWk = isDeloadWeek();
   /* (8/4 과학 감사) 복근이 주 0세트였다 — 6종목 제한 '밖'에서 코어 1종목을 마지막에 붙인다.
      맨몸이라 2~3분이면 끝나 50분 예산을 크게 건드리지 않는다. */
@@ -2578,6 +2608,28 @@ const _Q6 = {
   if(deloadWk){ exs.forEach(e=>{ e.sets=Math.max(2,e.sets-1); e.recW = e.recW==null?null:round(e.recW*0.9, EX[e.id].inc||1.25); }); }
   return {rest:false, day, exs, coach, deload:deloadWk};
 }
+
+/* (8/4 대표 지적) '근력 35분'은 하드코딩된 값이라 실제와 안 맞았다.
+   휴식을 근거대로 늘린 뒤엔 6종목 19세트가 60분 가까이 걸린다.
+   → 세트 수행시간 + 휴식 + 워밍업 + 기구 이동을 더해 실제 분을 계산한다. */
+function estimateMinutes(exs){
+  let sec = 0;
+  (exs||[]).forEach(e=>{
+    const ps = e.planSets || [];
+    const nWarm = ps.filter(x=>x.kind==="warm").length;
+    const nWork = ps.filter(x=>x.kind!=="warm").length || e.sets || 3;
+    const reps = e.recReps || 10;
+    const isTime = String(e.m||"").includes("코어") && /플랭크/.test(e.name||"");
+    const work = isTime ? reps : Math.min(60, Math.max(20, reps*3));  // 1회 ≈ 3초
+    sec += nWarm * (work*0.7 + 45);          // 워밍업은 짧게 쉬고 진행
+    sec += nWork * work + Math.max(0, nWork-1) * (e.rest||60);  // 마지막 세트 뒤 휴식은 이동시간으로 흡수
+    sec += 60;                                // 기구 찾기·세팅·이동
+  });
+  return Math.round(sec/60);
+}
+/* 사용자가 정한 운동 시간(분) — 기본 60분.
+   50분으로 잡으면 제대로 쉬면서 4종목밖에 못 해 주간 볼륨이 무너진다. */
+function timeBudget(){ const v = P() && P().timeBudget; return (v==null? 60 : +v); }
 
 // 6주 주기 · 매 6주차 쉬어가는 주 (첫 기록일 기준)
 function isDeloadWeek(){
@@ -2624,7 +2676,7 @@ function renderHome(){
     return;
   }
   const c=el("div","card");
-  c.innerHTML=`<div class="row between"><b>${plan.day.label}</b><span class="pill">${plan.exs.length}종목 · 근력 35분</span></div>
+  c.innerHTML=`<div class="row between"><b>${plan.day.label}</b><span class="pill">${plan.exs.length}종목 · 약 ${estimateMinutes(plan.exs)}분</span></div>
     ${plan.deload? '<div class="chip" style="margin-top:10px">🪫 <b>쉬어가는 주</b> — 가볍게 회복해요</div>':''}
     <div style="margin-top:12px">${plan.exs.map(e=>`<div class="row between" style="padding:7px 0;border-top:1px solid var(--line)">
       <span>${e.name} <span class="k">· ${e.m}</span></span>
@@ -2958,7 +3010,7 @@ function coachReply(t){
   const q=t.toLowerCase();
   for(const item of QA){ if(item.k.some(k=>q.includes(k.toLowerCase()))) return item.a; }
   // 기록 관련 즉답
-  if(q.includes("오늘")){ const p=todayPlan(); return p.rest? "오늘은 휴식일이에요 🌙 회복도 훈련입니다.": `오늘은 ${p.day.label} 예정이에요. ${p.exs.length}종목·근력 35분 + 유산소 15분(총 50분). 홈에서 '운동 시작' 누르면 됩니다.`; }
+  if(q.includes("오늘")){ const p=todayPlan(); return p.rest? "오늘은 휴식일이에요 🌙 회복도 훈련입니다.": `오늘은 ${p.day.label} 예정이에요. ${p.exs.length}종목·근력 약 ${estimateMinutes(p.exs)}분 + 유산소 15분(총 50분). 홈에서 '운동 시작' 누르면 됩니다.`; }
   return "좋은 질문이에요! 지금 베타 코치는 자주 묻는 것(단백질·빈도·증량·근육통·부상·쉬어가는 주 등)에 과학 근거로 답해요. 곧 클로드 실시간 코치가 붙으면 뭐든 대화할 수 있게 업데이트할게요. 그동안 무게 기록만 꾸준히 남겨주세요 — 프로그램은 제가 알아서 맞춰갑니다. 💪";
 }
 function renderChat(){
@@ -3325,6 +3377,22 @@ function renderSettings(){
     toast(P().kneeSafe ? "무릎에 부담 적은 운동으로 짜드릴게요" : "무릎 보호를 껐어요"); };
   kn.appendChild(kb);
   v.appendChild(kn);
+
+  // 운동 시간 예산 (8/4 대표 — 35분이라더니 실제로는 1시간이던 문제)
+  const tb=el("div","card");
+  const curB = (P().timeBudget==null? 60 : +P().timeBudget);
+  tb.innerHTML=`<h3>운동에 쓸 수 있는 시간</h3>
+    <p class="k" style="margin:6px 0 10px">유산소까지 포함한 <b>전체 시간</b>이에요. 여기에 맞춰 종목 수를 자동으로 조절해드려요.<br>
+      휴식을 제대로 쉬면(큰 운동 2분) 6종목 = 근력만 44분이에요. 여기에 유산소 15분·복근 3분이 붙어요.<br>
+      <b>40분</b> = 4종목 / <b>60분</b> = 5종목 / <b>75분</b> = 6종목 정도로 잡힙니다.<br>
+      시간이 없으면 <b>종목을 줄이는 게 휴식을 줄이는 것보다 나아요</b> — 대충 쉬면 다음 세트 무게가 떨어져서 결국 손해거든요.</p>`;
+  const tbBox=el("div"); tbBox.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+  [40,50,60,75].forEach(mn=>{
+    const b=el("button", curB===mn?"btn green sm":"btn sec sm", mn+"분");
+    b.style.flex="1"; b.onclick=()=>{ P().timeBudget=mn; persist(); renderSettings(); toast(mn+"분에 맞춰 짜드릴게요"); };
+    tbBox.appendChild(b);
+  });
+  tb.appendChild(tbBox); v.appendChild(tb);
 
   // 좌식 통증(엉덩이) 케어 (8/4 대표 — 아내분: 의자에 오래 앉아 엉덩이 아픔)
   const sit=el("div","card");
