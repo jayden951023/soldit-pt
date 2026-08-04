@@ -4038,13 +4038,14 @@ function photoModeSet(exId, mode){
 }
 function photoToggle(exId){
   const cur = photoMode(exId);
-  // 반대쪽 사진이 없으면 토글하지 않는다
-  const other = cur === "move" ? GYM_PHOTOS_GEAR[exId] : GYM_PHOTOS_MOVE[exId];
+  const own = photoLoad()[exId];   // 내가 찍은 기구 사진 = 기구쪽
+  const other = cur === "move" ? (own || GYM_PHOTOS_GEAR[exId]) : GYM_PHOTOS_MOVE[exId];
   if(!other) { toast("다른 사진이 없어요"); return; }
   photoModeSet(exId, cur === "move" ? "gear" : "move");
   if(typeof CO !== "undefined" && CO) coachRender();
+  else if($("#view-workout") && !$("#view-workout").classList.contains("hidden") && typeof renderWorkout==="function") renderWorkout();
 }
-function photoHasBoth(exId){ return !!(GYM_PHOTOS_MOVE[exId] && GYM_PHOTOS_GEAR[exId]); }
+function photoHasBoth(exId){ const own=photoLoad()[exId]; return !!(GYM_PHOTOS_MOVE[exId] && (own || GYM_PHOTOS_GEAR[exId])); }
 
 /* 프리웨이트 동작(덤벨 컬·바벨 스쿼트 등)은 전용 사진이 없으므로
    그 동작에 쓰는 기구(덤벨·바벨·랙) 사진을 대신 보여준다. (8/4) */
@@ -4060,12 +4061,11 @@ function photoFallback(exId){
 }
 
 function photoOf(exId){
-  // 직접 찍어 등록한 사진이 우선. 없으면 현재 모드(운동/기구)의 내장 사진.
+  // 내가 찍은 사진 = '기구 사진(사람X)' 슬롯. 사람 자세 사진(내장)은 그대로 유지 → 버튼으로 전환.
   const own = photoLoad()[exId];
-  if(own) return own;
   const mode = photoMode(exId);
-  return (mode === "gear" ? GYM_PHOTOS_GEAR[exId] : GYM_PHOTOS_MOVE[exId])
-      || GYM_PHOTOS_GEAR[exId] || GYM_PHOTOS_MOVE[exId] || photoFallback(exId) || null;
+  if(mode === "gear") return own || GYM_PHOTOS_GEAR[exId] || GYM_PHOTOS_MOVE[exId] || photoFallback(exId) || null;
+  return GYM_PHOTOS_MOVE[exId] || own || GYM_PHOTOS_GEAR[exId] || photoFallback(exId) || null;
 }
 function photoSave(exId, dataUrl){
   const m = photoLoad(); m[exId] = dataUrl;
