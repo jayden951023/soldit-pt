@@ -2358,6 +2358,12 @@ function todayPlan(dayOffset){
   }
   // 무릎 보호가 켜져 있으면 무릎 부담 큰 종목을 뺀다 (8/4)
   if(kneeSafeOn()) pool = pool.filter(id => !isKneeRisk(id));
+  // 좌식 통증(엉덩이) 모드 — 또 앉아서 누르는 기구는 빼고, 엉덩이 깨우는 운동을 앞으로 (8/4)
+  if(sitSafeOn()){
+    const cut = pool.filter(id => !SIT_LONGSIT.includes(id));
+    if(cut.length >= 5) pool = cut;
+    pool = [...pool.filter(id=>SIT_GLUTE.includes(id)), ...pool.filter(id=>!SIT_GLUTE.includes(id))];
+  }
   // 부족하면 다른 요일 풀에서 같은 성격 보충
   if(pool.length<5){ for(const k in SPLIT){ for(const id of SPLIT[k].pool){ if(pool.length>=6) break; if(avail(id)&&!pool.includes(id)) pool.push(id);} } }
   // 복합 먼저, 고립 뒤 — 5~6개 (50분)
@@ -2383,7 +2389,13 @@ function todayPlan(dayOffset){
     pull2: [[/등/,4],[/팔 앞/,1]],
     legs2: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리/,1]],
   };
-  const QUOTA = (_knee ? {
+  const _sit = sitSafeOn();
+  const _QSIT = {   // 좌식 통증 — 엉덩이·허벅지 뒤 위주 (앉아서 하는 앞허벅지 비중↓)
+    legs:  [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/어깨/,1]],
+    lower: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/어깨/,1]],
+    legs2: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리/,1]],
+  };
+  const QUOTA = (_sit && _QSIT[day.key]) ? _QSIT[day.key] : (_knee ? {
     push:  [[/가슴/,2],[/어깨/,2],[/팔 뒤/,1]],
     pull:  [[/등/,4],[/팔 앞/,1]],
     legs:  [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/어깨/,1]],
@@ -2413,26 +2425,54 @@ function todayPlan(dayOffset){
     return out;
   };
 
-  let chosen = [];
+  // (8/4 대표 지적) 같은 '동작'이 기구만 바꿔 두 번 나오던 문제 — 숄더프레스 2대가 같이 뽑혔다.
+  //   기구 id가 달라도 몸이 하는 동작이 같으면 한 번만 넣는다.
+  const MOVE = [
+    [/숄더\s*프레스|오버헤드/i,"어깨밀기"], [/래터럴|사이드\s*레이즈/i,"옆으로들기"], [/리어|리버스\s*플라이/i,"뒤어깨"],
+    [/체스트\s*프레스|벤치|인클라인|디클라인|와이드\s*체스트/i,"가슴밀기"], [/펙덱|플라이|풀오버/i,"가슴모으기"],
+    [/풀다운|풀업|친|랫/i,"위에서당기기"], [/로우/i,"앞에서당기기"],
+    [/레그\s*프레스|핵|스쿼트|런지/i,"다리밀기"], [/레그\s*익스텐션/i,"허벅지앞펴기"], [/레그\s*컬|라잉\s*컬|시티드\s*컬/i,"허벅지뒤접기"],
+    [/힙\s*쓰러스트|힙\s*프레스|데드리프트|루마니안/i,"엉덩이밀기"], [/어브덕션|외전|아웃타이/i,"다리벌리기"], [/애덕션|내전|이너타이/i,"다리모으기"],
+    [/킥백/i,"뒤로차기"], [/카프|종아리/i,"종아리"],
+    [/트라이|삼두|프레스다운|딥|익스텐션/i,"팔뒤펴기"], [/컬/i,"팔앞접기"],
+  ];
+  const moveOf = id => { const n = EX[id].name||""; for(const [re,k] of MOVE){ if(re.test(n)) return k; } return "single_"+id; };
+
+  let chosen = [], usedMove = new Set(), qIdx = {};
   QUOTA.forEach(([re, cnt], qi)=>{
     // 복합 먼저 채우고 부족하면 고립으로 — 큰 근육을 앞에 두기 위함
     const hit = pool.filter(id=>re.test(EX[id].m) && !chosen.includes(id));
     const c = hit.filter(id=>EX[id].type==="comp");
     const iso = hit.filter(id=>EX[id].type==="iso");
     const ordered = [...c, ...iso];
-    // rot 이 같은 배열에서 같은 인덱스를 두 번 뽑을 수 있어(배열이 짧을 때)
-    //   push 시점마다 중복을 다시 확인한다. (8/4 — 친/딥 어시스트가 2번 나오던 버그)
-    for(const id of rot(ordered, cnt, qi)){
-      if(!chosen.includes(id)) chosen.push(id);
+    // 로테이션 순서를 먼저 쓰되, 같은 동작이면 건너뛰고 다음 후보로 넘어간다.
+    const seq = [...rot(ordered, cnt, qi), ...ordered];
+    let got = 0;
+    for(const id of seq){
+      if(got >= cnt) break;
+      if(chosen.includes(id)) continue;
+      const mv = moveOf(id);
+      if(usedMove.has(mv)) continue;
+      usedMove.add(mv); qIdx[id] = qi; chosen.push(id); got++;
     }
   });
   // 쿼터로 못 채웠으면(기구를 꺼둔 경우 등) 남은 풀에서 보충
   if(chosen.length<5){
-    for(const id of pool){ if(chosen.length>=6) break; if(!chosen.includes(id)) chosen.push(id); }
+    for(const id of pool){
+      if(chosen.length>=6) break;
+      if(chosen.includes(id)) continue;
+      const mv = moveOf(id); if(usedMove.has(mv)) continue;
+      usedMove.add(mv); qIdx[id] = 99; chosen.push(id);
+    }
   }
-  // 복합 → 고립 순으로 정렬 (무거운 운동을 앞에)
+  // (8/4 대표 지적) 어깨 하다 갑자기 하체로 튀던 문제 — 같은 부위끼리 붙여서 정렬한다.
+  //   부위 순서 = 그날 주력 부위 순(쿼터 순서), 각 부위 안에서는 큰 운동(복합)을 앞에.
   //  총 50분 = 근력 35분 + 유산소 15분 (8/4 대표). 6종목이면 근력만 50분이라 5종목으로.
-  chosen = [...chosen.filter(id=>EX[id].type==="comp"), ...chosen.filter(id=>EX[id].type==="iso")].slice(0,6);
+  chosen = chosen.slice().sort((a,b)=>{
+    const qa = (qIdx[a]==null?99:qIdx[a]), qb = (qIdx[b]==null?99:qIdx[b]);
+    if(qa !== qb) return qa - qb;
+    return (EX[a].type==="comp"?0:1) - (EX[b].type==="comp"?0:1);
+  }).slice(0,6);
   // 오토레귤레이션: 오늘 컨디션
   const r = dayOffset ? null : P().readiness[todayKey()];   // 내일 미리보기엔 오늘 컨디션 반영 안 함
   let setMod = 0, wMod = 1, coach="";
@@ -2669,6 +2709,15 @@ function renderWorkout(){
   pv2.style.cssText="margin:0 0 10px;padding:12px;font-size:14px";
   pv2.onclick=()=>showTodayPreview(1); v.appendChild(pv2);
   v.appendChild(el("div","card",`<div class="row between"><b>${plan.day.label}</b><span class="pill">완료 후 다음날 무게 자동 반영</span></div>`));
+  // 좌식 통증 모드면 운동 전 스트레칭을 먼저 띄운다 (8/4)
+  if(sitSafeOn()){
+    const st=el("div","card");
+    st.style.cssText="border:1px solid rgba(34,211,167,.3);background:rgba(34,211,167,.06)";
+    st.innerHTML='<div class="row between"><b>🪑 시작 전 5분 — 엉덩이 깨우기</b><span class="pill">먼저 하세요</span></div>'+
+      '<p class="k" style="margin:8px 0 0">앉아 있느라 굳은 곳을 풀고 엉덩이에 스위치를 켜는 순서예요.</p>'+
+      SIT_STRETCH.map((x,i)=>'<div style="padding:8px 0;border-top:1px solid var(--line)"><b>'+(i+1)+'. '+x[0]+'</b><div class="k" style="margin-top:3px">'+x[1]+'</div></div>').join("");
+    v.appendChild(st);
+  }
   plan.exs.forEach((e,ei)=>{
     const card=el("div","ex"); card.dataset.ex=e.id;
     const saved = doneMap[e.id]||{};
@@ -2950,6 +2999,26 @@ function renderProgress(){
     });
   }
 }
+/* 사진을 적당히 줄여 base64 로 (업로드 용량·속도) */
+function shrinkImage(file, maxSide){
+  return new Promise((resolve, reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let {width:w, height:h} = img;
+        const sc = Math.min(1, maxSide/Math.max(w,h));
+        w=Math.round(w*sc); h=Math.round(h*sc);
+        const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(cv.toDataURL("image/jpeg", 0.85).split(",")[1]);
+      };
+      img.onerror=reject; img.src=fr.result;
+    };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+
 /* 몸무게 기록·추이 (8/4 대표) */
 function bodyRender(v){
   const p=P();
@@ -2961,6 +3030,50 @@ function bodyRender(v){
     p.wlog=p.wlog||{}; p.wlog[todayKey()]=w; p.weightKg=w; persist(); toast("기록됨 💪"); renderProgress(); };
   c.appendChild(b); v.appendChild(c);
   if(p.heightCm && p.weightKg){ const bx=el("div","card"); bx.innerHTML=bmiHtml(p); v.appendChild(bx); }
+
+  // 인바디 결과지 사진 → AI가 읽고 코칭 (8/4 대표)
+  const ib=el("div","card");
+  ib.innerHTML='<h3>📷 인바디 결과지 분석</h3>'+
+    '<p class="k" style="margin:6px 0 10px">헬스장에서 잰 인바디(체성분) 종이를 찍어 올리면<br>'+
+    '숫자를 읽어서 <b>지금 뭘 해야 하는지</b> 알려드려요.</p>';
+  const ibIn=document.createElement("input"); ibIn.type="file"; ibIn.accept="image/*"; ibIn.style.display="none";
+  const ibBtn=el("button","btn green","사진 선택하기");
+  ibBtn.onclick=()=>ibIn.click();
+  const ibOut=el("div"); ibOut.style.marginTop="10px";
+  if(p.inbody && p.inbody.text){
+    ibOut.innerHTML='<div class="note" style="white-space:pre-wrap">'+p.inbody.text+'</div>'+
+      '<div class="k" style="margin-top:6px">'+(p.inbody.date||'')+' 분석</div>';
+  }
+  ibIn.onchange=async ()=>{
+    const f=ibIn.files && ibIn.files[0]; if(!f) return;
+    ibOut.innerHTML='<div class="k">사진을 읽는 중이에요… (10~20초)</div>';
+    try{
+      const b64 = await shrinkImage(f, 1400);
+      const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(), 45000);
+      const r = await fetch(PT_API.replace("/pt-coach","/pt-inbody"), {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ image:b64, ctx:{키:p.heightCm||null, 목표:p.goal, 이름:p.name} }),
+        signal: ctrl.signal });
+      clearTimeout(to);
+      const j = await r.json();
+      if(j && j.ok && j.answer){
+        p.inbody = { text:j.answer, date:todayKey(), data:j.data||null };
+        // 사진에서 읽은 몸무게가 있으면 기록에도 자동 반영
+        const w2 = j.data && parseFloat(j.data.weight);
+        if(w2>0){ p.wlog=p.wlog||{}; p.wlog[todayKey()]=w2; p.weightKg=w2; }
+        persist();
+        ibOut.innerHTML='<div class="note" style="white-space:pre-wrap">'+j.answer+'</div>';
+        toast("분석 완료 💪");
+      } else {
+        ibOut.innerHTML='<div class="k">사진을 읽지 못했어요. 숫자가 잘 보이게 밝은 곳에서 다시 찍어주세요.</div>';
+      }
+    }catch(e){
+      ibOut.innerHTML='<div class="k">연결이 불안정해요. 잠시 후 다시 시도해주세요.</div>';
+    }
+    ibIn.value="";
+  };
+  ib.appendChild(ibBtn); ib.appendChild(ibIn); ib.appendChild(ibOut);
+  v.appendChild(ib);
   const keys=Object.keys(p.wlog||{}).sort();
   if(keys.length<2){ v.appendChild(el("div","note","몸무게가 2번 이상 쌓이면 추이 그래프가 그려져요 📉")); return; }
   const pts=keys.map(k=>p.wlog[k]);
@@ -3004,8 +3117,25 @@ function bmiHtml(p){
   const pLo=Math.round(w*1.6), pHi=Math.round(w*2.2);
   const cut=(p.goal||"").includes("체지방");
   const pace = cut ? '<div class="k" style="margin-top:6px">🎯 감량 페이스 권장: 주당 '+(w*0.005).toFixed(1)+'~'+(w*0.01).toFixed(1)+'kg (너무 빠르면 근손실)</div>' : '';
+  // BMI 25 이상이면 어떻게 운동해야 하는지 구체적으로 (8/4 대표)
+  let guide = '';
+  if(bmi >= 25){
+    const tgt = (22.9*Math.pow(h/100,2)).toFixed(1);
+    guide = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">'+
+      '<b style="font-size:13.5px">🏋️ 지금 몸에 맞는 운동 방법</b>'+
+      '<div class="k" style="margin-top:6px;line-height:1.7">'+
+      '· <b>근력운동을 먼저, 유산소는 뒤에</b> — 살 뺄 때 근육까지 빠지는 걸 막아줘요. 순서만 지켜도 다릅니다.<br>'+
+      '· <b>뛰지 말고 빠르게 걷기</b> — 몸무게가 실리면 무릎·발목에 부담이 커요. 경사 걷기·자전거·수영이 안전합니다.<br>'+
+      '· <b>숨차지 않을 정도로 20~30분</b> — 옆사람과 대화가 되는 강도가 지방을 가장 오래 태워요.<br>'+
+      '· <b>무릎 아프면 설정에서 "무릎 보호"를 켜세요</b> — 스쿼트·레그익스텐션을 빼고 짜드려요.<br>'+
+      '· <b>체중은 주 1회, 아침 공복에</b> — 매일 재면 물 무게에 흔들려서 포기하게 돼요.<br>'+
+      '· 운동보다 <b>식사가 7할</b>이에요. 단백질 '+pLo+'g은 꼭 채우고 그 안에서 줄이세요.'+
+      '</div>'+
+      '<div class="k" style="margin-top:8px">🎯 정상 범위(BMI 23)까지 <b>'+(w-tgt).toFixed(1)+'kg</b> — 주 0.5kg씩이면 약 '+Math.ceil((w-tgt)/0.5)+'주입니다. 급하게 안 해도 돼요.</div>'+
+      '</div>';
+  }
   return '<div class="row between"><b>BMI '+b+'</b><span class="pill" style="color:'+col+';border-color:'+col+'55">'+lab+'</span></div>'+
-    '<div class="k" style="margin-top:6px">🥩 하루 단백질 권장 <b>'+pLo+'~'+pHi+'g</b> (체중 1kg당 1.6~2.2g)</div>'+pace;
+    '<div class="k" style="margin-top:6px">🥩 하루 단백질 권장 <b>'+pLo+'~'+pHi+'g</b> (체중 1kg당 1.6~2.2g)</div>'+pace+guide;
 }
 
 /* ---------- 렌더: 설정 ---------- */
@@ -3120,6 +3250,19 @@ function renderSettings(){
     toast(P().kneeSafe ? "무릎에 부담 적은 운동으로 짜드릴게요" : "무릎 보호를 껐어요"); };
   kn.appendChild(kb);
   v.appendChild(kn);
+
+  // 좌식 통증(엉덩이) 케어 (8/4 대표 — 아내분: 의자에 오래 앉아 엉덩이 아픔)
+  const sit=el("div","card");
+  const sOn = !!P().sitSafe;
+  sit.innerHTML=`<h3>오래 앉아서 엉덩이 아픔 <span class="pill">${sOn?"켜짐":"꺼짐"}</span></h3>
+    <p class="k" style="margin:6px 0 10px">하루 종일 앉아 있으면 엉덩이 근육이 힘을 잃고 앞쪽이 짧아져요.<br>
+      켜면 <b>엉덩이·허벅지 뒤를 깨우는 운동</b> 위주로 짜고, 또 앉아서 누르는 기구는 빼요.<br>
+      운동 전 <b>5분 스트레칭</b>도 화면에 같이 띄워드려요.</p>`;
+  const sb=el("button", sOn?"btn sec":"btn green", sOn?"끄기":"🪑 엉덩이 케어 켜기");
+  sb.onclick=()=>{ P().sitSafe = !P().sitSafe; persist(); renderSettings();
+    toast(P().sitSafe ? "엉덩이 깨우는 운동 위주로 짜드릴게요 🍑" : "껐어요"); };
+  sit.appendChild(sb);
+  v.appendChild(sit);
 
   // 운동 알림 (8/4 대표) — 저녁 9시 내일 예고 · 오전 7:50 오늘 시작
   const noti=el("div","card");
@@ -3340,6 +3483,22 @@ const KNEE_RISK = ["bb_squat","sm_squat","nl_hack","nt_legext","db_lunge",
                    "ip_legpress","ip_slegpress","ip_1legpress"];
 function kneeSafeOn(){ return !!(P() && P().kneeSafe); }
 function isKneeRisk(exId){ return KNEE_RISK.includes(exId); }
+
+/* 오래 앉아 있어서 엉덩이가 아픈 분용 (8/4 대표 — 아내분)
+   하루 종일 앉아 있으면 엉덩이 근육이 잘 안 쓰여 힘이 빠지고(잠자는 엉덩이),
+   고관절 앞쪽이 짧아지면서 엉덩이·허리에 부담이 간다.
+   → ① 엉덩이·허벅지 뒤를 먼저 깨우고 ② 또 앉아서 누르는 기구는 뒤로 뺀다 ③ 스트레칭을 붙인다. */
+const SIT_GLUTE   = ["bb_hipthrust","gk_kickback","bb_standabd","dx_abduction","sp_hippress","bb_rdl","dx_lyingcurl","ht_line"];
+const SIT_LONGSIT = ["nt_legext","dx_seatcurl","lf_adduction","ip_legpress","ip_slegpress","ip_1legpress","nl_hack"];
+function sitSafeOn(){ return !!(P() && P().sitSafe); }
+
+/* 좌식 통증 완화 스트레칭 — 운동 시작 전 5분 */
+const SIT_STRETCH = [
+  ["엉덩이 늘리기 (누워서 4자)", "누워서 한쪽 발목을 반대쪽 무릎에 올리고, 아래 허벅지를 가슴 쪽으로 당겨요. 30초씩 양쪽."],
+  ["고관절 앞 늘리기 (런지 자세)", "한 발 앞으로 크게 딛고 뒷쪽 엉덩이를 앞으로 밀어요. 앉아 있느라 짧아진 앞쪽을 펴줍니다. 30초씩 양쪽."],
+  ["엉덩이 깨우기 (누워서 엉덩이 들기)", "누워서 무릎 세우고 엉덩이를 들어 3초 조였다 내려요. 15회. 본운동 전 엉덩이에 스위치를 켜는 동작."],
+  ["옆으로 누워 무릎 벌리기", "옆으로 누워 무릎을 붙인 채 위쪽 무릎만 벌렸다 모아요. 15회씩 양쪽."],
+];
 
 /* ═══ 운동 캘린더 (8/4 대표) ═══
    월간 달력에 요일별 분할과 운동 완료 여부를 함께 보여준다.
