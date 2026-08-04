@@ -2963,7 +2963,11 @@ function notiEnabled(){ return localStorage.getItem("soldpt_noti") === "1"; }
 async function notiAsk(){
   if(!("Notification" in window)){ toast("이 브라우저는 알림을 지원하지 않아요"); return false; }
   let perm = Notification.permission;
-  if(perm === "default") perm = await Notification.requestPermission();
+  // requestPermission 의 '반환값'을 우선 신뢰한다 — 일부 환경(헤드리스·인앱브라우저)에서
+  //   Notification.permission 이 갱신되지 않아 허용했는데도 거부로 잡히던 문제.
+  if(perm !== "granted"){
+    try{ perm = await Notification.requestPermission(); }catch(e){}
+  }
   if(perm !== "granted"){
     toast("알림이 차단돼 있어요. 브라우저 설정에서 허용해주세요");
     localStorage.setItem("soldpt_noti","0");
