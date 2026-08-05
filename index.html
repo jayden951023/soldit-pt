@@ -4172,7 +4172,7 @@ function micHandle(text){
   } else if(hit.act === "rest+"){
     if(CO.phase === "rest") coachAddRest();
   } else if(hit.act === "start"){
-    if(CO.phase === "ready") CO.t = 1;
+    if(CO.phase === "ready") coachGo();
     else if(CO.phase === "rest") coachSkipRest();
     else if(CO.phase === "move") coachMoved();
   } else if(hit.act === "heavy" || hit.act === "light"){
@@ -4221,7 +4221,7 @@ function coachTick(){
           else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go");
         }catch(e){}
       }
-      else if(CO.phase==="rest"){ CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ const st=coachSet(), sets=coachSets(); if(st.kind==="warm") say("warmup", vWeight(st.w), vReps(st.reps)); else if(CO.si>=sets.length-1) say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "last_set"); else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go"); }catch(e){} /* 휴식 끝나면 바로 세트 시작 (8/5 대표) — 준비 대기/카운트 생략 */ }
+      else if(CO.phase==="rest"){ CO.phase="ready"; CO.counting=false; beep(1); say("rest_end"); }
       else if(CO.phase==="move"){ CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("moved"); }
       coachRender(); return;
     }
@@ -4439,9 +4439,9 @@ function coachFeel(dir){
    여기서 소리 잠금도 함께 푼다. */
 function coachGo(){
   voiceUnlock();
-  CO.counting = true; CO.t = 5;
+  CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ const st=coachSet(), sets=coachSets(); if(st.kind==="warm") say("warmup", vWeight(st.w), vReps(st.reps)); else if(CO.si>=sets.length-1) say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "last_set"); else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go"); }catch(e){}
   coachRender();
-  sayNow("cnt5");
+  /* 카운트다운 없이 바로 시작 (8/5 대표) */
 }
 function coachSkipRest(){ CO.t=1; }
 function coachAddRest(){ CO.t+=15; coachPaint(); }
@@ -4509,7 +4509,7 @@ function coachBodyHTML(){
       ${kneeSafeOn() ? '<div class="co-knee">🦵 무릎 조심 · 아프면 바로 멈추세요</div>' : ''}
       ${st.w!=null ? '<div class="co-adj"><button onclick="coachNudge(-1)">−</button><span>무게 조절</span><button onclick="coachNudge(1)">＋</button></div>' : ''}
       <div class="co-sub" style="margin-top:6px">준비되면 눌러주세요</div>
-      <button class="co-btn big" onclick="coachGo()">시작하기 ▶</button>`;
+      <button class="co-btn big" onclick="coachGo()">시작 ▶</button>`;
   }
   if(CO.phase==="work"){
     return `<div class="co-phase go">${warm?"🔥 워밍업":"💪 "+(st.label||"세트")} 진행 중</div>
