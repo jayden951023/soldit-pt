@@ -4466,19 +4466,19 @@ function coachRender(){
   let v = $("#coachView");
   if(!v){ v = el("div",""); v.id="coachView"; document.body.appendChild(v); }
   if(CO.phase==="done"){ v.innerHTML = coachDoneHTML(); bindDone(v); return; }
-  const e = coachEx(), sets = coachSets(), st = coachSet();
+  const _mv = !!(CO.phase==="move" && CO.plan.exs[CO.ei+1]); const e = _mv ? CO.plan.exs[CO.ei+1] : coachEx(), sets = coachSets(), st = coachSet();
   const total = CO.plan.exs.length;
   const warm = st.kind==="warm";
   v.innerHTML = `
    <div class="co-wrap">
     <div class="co-top">
       <button class="co-x" onclick="coachStop()">✕</button>
-      <div class="co-prog"><span class="co-date">${todayLabel()}</span>${CO.ei+1} / ${total} 운동 · ${CO.si+1} / ${sets.length} 세트</div>
+      <div class="co-prog"><span class="co-date">${todayLabel()}</span>${_mv ? (CO.ei+2)+" / "+total+" 운동 · 이동 중" : (CO.ei+1)+" / "+total+" 운동 · "+(CO.si+1)+" / "+sets.length+" 세트"}</div>
       <button class="co-skip" onclick="coachSkipEx()">이 운동 건너뛰기 ⏭</button>
     </div>
     <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
 
-    <div class="co-exname">${CO.ei+1}. ${e.name}</div>
+    <div class="co-exname">${(_mv?CO.ei+2:CO.ei+1)}. ${e.name}</div>
     ${e.br && e.wt!=="free" ? `<div class="co-eq">🏋️ ${e.br}${e.wt==="pin"?" · 핀":e.wt==="plate"?" · 원판":""}${e.no&&e.no!=="—"?" · No."+e.no:""}</div>` : ""}
     <div class="co-machine">${machineArt(e)}</div>
     <div class="co-btnrow">
