@@ -4154,6 +4154,11 @@ function micStop(){
   if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
 }
 /* 코치가 말할 땐 마이크를 잠깐 놓아준다 — 안 그러면 음성인식이 오디오를 붙잡아 코치 목소리가 끊긴다 (8/5 대표) */
+/* 백그라운드 갔다 돌아오면 음성인식 되살리기 (8/5 대표 — 화면 다시 보이거나 포커스 오면 재시작) */
+function _micRevive(){ try{ if(micOn() && document.getElementById("coachView")){ MIC_WANT = true; if(!MIC_R) setTimeout(micStart, 300); } }catch(e){} }
+document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _micRevive(); });
+window.addEventListener("focus", _micRevive);
+window.addEventListener("pageshow", _micRevive);
 function _micPauseForTts(){ if(MIC_R){ _ttsPaused = true; try{ MIC_R.onend = null; MIC_R.stop(); }catch(e){} MIC_R = null; } }
 function _micResumeAfterTts(){ if(_ttsPaused){ _ttsPaused = false; if(MIC_WANT && micOn()) setTimeout(micStart, 350); } }
 function micHandle(text){
