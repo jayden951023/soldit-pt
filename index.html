@@ -4549,7 +4549,7 @@ function coachBodyHTML(){
     // 유산소도 코치가 정해준다 (8/4 대표) — 요일마다 기구를 바꿔 지루하지 않게.
     //   하체날은 다리에 부담 적은 걸로 (자전거·러닝머신).
     const c = CO.cardio || (CO.cardio = pickCardio());
-    const mins = (P().goal||"").includes("체지방") ? 20 : 15;
+    const mins = cardioMins();
     const done = CO.t;
     return `<div class="co-phase" style="color:#7fd3a8">🏃 마무리 유산소</div>
       <div class="co-movename">${c.n}</div>
@@ -4557,6 +4557,8 @@ function coachBodyHTML(){
       <div class="co-target" style="font-size:22px;margin-top:10px"><b>${mins}<small>분</small></b></div>
       <div class="co-count sm" id="coT">${mmss(done)}</div>
       ${cardioIntervalHTML(done, mins)}
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0;font-size:14px;color:#cfe0ff"><button class="co-btn ghost" style="width:auto;padding:8px 14px;margin:0" onclick="cardioMinsAdj(-5)">−5분</button><span>목표 <b>${mins}분</b></span><button class="co-btn ghost" style="width:auto;padding:8px 14px;margin:0" onclick="cardioMinsAdj(5)">+5분</button></div>
+      <button class="co-btn ghost" style="margin-bottom:8px" onclick="cardioToggleInterval()">${intervalOn()?"⚡ 인터벌 끄기":"⚡ 인터벌 모드 켜기 (빠르게·천천히 반복)"}</button>
       <div class="co-row">
         <button class="co-btn ghost" onclick="coachCardioSwap()">다른 기구 ↻</button>
         <button class="co-btn" onclick="coachCardioDone()">유산소 완료 ✓</button>
@@ -4615,12 +4617,16 @@ function cardioVoice(sec){
       else if(pos === IV_FAST - 3 || pos === cyc - 3) say("cnt3");
       return;
     }
-    const mins = (P().goal||"").includes("체지방") ? 20 : 15;
+    const mins = cardioMins();
+    if(sec>0 && sec%60===0 && sec%300!==0){ try{ say(["good1","good2","good3","push"][Math.floor(sec/60)%4]); }catch(e){} }
     if(sec > 0 && sec % 300 === 0) say("cardio_5min");           // 5분마다
     if(sec === mins*60 - 60) say("cardio_1min");                  // 1분 남았을 때
     if(sec === mins*60) sayNow("cardio_done");                    // 목표 시간 도달
   }catch(e){}
 }
+function cardioMins(){ return (CO&&CO.cardioMins) || ((P().goal||"").includes("체지방") ? 20 : 15); }
+function cardioToggleInterval(){ try{ localStorage.setItem("jayna_interval", intervalOn()?"0":"1"); }catch(e){} coachRender(); try{ toast(intervalOn()?"⚡ 인터벌 켜짐 — 빠르게/천천히 반복":"인터벌 껐어요"); }catch(e){} }
+function cardioMinsAdj(d){ CO.cardioMins=Math.max(5,Math.min(60,cardioMins()+d)); coachRender(); }
 function coachCardioSwap(){
   const cur = CO.cardio;
   const i = CARDIO.findIndex(c=>c.id===cur.id);
