@@ -3931,6 +3931,8 @@ function coachSet(){ return coachSets()[CO.si]; }
    고른 목소리 팩만 내려받아 IndexedDB 에 저장 → 두 번째부터는 바로 씀. */
 const VOICES = {
 seohyeon: { label: "서현",  tone: "부드럽게", sex: "여" },
+daeun: { label: "다은",  tone: "밝게", sex: "여" },
+minji: { label: "민지",  tone: "차분", sex: "여" },
   igyeom:   { label: "이겸",  tone: "밝게", sex: "남" },
   wonwoo:   { label: "원우",  tone: "밝게", sex: "남" },
   igyeom_n: { label: "이겸",  tone: "차분",  sex: "남" },
@@ -4014,6 +4016,7 @@ async function voiceLoad(id, onProgress){
       } else {
         pack = await r.json();
       }
+      try{ const rf = await fetch(VOICE_BASE + "pack_" + id + "_form.json"); if(rf.ok){ const _fp = await rf.json(); if(_fp && typeof _fp==="object") Object.assign(pack, _fp); } }catch(e){}
       await vdbPut(id, pack);
     }catch(e){ console.log("[음성] 내려받기 실패", e); return false; }
   }
