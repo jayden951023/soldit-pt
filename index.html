@@ -4054,7 +4054,7 @@ function _vstop(){
 }
 function _vnext(){
   const k = _vq.shift();
-  if(!k){ _vplaying = false; return; }
+  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 700; return; }
   _vplaying = true;
   try{
     const a = new Audio("data:audio/mpeg;base64," + VP[k]);
@@ -4154,6 +4154,7 @@ function micStop(){
   if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
 }
 function micHandle(text){
+  if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
   if(typeof CO === "undefined" || !CO) return;
   const hit = MIC_CMDS.find(c => c.re.test(text));
   if(!hit) return;
