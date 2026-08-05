@@ -4084,8 +4084,9 @@ const MIC_CMDS = [
   { re: /다음|넘어가|스킵|건너/,                                    act: "next"  },
   { re: /더\s*쉬|십오초|십오\s*초|더\s*쉴/,                        act: "rest+" },
   { re: /시작|고고|가자/,                                          act: "start" },
-  { re: /무겁|힘들|버겁/,                                          act: "heavy" },
+  { re: /무거|무겁|힘들|버겁/,                                          act: "heavy" },
   { re: /가벼|쉬웠|여유/,                                          act: "light" },
+  { re: /딱\s*좋|괜찮|적당/, act: "ok" },
 ];
 let MIC_R = null, MIC_WANT = false, _ttsPaused = false;
 
@@ -4094,8 +4095,8 @@ const MIC_HELP = [
   ["세트 끝",      "휴식으로 넘어가요",   "완료 · 다 했어 · 오케이"],
   ["다음",         "다음 운동으로",       "넘어가 · 스킵 · 건너뛰어"],
   ["시작",         "바로 시작해요",       "고고 · 가자"],
-  ["무겁다",       "다음 세트 무게 ↓",    "힘들어 · 버거워"],
-  ["가볍다",       "다음 세트 무게 ↑",    "쉬웠어 · 여유있어"],
+  ["무거워",       "다음 세트 무게 ↓",    "힘들어 · 버거워"],
+  ["가벼워",       "다음 세트 무게 ↑",    "쉬웠어 · 여유있어"],
   ["더 쉴게",      "휴식 15초 더",        "십오 초 · 더 쉬자"],
 ];
 /* 코치 모드에서 명령어 보기 (8/5) */
@@ -4175,7 +4176,7 @@ function micHandle(text){
     if(CO.phase === "ready") coachGo();
     else if(CO.phase === "rest") coachSkipRest();
     else if(CO.phase === "move") coachMoved();
-  } else if(hit.act === "heavy" || hit.act === "light"){
+  } else if(hit.act === "heavy" || hit.act === "light" || hit.act === "ok"){
     if(CO.phase === "rest") coachFeel(hit.act);
   }
 }
@@ -4508,7 +4509,7 @@ function coachBodyHTML(){
       <div class="co-guide">${weightGuide(st, sets, CO.si)}</div>
       ${kneeSafeOn() ? '<div class="co-knee">🦵 무릎 조심 · 아프면 바로 멈추세요</div>' : ''}
       ${st.w!=null ? '<div class="co-adj"><button onclick="coachNudge(-1)">−</button><span>무게 조절</span><button onclick="coachNudge(1)">＋</button></div>' : ''}
-      <div class="co-sub" style="margin-top:6px">준비되면 눌러주세요</div>
+      <div class="co-sub" style="margin-top:6px">준비되면 ${micOn()?'<b>"시작"</b> 말하거나 ':''}눌러주세요</div>
       <button class="co-btn big" onclick="coachGo()">시작 ▶</button>`;
   }
   if(CO.phase==="work"){
@@ -4516,7 +4517,7 @@ function coachBodyHTML(){
       <div class="co-target"><b>${st.w!=null?st.w+"<small>kg</small>":"맨몸"}</b> × <b>${st.reps}<small>회</small></b></div>
       <div class="co-count sm" id="coT">0:00</div>
       <div class="co-guide">${weightGuide(st, sets, CO.si)}</div>
-      <div class="co-sub">${st.reps}회 끝나면 아래 버튼을 눌러주세요</div>
+      <div class="co-sub">${st.reps}회 끝나면 ${micOn()?'<b>"세트 끝"</b> 말하거나 ':''}아래 버튼을 눌러주세요</div>
       <button class="co-btn big" onclick="coachDone()">세트 끝 ✓</button>`;
   }
   if(CO.phase==="rest"){
@@ -4525,10 +4526,10 @@ function coachBodyHTML(){
       <div class="co-count" id="coT">${mmss(CO.t)}</div>
       <div class="co-next">다음 · <b>${nx.w!=null?nx.w+"kg":"맨몸"} × ${nx.reps}회</b></div>
       <div class="co-feel">
-        <span>방금 세트, 몇 번 더 할 수 있었어요?</span>
-        <button class="${CO.feel==='heavy'?'sel':''}" onclick="coachFeel('heavy')">😤 못 채웠다</button>
-        <button class="${CO.feel==='ok'?'sel':''}" onclick="coachFeel('ok')">👍 1~2개</button>
-        <button class="${CO.feel==='light'?'sel':''}" onclick="coachFeel('light')">🙂 3개 이상</button>
+        <span>방금 세트 어땠어요?</span>${micOn()?'<div style="margin-top:8px;font-size:12.5px;color:#8fd0ff">🎤 <b>"무거워"</b> · <b>"딱 좋아"</b> · <b>"가벼워"</b> — 말해도 돼요</div>':'<div style="margin-top:8px;font-size:12.5px;color:#8fd0ff">🎤 설정에서 마이크 켜면 <b>말로</b> 대답할 수 있어요</div>'}
+        <button class="${CO.feel==='heavy'?'sel':''}" onclick="coachFeel('heavy')">😤 무거워</button>
+        <button class="${CO.feel==='ok'?'sel':''}" onclick="coachFeel('ok')">👍 딱 좋아</button>
+        <button class="${CO.feel==='light'?'sel':''}" onclick="coachFeel('light')">🙂 가벼워</button>
       </div>
       <div class="co-row">
         <button class="co-btn ghost" onclick="coachAddRest()">+15초</button>
