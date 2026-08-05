@@ -4054,8 +4054,8 @@ function _vstop(){
 }
 function _vnext(){
   const k = _vq.shift();
-  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 700; return; }
-  _vplaying = true;
+  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 700; _micResumeAfterTts(); return; }
+  _vplaying = true; _micPauseForTts();
   try{
     const a = new Audio("data:audio/mpeg;base64," + VP[k]);
     window._va = a;
@@ -4087,7 +4087,7 @@ const MIC_CMDS = [
   { re: /무겁|힘들|버겁/,                                          act: "heavy" },
   { re: /가벼|쉬웠|여유/,                                          act: "light" },
 ];
-let MIC_R = null, MIC_WANT = false;
+let MIC_R = null, MIC_WANT = false, _ttsPaused = false;
 
 /* 무슨 말을 알아듣는지 — 설정과 코치 모드에서 같이 쓴다 (8/5) */
 const MIC_HELP = [
@@ -4153,6 +4153,9 @@ function micStop(){
   MIC_WANT = false;
   if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
 }
+/* 코치가 말할 땐 마이크를 잠깐 놓아준다 — 안 그러면 음성인식이 오디오를 붙잡아 코치 목소리가 끊긴다 (8/5 대표) */
+function _micPauseForTts(){ if(MIC_R){ _ttsPaused = true; try{ MIC_R.onend = null; MIC_R.stop(); }catch(e){} MIC_R = null; } }
+function _micResumeAfterTts(){ if(_ttsPaused){ _ttsPaused = false; if(MIC_WANT && micOn()) setTimeout(micStart, 350); } }
 function micHandle(text){
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
   if(typeof CO === "undefined" || !CO) return;
