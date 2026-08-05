@@ -3930,7 +3930,6 @@ function coachSet(){ return coachSets()[CO.si]; }
    실시간 생성이 아니라 미리 받은 파일 재생이라 끊김이 없고 오프라인에서도 된다.
    고른 목소리 팩만 내려받아 IndexedDB 에 저장 → 두 번째부터는 바로 씀. */
 const VOICES = {
-  seojin:   { label: "서진",  tone: "밝게", sex: "남" },
   igyeom:   { label: "이겸",  tone: "밝게", sex: "남" },
   wonwoo:   { label: "원우",  tone: "밝게", sex: "남" },
   igyeom_n: { label: "이겸",  tone: "차분",  sex: "남" },
@@ -3940,7 +3939,7 @@ let VP = null;                    // 현재 로드된 음성팩 {key: base64}
 let VP_ID = null;
 
 function voiceOn(){ return localStorage.getItem("jayna_voice") === "1"; }
-function voiceId(){ return localStorage.getItem("jayna_voice_id") || "seojin"; }
+function voiceId(){ var id = localStorage.getItem("jayna_voice_id"); return (id && VOICES[id]) ? id : "igyeom"; }
 
 /* ── IndexedDB (음성팩은 커서 localStorage 에 안 들어간다) ── */
 function vdb(){
