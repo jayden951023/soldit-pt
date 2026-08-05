@@ -5217,5 +5217,133 @@ async function _lkTry(){
   setTimeout(()=>inp.focus(), 300);
 })();
 </script>
+<!-- ☁️ 폰pt 클라우드 백업 (8/5 대표) — 계정(이름+PIN)으로 어느 기기서든 기록 이어쓰기 -->
+<script>
+(function(){
+  var SYNC_URL="https://kakao-report-bot-production.up.railway.app/pt-sync";
+  var CRED="soldpt_cloud", STAMP="soldpt_synced_at", ASKED="soldpt_cloud_asked";
+  var SYNC_KEYS=["soldpt","soldpt_photos","soldpt_phmode","jayna_voice_id","jayna_voice","jayna_interval","jayna_mic"];
+  var _origSet=localStorage.setItem.bind(localStorage);
+  function cred(){ try{ return JSON.parse(localStorage.getItem(CRED)||"null"); }catch(e){ return null; } }
+  function stamp(){ return +(localStorage.getItem(STAMP)||0); }
+  function snapshot(){ var o={}; for(var i=0;i<SYNC_KEYS.length;i++){ var v=localStorage.getItem(SYNC_KEYS[i]); if(v!=null) o[SYNC_KEYS[i]]=v; } return o; }
+  function api(action,extra){
+    var c=(extra&&extra.cred)?extra.cred:cred();
+    if(!c) return Promise.resolve({ok:false,error:"연결 안 됨"});
+    var body={action:action,user:c.user,pin:c.pin};
+    if(extra&&extra.data){ body.data=extra.data; body.updatedAt=extra.updatedAt; }
+    return fetch(SYNC_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+      .then(function(r){return r.json();}).catch(function(e){return {ok:false,error:"네트워크"};});
+  }
+  var _pt=null;
+  function push(){
+    var c=cred(); if(!c) return Promise.resolve({ok:false});
+    var now=Date.now();
+    return api("set",{data:snapshot(),updatedAt:now}).then(function(j){
+      if(j&&j.ok){ _origSet(STAMP,String(j.updatedAt||now)); flash("☁️ 저장됨"); }
+      else if(j&&j.error){ flash("동기화 실패: "+j.error); }
+      return j;
+    });
+  }
+  function schedulePush(){ if(_pt) clearTimeout(_pt); _pt=setTimeout(push,1600); }
+  localStorage.setItem=function(k,v){ _origSet(k,v); if(cred()&&SYNC_KEYS.indexOf(k)>=0) schedulePush(); };
+  function applyData(data){ if(!data) return; for(var k in data){ if(SYNC_KEYS.indexOf(k)>=0){ try{ _origSet(k,data[k]); }catch(e){} } } }
+  function pullOnLoad(){
+    var c=cred(); if(!c) return;
+    if(sessionStorage.getItem("_ptcloud_pulled")) return;
+    api("get",{}).then(function(j){
+      if(j&&j.ok&&j.exists&&j.data&&(j.updatedAt||0)>stamp()){
+        applyData(j.data); _origSet(STAMP,String(j.updatedAt));
+        sessionStorage.setItem("_ptcloud_pulled","1");
+        location.reload();
+      } else { sessionStorage.setItem("_ptcloud_pulled","1"); }
+    });
+  }
+  function flash(msg){ try{ var d=document.createElement("div"); d.textContent=msg; d.style.cssText="position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1c2534;color:#dfe6f2;padding:9px 14px;border-radius:20px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.4);opacity:0;transition:opacity .2s"; document.body.appendChild(d); requestAnimationFrame(function(){d.style.opacity="1";}); setTimeout(function(){ d.style.opacity="0"; setTimeout(function(){ try{d.remove();}catch(e){} },300); },1800); }catch(e){} }
+  function el(tag,css,txt){ var e=document.createElement(tag); if(css)e.style.cssText=css; if(txt!=null)e.textContent=txt; return e; }
+  var overlay=null;
+  function closeModal(){ if(overlay){ try{overlay.remove();}catch(e){} overlay=null; } }
+  function timeAgo(ts){ if(!ts) return "없음"; var s=Math.floor((Date.now()-ts)/1000); if(s<60)return "방금"; if(s<3600)return Math.floor(s/60)+"분 전"; if(s<86400)return Math.floor(s/3600)+"시간 전"; return Math.floor(s/86400)+"일 전"; }
+  function openModal(){
+    closeModal();
+    overlay=el("div","position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px");
+    overlay.addEventListener("click",function(e){ if(e.target===overlay) closeModal(); });
+    var card=el("div","width:100%;max-width:340px;background:#121a26;border:1px solid #26344a;border-radius:16px;padding:20px;color:#e6ecf5;font-family:inherit;box-shadow:0 12px 40px rgba(0,0,0,.5)");
+    var c=cred();
+    card.appendChild(el("div","font-size:17px;font-weight:700;margin-bottom:4px","☁️ 클라우드 백업"));
+    card.appendChild(el("div","font-size:12px;color:#8b97ab;margin-bottom:16px","기록을 계정에 저장해서 다른 폰에서도 이어서 하기"));
+    if(c){
+      card.appendChild(el("div","font-size:14px;margin-bottom:6px","연결됨: "+c.user));
+      card.appendChild(el("div","font-size:12px;color:#8b97ab;margin-bottom:16px","마지막 저장: "+timeAgo(stamp())));
+      var bSave=el("button","width:100%;padding:12px;border:0;border-radius:10px;background:#2b6cff;color:#fff;font-size:15px;font-weight:600;margin-bottom:10px","지금 저장하기");
+      bSave.onclick=function(){ bSave.textContent="저장 중…"; push().then(function(){ closeModal(); }); };
+      card.appendChild(bSave);
+      var bOut=el("button","width:100%;padding:11px;border:1px solid #3a4a63;border-radius:10px;background:transparent;color:#c2ccdb;font-size:14px","연결 해제");
+      bOut.onclick=function(){ if(confirm("연결을 해제할까요? (이 기기 기록은 남아있어요)")){ localStorage.removeItem(CRED); closeModal(); flash("연결 해제됨"); } };
+      card.appendChild(bOut);
+    } else {
+      var iu=el("input","width:100%;padding:11px;border:1px solid #2f3e57;border-radius:10px;background:#0c131e;color:#fff;font-size:15px;margin-bottom:9px;box-sizing:border-box"); iu.placeholder="이름 (예: 성규 / 와이프)"; iu.autocapitalize="off"; iu.autocomplete="off";
+      var ip=el("input","width:100%;padding:11px;border:1px solid #2f3e57;border-radius:10px;background:#0c131e;color:#fff;font-size:15px;margin-bottom:14px;box-sizing:border-box"); ip.placeholder="PIN 4자리 (숫자)"; ip.inputMode="numeric"; ip.type="password";
+      card.appendChild(iu); card.appendChild(ip);
+      var bGo=el("button","width:100%;padding:12px;border:0;border-radius:10px;background:#2b6cff;color:#fff;font-size:15px;font-weight:600;margin-bottom:8px","연결 / 불러오기");
+      bGo.onclick=function(){ doConnect(iu.value,ip.value,bGo); };
+      card.appendChild(bGo);
+      var hint=el("div","font-size:11px;color:#71809a;margin-top:6px;line-height:1.6"); hint.innerHTML="· 새 이름이면 계정이 만들어지고 지금 기록이 올라가요.<br>· 다른 폰에서 같은 이름+PIN을 넣으면 그대로 이어져요.";
+      card.appendChild(hint);
+    }
+    var bx=el("button","width:100%;padding:9px;border:0;background:transparent;color:#6b7688;font-size:13px;margin-top:12px","닫기"); bx.onclick=closeModal; card.appendChild(bx);
+    overlay.appendChild(card); document.body.appendChild(overlay);
+  }
+  function doConnect(user,pin,btn){
+    user=String(user||"").trim(); pin=String(pin||"").trim();
+    if(!user){ alert("이름을 넣어주세요"); return; }
+    if(!/^\d{4,8}$/.test(pin)){ alert("PIN은 숫자 4자리로 넣어주세요"); return; }
+    var testCred={user:user,pin:pin};
+    if(btn) btn.textContent="확인 중…";
+    api("get",{cred:testCred}).then(function(j){
+      if(j&&j.ok&&j.exists){
+        var loadIt=confirm("'"+user+"' 계정에 저장된 기록이 있어요.\n\n[확인] 클라우드 기록 불러오기 (이 폰은 덮어쓰)\n[취소] 이 폰 기록을 클라우드에 올리기");
+        localStorage.setItem(CRED,JSON.stringify(testCred));
+        if(loadIt){
+          applyData(j.data); _origSet(STAMP,String(j.updatedAt||Date.now()));
+          sessionStorage.setItem("_ptcloud_pulled","1");
+          flash("불러오는 중…"); setTimeout(function(){ location.reload(); },400);
+        } else {
+          push().then(function(){ closeModal(); flash("이 폰 기록을 올렸어요"); });
+        }
+      } else if(j&&j.ok&&!j.exists){
+        localStorage.setItem(CRED,JSON.stringify(testCred));
+        push().then(function(r){ closeModal(); flash((r&&r.ok)?"계정 생성 + 기록 업로드 완료":"업로드 실패"); });
+      } else if(j&&/PIN/.test(j.error||"")){
+        if(btn) btn.textContent="연결 / 불러오기";
+        alert("PIN이 안 맞아요. 이미 다른 사람이 쓰는 이름일 수 있어요. 다른 이름이나 맞는 PIN을 넣어주세요.");
+      } else {
+        if(btn) btn.textContent="연결 / 불러오기";
+        alert("연결 실패: "+((j&&j.error)||"네트워크 확인"));
+      }
+    });
+  }
+  function mountBtn(){
+    if(document.getElementById("ptCloudBtn")) return;
+    var b=el("button","","☁️"); b.id="ptCloudBtn"; b.title="클라우드 백업";
+    b.style.cssText="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:10px;z-index:9997;width:38px;height:38px;border-radius:50%;border:1px solid #2b3a55;background:rgba(18,26,38,.85);color:#cfe0ff;font-size:16px;line-height:1;text-align:center;padding:0;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(0,0,0,.35)";
+    b.onclick=openModal;
+    document.body.appendChild(b);
+    if(!cred()&&!localStorage.getItem(ASKED)){
+      var dot=el("div","position:absolute;top:-2px;right:-2px;width:11px;height:11px;border-radius:50%;background:#ff4d4f;border:2px solid #121a26"); b.appendChild(dot);
+    }
+  }
+  function firstAsk(){
+    if(cred()||localStorage.getItem(ASKED)) return;
+    var hasData=false; try{ hasData=(localStorage.getItem("soldpt")||"").length>50; }catch(e){}
+    if(!hasData) return;
+    localStorage.setItem(ASKED,"1");
+    setTimeout(openModal,1500);
+  }
+  function init(){ try{ mountBtn(); pullOnLoad(); firstAsk(); }catch(e){} }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
+  window.PTCloud={push:push,open:openModal};
+})();
+</script>
 </body>
 </html>
