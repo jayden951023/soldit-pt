@@ -4074,7 +4074,7 @@ function vEx(id){ return "ex_" + id; }
    브라우저 내장 음성인식이라 따로 돈이 안 든다.
    ⚠️ 아이폰 사파리는 화면이 꺼지면 마이크가 끊긴다 → 화면 켜둠(wakeLock)과 같이 써야 함. */
 const MIC_CMDS = [
-  { re: /세트\s*끝|셋트\s*끝|끝났|완료|다\s*했|오케이|오케바리/, act: "done"  },
+  { re: /끝|완료|다\s*했|오케이|오케바리|다\s*됐|스톱/, act: "done"  },
   { re: /다음\s*운동|넘어가|스킵|건너/,                                    act: "next"  },
   { re: /더\s*쉬|십오초|십오\s*초|더\s*쉴/,                        act: "rest+" },
   { re: /시작|고고|가자/,                                          act: "start" },
@@ -4126,7 +4126,7 @@ function micStart(){
   const r = new SR();
   r.lang = "ko-KR";
   r.continuous = true;
-  r.interimResults = false;
+  r.interimResults = true;
   r.onresult = (e)=>{
     for(let i = e.resultIndex; i < e.results.length; i++){
       const t = (e.results[i][0].transcript || "").trim();
@@ -4135,7 +4135,7 @@ function micStart(){
     }
   };
   // 브라우저가 조용하면 알아서 멈춘다 → 다시 켠다
-  r.onend = ()=>{ MIC_R = null; if(MIC_WANT) setTimeout(micStart, 400); };
+  r.onend = ()=>{ MIC_R = null; if(MIC_WANT) setTimeout(micStart, 150); };
   r.onerror = (e)=>{
     if(e.error === "not-allowed" || e.error === "service-not-allowed"){
       MIC_WANT = false; /* 설정은 유지 — 자동으로 끄지 않음 (8/5 대표) */
@@ -4154,13 +4154,14 @@ function _micRevive(){ try{ if(micOn() && document.getElementById("coachView")){
 document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _micRevive(); });
 window.addEventListener("focus", _micRevive);
 window.addEventListener("pageshow", _micRevive);
-function _micPauseForTts(){ if(MIC_R){ _ttsPaused = true; try{ MIC_R.onend = null; MIC_R.stop(); }catch(e){} MIC_R = null; } }
-function _micResumeAfterTts(){ if(_ttsPaused){ _ttsPaused = false; if(MIC_WANT && micOn()) setTimeout(micStart, 350); } }
+function _micPauseForTts(){ /* 마이크 계속 켜둠 — 껐다켜졌다 방지 (8/6 대표) */ }
+function _micResumeAfterTts(){}
 function micHandle(text){
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
   if(typeof CO === "undefined" || !CO) return;
   const hit = MIC_CMDS.find(c => c.re.test(text));
   if(!hit) return;
+  if(Date.now() < (window._micCmdCd||0)) return; window._micCmdCd = Date.now()+1200;
   micFlash(text);
   if(hit.act === "done"){
     if(CO.phase === "work") coachDone();
