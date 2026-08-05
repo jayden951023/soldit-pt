@@ -4221,7 +4221,7 @@ function coachTick(){
           else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go");
         }catch(e){}
       }
-      else if(CO.phase==="rest"){ CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("rest_end"); }
+      else if(CO.phase==="rest"){ CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ const st=coachSet(), sets=coachSets(); if(st.kind==="warm") say("warmup", vWeight(st.w), vReps(st.reps)); else if(CO.si>=sets.length-1) say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "last_set"); else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go"); }catch(e){} /* 휴식 끝나면 바로 세트 시작 (8/5 대표) — 준비 대기/카운트 생략 */ }
       else if(CO.phase==="move"){ CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("moved"); }
       coachRender(); return;
     }
