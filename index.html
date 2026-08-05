@@ -3515,7 +3515,7 @@ function renderSettings(){
     <label class="fld">숙련도</label>
     <select id="s_exp">${["초급","중급","상급"].map(g=>`<option ${p.exp===g?'selected':''}>${g}</option>`).join("")}</select>
     <label class="fld">주간 목표</label>
-    <select id="s_wt">${[3,4,5].map(n=>`<option value="${n}" ${(p.weeklyTarget||4)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>
+    <select id="s_wt">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${(p.weeklyTarget||4)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>
     <label class="fld">세트 사이 쉬는 시간</label>
     <select id="s_rest">${[[0,"자동 (목표에 맞게)"],[30,"30초"],[45,"45초"],[60,"1분"],[90,"1분 30초"],[120,"2분"],[180,"3분"]].map(o=>`<option value="${o[0]}" ${(+(p.restOverride||0)===o[0])?'selected':''}>${o[1]}</option>`).join("")}</select>
     <div class="row" style="gap:10px;margin-top:4px">
