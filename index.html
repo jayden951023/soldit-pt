@@ -4222,7 +4222,7 @@ function coachTick(){
     if(!CO) return;
     // 화면이 없어졌는데 타이머만 도는 상태 방지 (8/4)
     if(!document.getElementById("coachView")){ clearInterval(CO.timer); CO = null; return; }
-    try{ /* _micEnsure: 코치 안 말할 때 마이크 켜둠 (8/6 대표 — 준비화면 음성 안되던 것) */ if(micOn() && !_vplaying && !MIC_R && CO.phase!=="done") micStart(); }catch(e){}
+    try{ /* _micEnsure: 코치 안 말할 때 마이크 켜둠 (8/6 대표 — 준비화면 음성 안되던 것) */ if(CO.phase==="cardio" || CO.phase==="done"){ if(MIC_R){ try{ MIC_R.onend=null; MIC_R.stop(); }catch(e){} MIC_R=null; MIC_WANT=false; } } else if(micOn() && !_vplaying && !MIC_R) micStart(); }catch(e){}
     if(CO.phase==="work" || CO.phase==="cardio"){
       CO.t++;
       // 유산소 안내 (8/5 대표) — 인터벌이면 전환 시점에, 아니면 5분마다
