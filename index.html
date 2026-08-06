@@ -4068,7 +4068,7 @@ function _vstop(){
 }
 function _vnext(){
   const k = _vq.shift();
-  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 700; _micResumeAfterTts(); return; }
+  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 1200; _micResumeAfterTts(); return; }
   _vplaying = true; _micPauseForTts();
   try{
     const a = new Audio("data:audio/mpeg;base64," + VP[k]);
@@ -4174,8 +4174,8 @@ function _micRevive(){ try{ if(micOn() && document.getElementById("coachView")){
 document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _micRevive(); });
 window.addEventListener("focus", _micRevive);
 window.addEventListener("pageshow", _micRevive);
-function _micPauseForTts(){ if(MIC_R){ _ttsPaused=true; try{ MIC_R.onend=null; MIC_R.stop(); }catch(e){} MIC_R=null; } }
-function _micResumeAfterTts(){ _ttsPaused=false; if(micOn() && !MIC_R) setTimeout(micStart, 600); }
+function _micPauseForTts(){ /* 마이크 계속 켜둠 — 껐다켜졌다 방지 (8/7 대표) */ }
+function _micResumeAfterTts(){}
 function micHandle(text){
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
   if(typeof CO === "undefined" || !CO) return;
