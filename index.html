@@ -4147,9 +4147,10 @@ function micStart(){
   r.lang = "ko-KR";
   r.continuous = true;
   r.interimResults = true;
+  r.maxAlternatives = 6;
   r.onresult = (e)=>{
     for(let i = e.resultIndex; i < e.results.length; i++){
-      const t = (e.results[i][0].transcript || "").trim();
+      const t = Array.from(e.results[i]||[]).map(a=>(a&&a.transcript)||"").join(" ").trim();
       if(!t) continue;
       micHandle(t);
     }
@@ -4181,7 +4182,7 @@ function micHandle(text){
   if(typeof CO === "undefined" || !CO) return;
   const hit = MIC_CMDS.find(c => c.re.test(text));
   if(!hit) return;
-  if(Date.now() < (window._micCmdCd||0)) return; window._micCmdCd = Date.now()+1200;
+  if(Date.now() < (window._micCmdCd||0)) return; window._micCmdCd = Date.now()+900;
   micFlash(text);
   if(hit.act === "done"){
     if(CO.phase === "work") coachDone();
