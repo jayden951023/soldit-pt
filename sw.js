@@ -1,7 +1,7 @@
 /* JAYNA PT 서비스워커 — 오프라인 실행 + 자동 업데이트
    전략: HTML 은 network-first(항상 최신 코드), 아이콘 등 정적파일은 cache-first.
    → 제가 코드를 고쳐 올리면 앱을 켤 때 바로 최신본이 뜬다. 재설치 불필요. */
-const V = 'soldpt-v4';   // 8/4 — 캐시 갱신(옛 버전 섞임 방지)
+const V = 'soldpt-v5';   // 8/4 — 캐시 갱신(옛 버전 섞임 방지)
 const ASSETS = ['./', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
