@@ -3887,6 +3887,7 @@ function boot(){
   $("#whoBtn").textContent=P().name[0]||"나";
   $("#whoBtn").onclick=switchAccount;   // 8/4 대표 — 아바타 누르면 바로 계정 전환
   updateStreak();
+  try{ var _cr=JSON.parse(localStorage.getItem("soldpt_cardio_run")||"null"); var _cel=_cr?((_cr.accum||0)+((_cr.running&&_cr.startTs)?Math.floor((Date.now()-_cr.startTs)/1000):0)):0; if(_cr && (_cr.running||_cr.accum) && _cel<10800){ setTimeout(openCardioLog, 500); } else { var _co=JSON.parse(localStorage.getItem("soldpt_coach_run")||"null"); if(_co && _co.date===todayKey()){ setTimeout(coachStart, 500); } } }catch(e){}
   nav("home");
 }
 
@@ -3916,6 +3917,7 @@ function coachStart(){
       if(_lw && e.planSets) for(let _si=_dn; _si<e.planSets.length; _si++){ if(e.planSets[_si] && e.planSets[_si].kind!=="warm"){ e.planSets[_si].w=_lw.w; e.planSets[_si].w0=_lw.w; } } } });
     for(let _ei=0; _ei<plan.exs.length; _ei++){ const _e=plan.exs[_ei]; const _n=(_e.planSets&&_e.planSets.length)?_e.planSets.length:1; const _done=(CO.log[_e.id]||[]).filter(x=>x&&x.done).length; if(_done<_n){ CO.ei=_ei; CO.si=_done; break; } }
   }catch(e){}
+  try{ localStorage.setItem("soldpt_coach_run", JSON.stringify({date:todayKey()})); }catch(e){}
   document.body.classList.add("coach-on");
   keepAwake(true);   // 운동 중 화면 꺼짐 방지 (8/4)
   coachTick();
@@ -3925,6 +3927,7 @@ function coachStop(){
   try{ _vq=[]; _vstop(); micStop(); }catch(e){}
   if(CO && CO.timer) clearInterval(CO.timer);
   CO = null;
+  try{ localStorage.removeItem("soldpt_coach_run"); }catch(e){}
   document.body.classList.remove("coach-on");
   keepAwake(false);
   const w = $("#coachView"); if(w) w.remove();
