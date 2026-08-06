@@ -2415,7 +2415,7 @@ function openCardioLog(){
   const fmt=(s)=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
   const m=el("div","card"); m.id="cardioModal";
   m.style.cssText="position:fixed;inset:0;z-index:80;margin:0;border-radius:0;overflow:auto;background:var(--bg);padding:20px 16px;display:flex;flex-direction:column;justify-content:center;text-align:center";
-  let tick=null, wake=null, lastSeg=-1;
+  let tick=null, wake=null, lastSeg=-1, lastCount=0;
   const keepAwake=async()=>{ try{ if("wakeLock" in navigator && !wake){ wake=await navigator.wakeLock.request("screen"); if(wake&&wake.addEventListener) wake.addEventListener("release",()=>{wake=null;}); } }catch(e){} };
   const releaseAwake=()=>{ try{ if(wake){ wake.release(); wake=null; } }catch(e){} };
   const ivInfo=(s)=>{ const pos=s%CYC; const fast=pos<IVF; return {fast, left: fast?(IVF-pos):(CYC-pos), seg: fast?0:1, round: Math.floor(s/CYC)+1}; };
@@ -2428,9 +2428,9 @@ function openCardioLog(){
         const info=ivInfo(s); iv.style.display="";
         iv.style.background = info.fast ? "rgba(255,120,90,.14)" : "rgba(120,180,255,.12)";
         iv.style.borderColor = info.fast ? "#ff7a5a" : "#5b9dff";
-        iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+'</div><div style="font-size:14px;color:#cfe0ff;margin-top:3px">'+info.left+'초 남음 · '+info.round+'번째</div><div style="font-size:12.5px;color:#8b97ab;margin-top:3px">'+(info.fast?"숨이 찰 정도로 올려주세요":"숨 고르며 걷는 정도로")+'</div>';
-        if(info.seg!==lastSeg){ if(lastSeg!==-1){ try{ beep(1); }catch(e){} try{ say(info.fast?"iv_fast":"iv_slow"); }catch(e){} } lastSeg=info.seg; }
-      } else { iv.style.display="none"; lastSeg=-1; }
+        var _dur=info.fast?IVF:IVS; var _isTread=/러닝|트레드|treadmill/i.test((plan&&plan.n)||"")||(plan&&plan.id==="tread"); var _kmh=_isTread?(info.fast?" · 8~9km/h":" · 5~6km/h"):""; iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+' <span style="font-size:14px;opacity:.85">'+(_dur%60===0?(_dur/60)+"분":_dur+"초")+' 동안</span></div><div style="font-size:34px;font-weight:900;color:'+(info.left<=5?"#ff5a5a":"#fff")+';margin-top:2px;line-height:1.05">'+info.left+'<span style="font-size:15px"> 초 남음</span></div><div style="font-size:12.5px;color:#8b97ab;margin-top:4px">'+(info.fast?("숨이 찰 정도로 올려요"+_kmh):("숨 고르며 걸어요"+_kmh))+'</div>';
+        if(info.seg!==lastSeg){ if(lastSeg!==-1){ try{ beep(1); }catch(e){} try{ say(info.fast?"iv_fast":"iv_slow"); }catch(e){} } lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ say("cnt"+info.left); }catch(e){} try{ beep(0); }catch(e){} }
+      } else { iv.style.display="none"; lastSeg=-1; lastCount=0; }
     }
     const h=m.querySelector("#c_hint"); if(h && s>=goalMin*60){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
   };
