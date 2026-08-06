@@ -5299,7 +5299,7 @@ async function _lkTry(){
       bOut.onclick=function(){ if(confirm("연결을 해제할까요? (이 기기 기록은 남아있어요)")){ localStorage.removeItem(CRED); closeModal(); flash("연결 해제됨"); } };
       card.appendChild(bOut);
     } else {
-      var iu=el("input","width:100%;padding:11px;border:1px solid #2f3e57;border-radius:10px;background:#0c131e;color:#fff;font-size:15px;margin-bottom:9px;box-sizing:border-box"); iu.placeholder="이름 (예: 성규 / 와이프)"; iu.autocapitalize="off"; iu.autocomplete="off";
+      var iu=el("input","width:100%;padding:11px;border:1px solid #2f3e57;border-radius:10px;background:#0c131e;color:#fff;font-size:15px;margin-bottom:9px;box-sizing:border-box"); iu.placeholder="이름 (예: 성규)"; iu.autocapitalize="off"; iu.autocomplete="off";
       var ip=el("input","width:100%;padding:11px;border:1px solid #2f3e57;border-radius:10px;background:#0c131e;color:#fff;font-size:15px;margin-bottom:14px;box-sizing:border-box"); ip.placeholder="PIN 4자리 (숫자)"; ip.inputMode="numeric"; ip.type="password";
       card.appendChild(iu); card.appendChild(ip);
       var bGo=el("button","width:100%;padding:12px;border:0;border-radius:10px;background:#2b6cff;color:#fff;font-size:15px;font-weight:600;margin-bottom:8px","연결 / 불러오기");
