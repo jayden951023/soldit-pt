@@ -2401,9 +2401,10 @@ function renderCardioCard(v){
 }
 let cardioT=null, cardioSec=0;
 function openCardioLog(){
-  // 화면 꺼지거나 나가도 유지 (8/6 대표) — 타임스탬프 기반 + localStorage 저장 + 화면유지
+  // 화면 꺼지거나 나가도 유지 + 인터벌 모드 (8/6 대표)
   const CKEY="soldpt_cardio_run";
   const goalMin=(P().goal||"").includes("체지방")?20:15;
+  const IVF=60, IVS=120, CYC=180; // 빠르게 1분 / 천천히 2분
   let sess=null; try{ sess=JSON.parse(localStorage.getItem(CKEY)||"null"); }catch(e){}
   let plan;
   if(sess&&sess.planId){ plan=CARDIO.find(c=>c.id===sess.planId)||pickCardio(); }
@@ -2414,10 +2415,25 @@ function openCardioLog(){
   const fmt=(s)=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
   const m=el("div","card"); m.id="cardioModal";
   m.style.cssText="position:fixed;inset:0;z-index:80;margin:0;border-radius:0;overflow:auto;background:var(--bg);padding:20px 16px;display:flex;flex-direction:column;justify-content:center;text-align:center";
-  let tick=null, wake=null;
+  let tick=null, wake=null, lastSeg=-1;
   const keepAwake=async()=>{ try{ if("wakeLock" in navigator && !wake){ wake=await navigator.wakeLock.request("screen"); if(wake&&wake.addEventListener) wake.addEventListener("release",()=>{wake=null;}); } }catch(e){} };
   const releaseAwake=()=>{ try{ if(wake){ wake.release(); wake=null; } }catch(e){} };
-  const paint=()=>{ const d=m.querySelector("#c_tdisp"); if(d) d.textContent=fmt(elapsed()); const h=m.querySelector("#c_hint"); if(h && elapsed()>=goalMin*60){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; } };
+  const ivInfo=(s)=>{ const pos=s%CYC; const fast=pos<IVF; return {fast, left: fast?(IVF-pos):(CYC-pos), seg: fast?0:1, round: Math.floor(s/CYC)+1}; };
+  const paint=()=>{
+    const s=elapsed();
+    const d=m.querySelector("#c_tdisp"); if(d) d.textContent=fmt(s);
+    const iv=m.querySelector("#c_iv");
+    if(iv){
+      if(intervalOn() && sess.running){
+        const info=ivInfo(s); iv.style.display="";
+        iv.style.background = info.fast ? "rgba(255,120,90,.14)" : "rgba(120,180,255,.12)";
+        iv.style.borderColor = info.fast ? "#ff7a5a" : "#5b9dff";
+        iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+'</div><div style="font-size:14px;color:#cfe0ff;margin-top:3px">'+info.left+'초 남음 · '+info.round+'번째</div><div style="font-size:12.5px;color:#8b97ab;margin-top:3px">'+(info.fast?"숨이 찰 정도로 올려주세요":"숨 고르며 걷는 정도로")+'</div>';
+        if(info.seg!==lastSeg){ if(lastSeg!==-1){ try{ beep(1); }catch(e){} try{ say(info.fast?"iv_fast":"iv_slow"); }catch(e){} } lastSeg=info.seg; }
+      } else { iv.style.display="none"; lastSeg=-1; }
+    }
+    const h=m.querySelector("#c_hint"); if(h && s>=goalMin*60){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
+  };
   const startTick=()=>{ if(!tick) tick=setInterval(paint,1000); };
   const stopTick=()=>{ if(tick){ clearInterval(tick); tick=null; } };
   const draw=()=>{
@@ -2427,20 +2443,24 @@ function openCardioLog(){
       '<div style="font-size:12.5px;color:#7cc4ff;background:rgba(124,196,255,.1);border:1px solid rgba(124,196,255,.24);border-radius:8px;padding:6px 12px;display:inline-block;margin-bottom:14px">'+plan.tip+'</div>'+
       '<div style="font-size:15px;color:#bcd3e6">목표 <b style="color:#fff;font-size:26px">'+goalMin+'</b>분</div>'+
       '<div id="c_tdisp" style="font-size:62px;font-weight:900;color:#fff;line-height:1.1;margin:8px 0;font-variant-numeric:tabular-nums">'+fmt(elapsed())+'</div>'+
+      '<div id="c_iv" style="display:none;border:1px solid #5b9dff;border-radius:12px;padding:10px 14px;margin:4px auto 10px;max-width:320px"></div>'+
       '<div id="c_hint" class="k">'+(sess.running?"운동 중 · 화면 꺼지거나 나가도 계속 돼요":(sess.accum?"일시정지됨 · 이어서 누르세요":"시작을 누르면 시간이 올라가요"))+'</div>';
     const start=el("button","btn green", sess.running?"⏸ 일시정지":(sess.accum?"▶ 이어서":"▶ 유산소 시작")); start.style.marginTop="16px";
+    const ivbtn=el("button","btn sec", intervalOn()?"⚡ 인터벌 끄기":"⚡ 인터벌 모드 켜기 (빠르게·천천히)"); ivbtn.style.marginTop="8px";
     const swap=el("button","btn sec","↻ 다른 기구로"); swap.style.marginTop="8px"; if(sess.running||sess.accum) swap.style.display="none";
     const save=el("button","btn green","✓ 완료 · 기록 저장"); save.style.marginTop="8px"; if(!(sess.running||sess.accum)) save.style.display="none";
     const cancel=el("button","btn sec", (sess.running||sess.accum)?"닫기 (계속 유지)":"닫기"); cancel.style.marginTop="8px";
     start.onclick=()=>{
       if(sess.running){ sess.accum=elapsed(); sess.running=false; sess.startTs=0; saveSess(); stopTick(); releaseAwake(); draw(); }
-      else { sess.running=true; sess.startTs=Date.now(); saveSess(); startTick(); keepAwake(); draw(); }
+      else { sess.running=true; sess.startTs=Date.now(); saveSess(); if(voiceOn() && !VP){ try{ voiceLoad(); }catch(e){} } startTick(); keepAwake(); draw(); }
     };
+    ivbtn.onclick=()=>{ try{ localStorage.setItem("jayna_interval", intervalOn()?"0":"1"); }catch(e){} lastSeg=-1; draw(); try{ toast(intervalOn()?"⚡ 인터벌 켜짐 — 빠르게 1분·천천히 2분 반복":"인터벌 껐어요"); }catch(e){} };
     swap.onclick=()=>{ if(sess.running) return; const i=CARDIO.findIndex(c=>c.id===plan.id); plan=CARDIO[(i+1)%CARDIO.length]; sess.planId=plan.id; saveSess(); draw(); };
-    save.onclick=()=>{ const min=Math.max(1,Math.round(elapsed()/60)); stopTick(); releaseAwake(); clearSess(); P().cardio=P().cardio||[]; P().cardio.push({date:todayKey(),type:plan.n,min:min,intensity:"Zone 2"}); const g=gameStats(); const newB=syncBadges(g); persist(); if(m._vis) document.removeEventListener("visibilitychange",m._vis); m.remove(); try{ beep(2); }catch(e){} toast(plan.n+" "+min+"분 기록 · +20 XP"+(newB.length?" · 배지 "+newB.length+"개!":"")); nav("home"); };
+    save.onclick=()=>{ const min=Math.max(1,Math.round(elapsed()/60)); stopTick(); releaseAwake(); clearSess(); P().cardio=P().cardio||[]; P().cardio.push({date:todayKey(),type:plan.n,min:min,intensity:intervalOn()?"인터벌":"Zone 2"}); const g=gameStats(); const newB=syncBadges(g); persist(); if(m._vis) document.removeEventListener("visibilitychange",m._vis); m.remove(); try{ beep(2); }catch(e){} toast(plan.n+" "+min+"분 기록 · +20 XP"+(newB.length?" · 배지 "+newB.length+"개!":"")); nav("home"); };
     cancel.onclick=()=>{ stopTick(); releaseAwake(); if(m._vis) document.removeEventListener("visibilitychange",m._vis); m.remove(); };
-    m.appendChild(start); m.appendChild(swap); m.appendChild(save); m.appendChild(cancel);
+    m.appendChild(start); m.appendChild(ivbtn); m.appendChild(swap); m.appendChild(save); m.appendChild(cancel);
     if(sess.running){ startTick(); keepAwake(); }
+    paint();
   };
   draw();
   document.body.appendChild(m);
