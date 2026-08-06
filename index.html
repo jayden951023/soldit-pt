@@ -4744,11 +4744,23 @@ function photoHasBoth(exId){
 /* 프리웨이트 동작(덤벨 컬·바벨 스쿼트 등)은 전용 사진이 없으므로
    그 동작에 쓰는 기구(덤벨·바벨·랙) 사진을 대신 보여준다. (8/4) */
 function photoFallback(exId){
-  const eq = (EX[exId] && EX[exId].eq) || [];
+  const ex = EX[exId]; if(!ex) return null;
+  const _m0 = (ex.m||"").split("\u00b7")[0].split("(")[0].trim();
+  const kw = (ex.name||"").match(/로우|컬|프레스|플라이|풀다운|풀업|레이즈|익스텐션|킥백|스쿼트|런지|데드|힙|크런치|레그|로|풀/g) || [];
+  var muscleOnly = null;
+  for(const x of Object.keys(EX)){
+    if(x===exId) continue;
+    if(!(GYM_PHOTOS_MOVE[x] || GYM_PHOTOS_GEAR[x])) continue;
+    const _m2 = (EX[x].m||"").split("\u00b7")[0].split("(")[0].trim();
+    const sameM = _m0 && _m2 && (_m2.indexOf(_m0)>=0 || _m0.indexOf(_m2)>=0);
+    if(!sameM) continue;
+    if(kw.some(function(k){ return (EX[x].name||"").indexOf(k)>=0; })) return GYM_PHOTOS_MOVE[x] || GYM_PHOTOS_GEAR[x];
+    if(!muscleOnly) muscleOnly = x;
+  }
+  if(muscleOnly) return GYM_PHOTOS_MOVE[muscleOnly] || GYM_PHOTOS_GEAR[muscleOnly];
+  const eq = ex.eq || [];
   for(const id of eq){
-    // 같은 기구를 쓰는 다른 종목 중 사진이 있는 것을 빌려온다
-    const k = Object.keys(EX).find(x => x !== exId && (EX[x].eq||[]).includes(id)
-              && (GYM_PHOTOS_GEAR[x] || GYM_PHOTOS_MOVE[x]));
+    const k = Object.keys(EX).find(function(x){ return x !== exId && (EX[x].eq||[]).includes(id) && (GYM_PHOTOS_GEAR[x] || GYM_PHOTOS_MOVE[x]); });
     if(k) return GYM_PHOTOS_MOVE[k] || GYM_PHOTOS_GEAR[k];
   }
   return null;
