@@ -4404,6 +4404,39 @@ function beep(kind){
 }
 
 /* [끝] — 세트 완료 → 휴식 or 다음 운동 */
+/* 화면 두 번 톡톡 = 다음으로 (음성 대체, 8/8 대표) */
+function _coachTapAdvance(){
+  try{
+    if(typeof CO==="undefined" || !CO) return;
+    if(CO.phase==="work") coachDone();
+    else if(CO.phase==="ready") coachGo();
+    else if(CO.phase==="rest") coachSkipRest();
+    else if(CO.phase==="move") coachMoved();
+    else return;
+    try{ micFlash("👆 두 번 탭 — 다음으로"); }catch(e){}
+    try{ beep(1); }catch(e){}
+  }catch(e){}
+}
+if(!window._coachDblInit){ window._coachDblInit=1;
+  var _lastCoTap=0;
+  document.addEventListener("touchend", function(ev){
+    try{
+      if(typeof CO==="undefined" || !CO || !document.getElementById("coachView")) return;
+      var t=ev.target;
+      if(t && t.closest && t.closest("button,a,input,select,textarea")) return;
+      var now=Date.now();
+      if(_lastCoTap && now-_lastCoTap<450){ _lastCoTap=0; try{ ev.preventDefault(); }catch(e){} _coachTapAdvance(); }
+      else _lastCoTap=now;
+    }catch(e){}
+  }, true);
+  document.addEventListener("dblclick", function(ev){
+    try{
+      if(typeof CO==="undefined" || !CO || !document.getElementById("coachView")) return;
+      var t=ev.target; if(t && t.closest && t.closest("button,a,input,select,textarea")) return;
+      _coachTapAdvance();
+    }catch(e){}
+  }, true);
+}
 function coachDone(){
   const e = coachEx(), st = coachSet();
   CO.log[e.id] = CO.log[e.id] || [];
@@ -4670,7 +4703,7 @@ function coachBodyHTML(){
       ${kneeSafeOn() ? '<div class="co-knee">🦵 무릎 조심 · 아프면 바로 멈추세요</div>' : ''}
       ${st.w!=null ? '<div class="co-adj"><button onclick="coachNudge(-1)">−</button><span>무게 조절</span><button onclick="coachNudge(1)">＋</button></div>' : ''}
       ${FORM_CUES[e.id] ? '<div style="margin:8px 0;padding:10px 12px;background:rgba(91,157,255,.12);border-left:3px solid #5b9dff;border-radius:8px;font-size:13.5px;color:#cfe0ff;line-height:1.5">🧍 '+FORM_CUES[e.id]+'</div>' : ''}
-      <div class="co-sub" style="margin-top:6px">준비되면 ${micOn()?'<b>"시작"</b> 말하거나 ':''}눌러주세요</div>
+      <div class="co-sub" style="margin-top:6px">준비되면 ${micOn()?'<b>"시작"</b> 말하거나 ':''}눌러주세요 · 또는 화면 두 번 톡톡</div>
       <button class="co-btn big" onclick="coachGo()">시작 ▶</button>`;
   }
   if(CO.phase==="work"){
@@ -4679,7 +4712,7 @@ function coachBodyHTML(){
       <div class="co-count sm" id="coT">0:00</div>
       <div class="co-guide">${weightGuide(st, sets, CO.si)}</div>
       ${FORM_CUES[e.id] ? '<div style="margin:8px 0;padding:10px 12px;background:rgba(91,157,255,.12);border-left:3px solid #5b9dff;border-radius:8px;font-size:13.5px;color:#cfe0ff;line-height:1.5">🧍 '+FORM_CUES[e.id]+'</div>' : ''}
-      <div class="co-sub">${st.reps}회 끝나면 ${micOn()?'<b>"세트 끝"</b> 말하거나 ':''}아래 버튼을 눌러주세요</div>
+      <div class="co-sub">${st.reps}회 끝나면 ${micOn()?'<b>"세트 끝"</b> 말하거나 ':''}아래 버튼 · 또는 화면 <b>아무 데나 두 번 톡톡</b></div>
       <button class="co-btn big" onclick="coachDone()">세트 끝 ✓</button>`;
   }
   if(CO.phase==="rest"){
