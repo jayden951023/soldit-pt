@@ -2400,6 +2400,9 @@ function renderCardioCard(v){
   c.appendChild(rowb); v.appendChild(c);
 }
 let cardioT=null, cardioSec=0;
+function _ivSpeak(t){ try{ if("speechSynthesis" in window && t){ var u=new SpeechSynthesisUtterance(String(t)); u.lang="ko-KR"; u.rate=1.05; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} }
+var _IVF_MENTS=["자, 빠르게!","스피드 올려요!","전력으로 갑니다!","힘차게 밀어붙여요!","가속!","지금 최고 속도로!"];
+var _IVS_MENTS=["이제 천천히","숨 고르세요","편하게 회복하세요","살살 걸어요","회복 구간이에요","천천히 숨 골라요"];
 function openCardioLog(){
   // 화면 꺼지거나 나가도 유지 + 인터벌 모드 (8/6 대표)
   const CKEY="soldpt_cardio_run";
@@ -2429,7 +2432,7 @@ function openCardioLog(){
         iv.style.background = info.fast ? "rgba(255,120,90,.14)" : "rgba(120,180,255,.12)";
         iv.style.borderColor = info.fast ? "#ff7a5a" : "#5b9dff";
         var _dur=info.fast?IVF:IVS; var _spd=info.fast?((plan&&plan.ivf)||"힘차게 빠르게"):((plan&&plan.ivs)||"편하게 천천히"); iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+' <span style="font-size:14px;opacity:.85">'+(_dur%60===0?(_dur/60)+"분":_dur+"초")+' 동안</span></div><div style="font-size:34px;font-weight:900;color:'+(info.left<=5?"#ff5a5a":"#fff")+';margin-top:2px;line-height:1.05">'+info.left+'<span style="font-size:15px"> 초 남음</span></div><div style="font-size:12.5px;color:#8b97ab;margin-top:4px">'+_spd+'</div>';
-        if(info.seg!==lastSeg){ if(lastSeg!==-1){ try{ beep(1); }catch(e){} try{ say(info.fast?"iv_fast":"iv_slow"); }catch(e){} } lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ say("cnt"+info.left); }catch(e){} try{ beep(0); }catch(e){} }
+        if(info.seg!==lastSeg){ try{ beep(1); }catch(e){} try{ var _mts=info.fast?_IVF_MENTS:_IVS_MENTS; _ivSpeak(_mts[Math.max(0,(info.round-1))%_mts.length]+" "+(info.fast?((plan&&plan.ivf)||"빠르게"):((plan&&plan.ivs)||"천천히"))); }catch(e){} lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ _ivSpeak(["","하나","둘","셋","넷","다섯"][info.left]); }catch(e){} try{ beep(0); }catch(e){} }
       } else { iv.style.display="none"; lastSeg=-1; lastCount=0; }
     }
     const h=m.querySelector("#c_hint"); if(h && s>=goalMin*60){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
