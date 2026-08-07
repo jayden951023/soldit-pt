@@ -3715,7 +3715,25 @@ function renderSettings(){
   }
 
   // 무릎 보호 (8/4 대표) — 무릎이 약한 사람용
-  const kn=el("div","card");
+    try{
+    var _isNat=!!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    var _dc=el("div","card");
+    _dc.innerHTML='<h3>🔧 앱 상태 (문제 확인용)</h3>';
+    var _ln=function(k,val){ var p=document.createElement("div"); p.style.cssText="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;border-top:1px solid rgba(255,255,255,.06)"; p.innerHTML='<span class="k">'+k+'</span><b class="dv">'+val+'</b>'; _dc.appendChild(p); return p; };
+    var _pNat=_ln("네이티브 앱", _isNat?"예 ✅":"아니오(브라우저)");
+    var _pMic=_ln("마이크 권한", _isNat?"확인중…":"—");
+    var _pNoti=_ln("알림 권한", _isNat?"확인중…":"—");
+    var _rb=el("button","btn sec","🔔 권한 다시 요청 / 알림 테스트");
+    _rb.style.marginTop="8px";
+    _rb.onclick=function(){ try{ if(typeof _natNotiPerm==="function") _natNotiPerm(); }catch(e){} try{ if(_isNat){ var _s=window.Capacitor.registerPlugin("SpeechRecognition"); _s.requestPermissions&&_s.requestPermissions(); } }catch(e){} try{ if(typeof _natNoti==="function") _natNoti("🔔 알림 테스트","이게 보이면 알림 정상이에요!"); }catch(e){} setTimeout(renderSettings,900); };
+    _dc.appendChild(_rb);
+    v.appendChild(_dc);
+    if(_isNat){
+      try{ var _SR=window.Capacitor.registerPlugin("SpeechRecognition"); _SR.checkPermissions().then(function(p){ _pMic.querySelector(".dv").textContent=((p&&p.speechRecognition)||"?"); }).catch(function(e){ _pMic.querySelector(".dv").textContent="플러그인없음"; }); }catch(e){ _pMic.querySelector(".dv").textContent="에러"; }
+      try{ var _LN=window.Capacitor.registerPlugin("LocalNotifications"); _LN.checkPermissions().then(function(p){ _pNoti.querySelector(".dv").textContent=((p&&p.display)||"?"); }).catch(function(e){ _pNoti.querySelector(".dv").textContent="플러그인없음"; }); }catch(e){ _pNoti.querySelector(".dv").textContent="에러"; }
+    }
+  }catch(e){}
+const kn=el("div","card");
   const kOn = !!P().kneeSafe;
   kn.innerHTML=`<h3>무릎 보호 <span class="pill">${kOn?"켜짐":"꺼짐"}</span></h3>
     <p class="k" style="margin:6px 0 10px">무릎 아픈 분을 위해 스쿼트·레그익스텐션 같은 걸 빼고<br>
