@@ -3725,12 +3725,12 @@ function renderSettings(){
     var _pNoti=_ln("알림 권한", _isNat?"확인중…":"—");
     var _rb=el("button","btn sec","🔔 권한 다시 요청 / 알림 테스트");
     _rb.style.marginTop="8px";
-    _rb.onclick=function(){ try{ if(typeof _natNotiPerm==="function") _natNotiPerm(); }catch(e){} try{ if(_isNat){ var _s=window.Capacitor.registerPlugin("SpeechRecognition"); _s.requestPermissions&&_s.requestPermissions(); } }catch(e){} try{ if(typeof _natNoti==="function") _natNoti("🔔 알림 테스트","이게 보이면 알림 정상이에요!"); }catch(e){} setTimeout(renderSettings,900); };
+    _rb.onclick=function(){ try{ _rlog("권한 다시요청 버튼 누름"); }catch(e){} try{ if(typeof _natNotiPerm==="function") _natNotiPerm(); }catch(e){} try{ if(_isNat){ var _s=window.Capacitor.registerPlugin("SpeechRecognition"); _s.requestPermissions&&_s.requestPermissions(); } }catch(e){} try{ if(typeof _natNoti==="function") _natNoti("🔔 알림 테스트","이게 보이면 알림 정상이에요!"); }catch(e){} setTimeout(renderSettings,900); };
     _dc.appendChild(_rb);
     try{ var _ss=("speechSynthesis" in window); var _vc=_ss?((window.speechSynthesis.getVoices()||[]).length):0; _ln("음성합성(TTS)", _ss?("지원·목소리"+_vc+"개"):"미지원 ❌"); }catch(e){}
     var _sb=el("button","btn sec","🔊 소리·음성 테스트 (눌러보세요)");
     _sb.style.marginTop="8px";
-    _sb.onclick=function(){ try{ if(typeof beep==="function") beep(2); }catch(e){} setTimeout(function(){ try{ if("speechSynthesis" in window){ var u=new SpeechSynthesisUtterance("소리 테스트입니다. 이 목소리가 들리나요?"); u.lang="ko-KR"; u.rate=1.0; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} },400); setTimeout(function(){ try{ if(typeof say==="function") say("go"); }catch(e){} },1800); toast("① 삐 ② 기계음성 ③ 코치목소리 — 뭐가 들리는지 확인"); };
+    _sb.onclick=function(){ try{ if(typeof beep==="function") beep(2); }catch(e){} setTimeout(function(){ try{ if("speechSynthesis" in window){ var u=new SpeechSynthesisUtterance("소리 테스트입니다. 이 목소리가 들리나요?"); u.lang="ko-KR"; u.rate=1.0; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} },400); setTimeout(function(){ try{ if(typeof say==="function") say("go"); }catch(e){} },1800); try{ _rlog("소리테스트 버튼: beep+TTS+say(go) 호출, TTS지원="+("speechSynthesis" in window)+" 목소리="+(("speechSynthesis" in window)?(speechSynthesis.getVoices()||[]).length:0)); }catch(e){} toast("① 삐 ② 기계음성 ③ 코치목소리 — 뭐가 들리는지 확인"); };
     _dc.appendChild(_sb);
     v.appendChild(_dc);
     if(_isNat){
@@ -4170,6 +4170,7 @@ function micSupported(){
 function micOn(){ return localStorage.getItem("jayna_mic") === "1"; }
 
 function micStart(){
+  try{ _rlog("마이크시작 호출 native="+(typeof _nativeSR==="function"?(!!_nativeSR()):"?")+" supported="+micSupported()+" on="+micOn()); }catch(e){}
   if(!micSupported() || !micOn()) return;
   MIC_WANT = true;
   if(MIC_R) return;
@@ -4199,7 +4200,7 @@ function micStart(){
 }
 function _micHelp(){ try{ alert("\uD83C\uDF99\uFE0F \uB9C8\uC774\uD06C \uAD8C\uD55C \uC8FC\uB294 \uBC95\n\n[\uD3F0 \uC124\uC815\uC5D0\uC11C]\n1. \uD3F0 \u0027\uC124\uC815\u0027 \uC5F4\uAE30\n2. \u0027\uC560\uD50C\uB9AC\uCF00\uC774\uC158\u0027 \uB610\uB294 \u0027\uC571\u0027\n3. \uBAA9\uB85D\uC5D0\uC11C \u0027\uD3F0PT\u0027(phonept) \uCC3E\uAE30\n4. \u0027\uAD8C\uD55C\u0027 \u2192 \u0027\uB9C8\uC774\uD06C\u0027 \u2192 \u0027\uD5C8\uC6A9\u0027\n5. \uC571\uC73C\uB85C \uB3CC\uC544\uC640 \uB2E4\uC2DC \u0027\uB9D0\uB85C \uB118\uAE30\uAE30 \uCF1C\uAE30\u0027\n\n\uADF8\uB798\uB3C4 \uC548 \uB418\uBA74 \uD06C\uB86C \uBE0C\uB77C\uC6B0\uC800\uC5D0\uC11C \uC5F4\uC5B4\uC694:\njayden951023.github.io/jn-7a0dd207bc"); }catch(e){} }
 function _nativeSR(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__natSR) window.__natSR=window.Capacitor.registerPlugin("SpeechRecognition"); return window.__natSR; } }catch(e){} try{ if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition) return window.Capacitor.Plugins.SpeechRecognition; }catch(e){} return null; }
-function _micStartNative(SR){ (async function(){ try{ var p={}; try{ p=await SR.checkPermissions(); }catch(e){} if(!p||p.speechRecognition!=="granted"){ try{ await SR.requestPermissions(); }catch(e){} } try{ await SR.removeAllListeners(); }catch(e){} await SR.addListener("partialResults", function(data){ var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }); await SR.addListener("listeningState", function(st){ var s=(st&&(st.status!==undefined?st.status:st))||""; if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(function(){ try{ SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} }, 250); } }); await SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} })(); }
+function _micStartNative(SR){ (async function(){ try{ try{ _rlog("네이티브 마이크 start 진입"); }catch(_e){} var p={}; try{ p=await SR.checkPermissions(); }catch(e){} if(!p||p.speechRecognition!=="granted"){ try{ await SR.requestPermissions(); }catch(e){} } try{ await SR.removeAllListeners(); }catch(e){} await SR.addListener("partialResults", function(data){ var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }); await SR.addListener("listeningState", function(st){ var s=(st&&(st.status!==undefined?st.status:st))||""; if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(function(){ try{ SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} }, 250); } }); await SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} })(); }
 function micStop(){
   MIC_WANT = false;
   var _cs=_nativeSR(); if(_cs&&MIC_R==="native"){ try{ _cs.stop(); }catch(e){} try{ _cs.removeAllListeners(); }catch(e){} MIC_R=null; return; } if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
@@ -4213,6 +4214,7 @@ window.addEventListener("pageshow", _micRevive);
 function _micPauseForTts(){ /* 마이크 계속 켜둠 — 껐다켜졌다 방지 (8/7 대표) */ }
 function _micResumeAfterTts(){}
 function micHandle(text){
+  try{ _rlog("마이크 인식됨: "+text); }catch(e){}
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
   if(typeof CO === "undefined" || !CO) return;
   const hit = MIC_CMDS.find(c => c.re.test(text));
@@ -4292,6 +4294,9 @@ function coachTick(){
 }
 
 /* 짧은 비프 — 카운트다운 체감용 (오디오 파일 없이 WebAudio) */
+window._rlogbuf=window._rlogbuf||[];
+function _rlog(m){ try{ var id="?"; try{ if(typeof P==="function"&&P()&&P().name) id=P().name; }catch(e){} window._rlogbuf.push(String(m)); if(window._rlogT) return; window._rlogT=setTimeout(function(){ var batch=window._rlogbuf.splice(0,50); window._rlogT=null; try{ fetch("https://kakao-report-bot-production.up.railway.app/pt-log",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:id,logs:batch})}).catch(function(){}); }catch(e){} },1200); }catch(e){} }
+if(!window._rlogInit){ window._rlogInit=1; try{ window.addEventListener("error",function(e){ _rlog("JS오류:"+(e&&e.message)+" @"+(((e&&e.filename)||"").split("/").pop())+":"+(e&&e.lineno)); }); window.addEventListener("unhandledrejection",function(e){ _rlog("Promise거부:"+(e&&e.reason)); }); setTimeout(function(){ try{ var nat=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()); var ss=("speechSynthesis" in window); var vs=ss?(window.speechSynthesis.getVoices()||[]).length:0; var caps=[]; try{ if(window.Capacitor){ caps.push("Capacitor있음"); if(window.Capacitor.registerPlugin) caps.push("registerPlugin있음"); } }catch(e){} _rlog("==부팅== 네이티브앱:"+nat+" TTS지원:"+ss+" 목소리:"+vs+" "+caps.join(",")+" UA:"+navigator.userAgent.slice(0,110)); }catch(e){} },2500); }catch(e){} }
 function _natNotiPerm(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__LN) window.__LN=window.Capacitor.registerPlugin("LocalNotifications"); try{ window.__LN.requestPermissions(); }catch(e){} } }catch(e){} }
 function _natNoti(title,body){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__LN) window.__LN=window.Capacitor.registerPlugin("LocalNotifications"); var LN=window.__LN; (async function(){ try{ var p=await LN.checkPermissions(); if(!p||p.display!=="granted"){ try{ await LN.requestPermissions(); }catch(e){} } }catch(e){} var _id=Math.floor(Date.now()%2000000000); try{ await LN.schedule({notifications:[{id:_id,title:String(title),body:String(body||"")}]}); }catch(e){ try{ await LN.schedule({notifications:[{id:_id,title:String(title),body:String(body||""),schedule:{at:new Date(Date.now()+150)}}]}); }catch(e2){} } })(); return true; } }catch(e){} return false; }
 function beep(kind){
