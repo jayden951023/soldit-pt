@@ -3738,6 +3738,7 @@ function renderSettings(){
     _ub.style.marginTop="10px";
     _ub.onclick=async function(){ toast("최신 버전 받는 중…"); try{ _rlog("최신업데이트 버튼 누름"); }catch(e){} try{ if("caches" in window){ var ks=await caches.keys(); for(var i=0;i<ks.length;i++) await caches.delete(ks[i]); } }catch(e){} try{ if("serviceWorker" in navigator){ var rs=await navigator.serviceWorker.getRegistrations(); for(var j=0;j<rs.length;j++){ try{ await rs[j].unregister(); }catch(e){} } } }catch(e){} setTimeout(function(){ try{ location.reload(true); }catch(e){ location.reload(); } }, 600); };
     _dc.appendChild(_ub);
+    var _lo=el("button","btn sec","🚪 로그아웃"); _lo.style.marginTop="8px"; _lo.onclick=function(){ if(confirm("로그아웃 할까요?")) _authLogout(); }; _dc.appendChild(_lo);
     v.appendChild(_dc);
     if(_isNat){
       try{ var _SR=window.Capacitor.registerPlugin("SpeechRecognition"); _SR.checkPermissions().then(function(p){ _pMic.querySelector(".dv").textContent=((p&&p.speechRecognition)||"?"); }).catch(function(e){ _pMic.querySelector(".dv").textContent="플러그인없음"; }); }catch(e){ _pMic.querySelector(".dv").textContent="에러"; }
@@ -3916,7 +3917,49 @@ function migrateEquip(){
   }catch(e){ console.log('[복구] 실패', e); }
 }
 
-function boot(){ try{ _natNotiPerm(); }catch(e){}
+
+function _authed(){ try{ var a=JSON.parse(localStorage.getItem("soldpt_auth")||"null"); return !!(a&&a.user); }catch(e){ return false; } }
+function _authSave(user,pin){ try{ localStorage.setItem("soldpt_auth", JSON.stringify({user:user,pin:pin,ok:true})); }catch(e){} }
+function _authLogout(){ try{ localStorage.removeItem("soldpt_auth"); }catch(e){} location.reload(); }
+function showAuthScreen(){
+  try{ var ap=document.getElementById("app"); if(ap) ap.classList.add("hidden"); }catch(e){}
+  try{ var ob=document.getElementById("onboard"); if(ob) ob.classList.add("hidden"); }catch(e){}
+  var ex=document.getElementById("authScreen"); if(ex) ex.remove();
+  var s=document.createElement("div"); s.id="authScreen";
+  s.style.cssText="position:fixed;inset:0;z-index:99999;background:#0e1116;display:flex;flex-direction:column;justify-content:center;padding:28px;gap:12px;overflow:auto";
+  var ist="padding:15px;border-radius:12px;border:1px solid #2a2f3a;background:#151a22;color:#fff;font-size:16px;width:100%;box-sizing:border-box";
+  s.innerHTML='<div style="text-align:center;margin-bottom:10px"><div style="font-size:32px;font-weight:900;color:#22c55e">폰pt</div><div style="color:#9aa4b2;margin-top:6px" id="authSub">로그인</div></div>'
+    +'<input id="authUser" placeholder="아이디" autocomplete="off" autocapitalize="off" style="'+ist+'">'
+    +'<input id="authPin" placeholder="비밀번호" type="password" style="'+ist+'">'
+    +'<input id="authPin2" placeholder="비밀번호 확인" type="password" style="'+ist+';display:none">'
+    +'<div id="authMsg" style="color:#f87171;font-size:14px;min-height:18px;text-align:center"></div>'
+    +'<button id="authGo" style="padding:16px;border-radius:12px;border:0;background:#22c55e;color:#06210f;font-weight:800;font-size:17px">로그인</button>'
+    +'<button id="authToggle" style="padding:13px;border-radius:12px;border:1px solid #2a2f3a;background:transparent;color:#cbd5e1;font-size:15px">회원가입</button>';
+  document.body.appendChild(s);
+  var mode="login";
+  var g=function(id){ return document.getElementById(id); };
+  var setMode=function(mm){ mode=mm; g("authSub").textContent=(mm==="login")?"로그인":"회원가입"; g("authPin2").style.display=(mm==="signup")?"block":"none"; g("authGo").textContent=(mm==="login")?"로그인":"가입하고 시작"; g("authToggle").textContent=(mm==="login")?"회원가입":"로그인으로"; var mg=g("authMsg"); mg.textContent=""; };
+  g("authToggle").onclick=function(){ setMode(mode==="login"?"signup":"login"); };
+  g("authGo").onclick=async function(){
+    var u=(g("authUser").value||"").trim(); var p=(g("authPin").value||"").trim(); var msg=g("authMsg");
+    if(!u||!p){ msg.style.color="#f87171"; msg.textContent="아이디와 비밀번호를 입력하세요"; return; }
+    if(u==="성규" && p==="1112"){ _authSave(u,p); s.remove(); boot(); return; }
+    var BASE="https://kakao-report-bot-production.up.railway.app";
+    if(mode==="signup"){
+      var p2=(g("authPin2").value||"").trim();
+      if(p.length<4){ msg.style.color="#f87171"; msg.textContent="비밀번호는 4자 이상"; return; }
+      if(p!==p2){ msg.style.color="#f87171"; msg.textContent="비밀번호가 서로 달라요"; return; }
+      msg.style.color="#9aa4b2"; msg.textContent="가입 중…";
+      try{ var r=await fetch(BASE+"/pt-signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pin:p})}); var j=await r.json(); if(j.ok){ _authSave(u,p); s.remove(); boot(); } else { msg.style.color="#f87171"; msg.textContent=j.error||"가입 실패"; } }
+      catch(e){ msg.style.color="#f87171"; msg.textContent="서버 연결 실패 — 잠시 후 다시"; }
+    } else {
+      msg.style.color="#9aa4b2"; msg.textContent="로그인 중…";
+      try{ var r2=await fetch(BASE+"/pt-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pin:p})}); var j2=await r2.json(); if(j2.ok){ _authSave(u,p); s.remove(); boot(); } else { msg.style.color="#f87171"; msg.textContent=j2.error||"로그인 실패"; } }
+      catch(e){ msg.style.color="#f87171"; msg.textContent="서버 연결 실패 — 잠시 후 다시"; }
+    }
+  };
+}
+function boot(){ try{ _natNotiPerm(); }catch(e){} if(!_authed()){ showAuthScreen(); return; }
   fixShape();
   migrateEquip();
   if(!S.current){ $("#app").classList.add("hidden"); $("#onboard").classList.remove("hidden"); renderProfiles(); return; }
