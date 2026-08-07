@@ -5130,9 +5130,12 @@ const NOTI_TIMES = [
   {key:"morn", h:7,  m:50, kind:"today"},      // 오전 7시 50분 — 오늘 시작
 ];
 
+function _isNativeApp(){ try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }catch(e){ return false; } }
+function _LNplugin(){ try{ if(!window.__LN && window.Capacitor && window.Capacitor.registerPlugin) window.__LN=window.Capacitor.registerPlugin("LocalNotifications"); return window.__LN||null; }catch(e){ return null; } }
+async function notiScheduleNative(){ try{ var _LN=_LNplugin(); if(!_LN) return; var arr=(NOTI_TIMES||[]).map(function(cfg,i){ var isTom=cfg.kind==="tomorrow"; return { id:9000+i+1, title:isTom?"📅 내일 운동 준비":"💪 오늘 운동할 시간!", body:isTom?"내일 루틴 확인하고 오늘은 푹 쉬어요":"오늘도 화이팅! 폰pt 열어서 시작해요", schedule:{on:{hour:cfg.h,minute:cfg.m}, repeats:true} }; }); try{ await _LN.cancel({notifications:arr.map(function(n){return {id:n.id};})}); }catch(e){} await _LN.schedule({notifications:arr}); }catch(e){} }
 function notiEnabled(){ return localStorage.getItem("soldpt_noti") === "1"; }
 
-async function notiAsk(){
+async function notiAsk(){ if(_isNativeApp()){ try{ var _LN=_LNplugin(); var _p=await _LN.checkPermissions(); if(!_p||_p.display!=="granted"){ _p=await _LN.requestPermissions(); } if(!_p||_p.display!=="granted"){ toast("알림이 차단돼 있어요. 폰 설정 → 앱 → 폰PT → 알림 켜주세요"); localStorage.setItem("soldpt_noti","0"); return false; } localStorage.setItem("soldpt_noti","1"); await notiScheduleNative(); toast("알림 켰어요! 🔔 저녁 9시·아침 7시50분"); return true; }catch(e){ toast("알림 설정 오류"); return false; } }
   if(!("Notification" in window)){ toast("이 브라우저는 알림을 지원하지 않아요"); return false; }
   let perm = Notification.permission;
   // requestPermission 의 '반환값'을 우선 신뢰한다 — 일부 환경(헤드리스·인앱브라우저)에서
@@ -5149,7 +5152,7 @@ async function notiAsk(){
   notiSchedule();
   return true;
 }
-function notiOff(){
+function notiOff(){ try{ if(_isNativeApp()){ var _LN=_LNplugin(); if(_LN) _LN.cancel({notifications:(NOTI_TIMES||[]).map(function(_,i){return {id:9000+i+1};})}); } }catch(e){}
   localStorage.setItem("soldpt_noti","0");
   (window._notiTimers||[]).forEach(clearTimeout);
   window._notiTimers = [];
@@ -5191,7 +5194,7 @@ function notiCatchUp(){
   }catch(e){}
 }
 
-function notiSchedule(){
+function notiSchedule(){ if(_isNativeApp()){ notiScheduleNative(); return; }
   (window._notiTimers||[]).forEach(clearTimeout);
   window._notiTimers = [];
   if(!notiEnabled()) return;
@@ -5241,6 +5244,7 @@ async function notiFire(cfg){
       body, icon:"icon-192.png", badge:"icon-192.png",
       tag:"soldpt-"+cfg.key, renotify:true, data:{url:"./"},
     };
+    if(_isNativeApp()){ try{ _natNoti(title, body); }catch(e){} return; }
     const reg = ("serviceWorker" in navigator) ? await navigator.serviceWorker.getRegistration() : null;
     if(reg && reg.showNotification) await reg.showNotification(title, opt);
     else new Notification(title, opt);
