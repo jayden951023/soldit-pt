@@ -2368,10 +2368,10 @@ function celebrate(d){
 /* ---------- 유산소 모듈 (아침 공복 · Zone2 중심) ---------- */
 /* 유산소 — 실제 보유 기구 (8/4 대표: 러닝머신·자전거·천국의계단·경사러닝) */
 const CARDIO=[
-  {id:"tread",   n:"러닝머신 (디랙스)",   yt:"러닝머신 유산소 방법", tip:"속도 6~7km/h · 대화되는 정도"},
-  {id:"incline", n:"경사 러닝머신",       yt:"트레드밀 경사 걷기 유산소", tip:"경사 10~12% · 속도 5km/h · 손잡이 잡지 말기"},
-  {id:"stair",   n:"천국의 계단",         yt:"천국의 계단 스텝밀 유산소", tip:"레벨 5~7 · 난간에 기대지 말고 상체 세우기"},
-  {id:"cycle",   n:"실내 자전거",         yt:"실내 사이클 유산소 방법", tip:"저항 중간 · 분당 70~80회전"},
+  {id:"tread",   n:"러닝머신 (디랙스)",   yt:"러닝머신 유산소 방법", tip:"속도 6~7km/h · 대화되는 정도", ivf:"8~9km/h로 빠르게 뛰기", ivs:"5~6km/h로 걷기"},
+  {id:"incline", n:"경사 러닝머신",       yt:"트레드밀 경사 걷기 유산소", tip:"경사 10~12% · 속도 5km/h · 손잡이 잡지 말기", ivf:"속도 7km/h로 빠르게", ivs:"속도 4km/h로 천천히"},
+  {id:"stair",   n:"천국의 계단",         yt:"천국의 계단 스텝밀 유산소", tip:"레벨 5~7 · 난간에 기대지 말고 상체 세우기", ivf:"레벨 8~10으로 빠르게", ivs:"레벨 4~5로 천천히"},
+  {id:"cycle",   n:"실내 자전거",         yt:"실내 사이클 유산소 방법", tip:"저항 중간 · 분당 70~80회전", ivf:"저항 올리고 분당 90~100회전", ivs:"저항 낮추고 분당 60~70회전"},
 ];
 function cardioRec(){
   const day=SPLIT[nowKST().getDay()];
@@ -2428,7 +2428,7 @@ function openCardioLog(){
         const info=ivInfo(s); iv.style.display="";
         iv.style.background = info.fast ? "rgba(255,120,90,.14)" : "rgba(120,180,255,.12)";
         iv.style.borderColor = info.fast ? "#ff7a5a" : "#5b9dff";
-        var _dur=info.fast?IVF:IVS; var _isTread=/러닝|트레드|treadmill/i.test((plan&&plan.n)||"")||(plan&&plan.id==="tread"); var _kmh=_isTread?(info.fast?" · 8~9km/h":" · 5~6km/h"):""; iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+' <span style="font-size:14px;opacity:.85">'+(_dur%60===0?(_dur/60)+"분":_dur+"초")+' 동안</span></div><div style="font-size:34px;font-weight:900;color:'+(info.left<=5?"#ff5a5a":"#fff")+';margin-top:2px;line-height:1.05">'+info.left+'<span style="font-size:15px"> 초 남음</span></div><div style="font-size:12.5px;color:#8b97ab;margin-top:4px">'+(info.fast?("숨이 찰 정도로 올려요"+_kmh):("숨 고르며 걸어요"+_kmh))+'</div>';
+        var _dur=info.fast?IVF:IVS; var _spd=info.fast?((plan&&plan.ivf)||"힘차게 빠르게"):((plan&&plan.ivs)||"편하게 천천히"); iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+' <span style="font-size:14px;opacity:.85">'+(_dur%60===0?(_dur/60)+"분":_dur+"초")+' 동안</span></div><div style="font-size:34px;font-weight:900;color:'+(info.left<=5?"#ff5a5a":"#fff")+';margin-top:2px;line-height:1.05">'+info.left+'<span style="font-size:15px"> 초 남음</span></div><div style="font-size:12.5px;color:#8b97ab;margin-top:4px">'+_spd+'</div>';
         if(info.seg!==lastSeg){ if(lastSeg!==-1){ try{ beep(1); }catch(e){} try{ say(info.fast?"iv_fast":"iv_slow"); }catch(e){} } lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ say("cnt"+info.left); }catch(e){} try{ beep(0); }catch(e){} }
       } else { iv.style.display="none"; lastSeg=-1; lastCount=0; }
     }
