@@ -3732,6 +3732,10 @@ function renderSettings(){
     _sb.style.marginTop="8px";
     _sb.onclick=function(){ try{ if(typeof beep==="function") beep(2); }catch(e){} setTimeout(function(){ try{ if("speechSynthesis" in window){ var u=new SpeechSynthesisUtterance("소리 테스트입니다. 이 목소리가 들리나요?"); u.lang="ko-KR"; u.rate=1.0; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} },400); setTimeout(function(){ try{ if(typeof say==="function") say("go"); }catch(e){} },1800); try{ _rlog("소리테스트 버튼: beep+TTS+say(go) 호출, TTS지원="+("speechSynthesis" in window)+" 목소리="+(("speechSynthesis" in window)?(speechSynthesis.getVoices()||[]).length:0)); }catch(e){} toast("① 삐 ② 기계음성 ③ 코치목소리 — 뭐가 들리는지 확인"); };
     _dc.appendChild(_sb);
+    var _ub=el("button","btn green","🔄 앱 최신으로 업데이트");
+    _ub.style.marginTop="10px";
+    _ub.onclick=async function(){ toast("최신 버전 받는 중…"); try{ _rlog("최신업데이트 버튼 누름"); }catch(e){} try{ if("caches" in window){ var ks=await caches.keys(); for(var i=0;i<ks.length;i++) await caches.delete(ks[i]); } }catch(e){} try{ if("serviceWorker" in navigator){ var rs=await navigator.serviceWorker.getRegistrations(); for(var j=0;j<rs.length;j++){ try{ await rs[j].unregister(); }catch(e){} } } }catch(e){} setTimeout(function(){ try{ location.reload(true); }catch(e){ location.reload(); } }, 600); };
+    _dc.appendChild(_ub);
     v.appendChild(_dc);
     if(_isNat){
       try{ var _SR=window.Capacitor.registerPlugin("SpeechRecognition"); _SR.checkPermissions().then(function(p){ _pMic.querySelector(".dv").textContent=((p&&p.speechRecognition)||"?"); }).catch(function(e){ _pMic.querySelector(".dv").textContent="플러그인없음"; }); }catch(e){ _pMic.querySelector(".dv").textContent="에러"; }
