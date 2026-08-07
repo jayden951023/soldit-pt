@@ -3537,6 +3537,7 @@ var PERSONAS=[
     hi:"좋았어요! 저는 태양이에요! 오늘 여러분 안에 잠든 한계, 제가 다 끌어올려 드릴게요. 힘들 때가 바로 크는 순간이에요. 자, 심장 뛰게 준비됐죠? 우리 오늘 제대로 불태워봅시다!",
     tone:"너는 '태양'이라는 이름의 열정 넘치는 동기부여 트레이너다. 텐션을 높게 유지하며 크게 응원하고 회원의 한계를 끌어올린다. 예: \"할 수 있어요! 지금이 진짜예요! 마지막 힘까지!\"" },
 ];
+function _playPersonaIntro(pp){ try{ if(window._introA){ try{ window._introA.pause(); }catch(e){} } var a=new Audio("voice/intro_"+pp.id+".mp3"); window._introA=a; a.onerror=function(){ try{ _speak(pp.hi); }catch(e){} }; var pr=a.play(); if(pr&&pr.catch) pr.catch(function(){ try{ _speak(pp.hi); }catch(e){} }); }catch(e){ try{ _speak(pp.hi); }catch(e2){} } }
 function coachPersona(){ var id=""; try{ id=localStorage.getItem("soldpt_persona")||""; }catch(e){} for(var i=0;i<PERSONAS.length;i++){ if(PERSONAS[i].id===id) return PERSONAS[i]; } return PERSONAS[0]; }
 function coachPersonaLite(){ try{ var pp=coachPersona(); return {name:pp.name, tone:pp.tone}; }catch(e){ return null; } }
 function setPersona(id){ try{ localStorage.setItem("soldpt_persona", id); }catch(e){} try{ var pp=coachPersona(); if(pp.pack) localStorage.setItem("jayna_voice_id", pp.pack); }catch(e){} }
@@ -3548,7 +3549,7 @@ function _personaCard(){
     var b=el("button", pp.id===cur.id?"btn green":"btn sec");
     b.style.cssText="margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;width:100%";
     b.innerHTML='<span style="font-size:24px">'+pp.emoji+'</span><span style="flex:1"><b style="font-size:16px">'+pp.name+' 선생님</b><br><span class="k">'+pp.tag+'</span></span>'+(pp.id===cur.id?'<span style="font-size:18px">✓</span>':'');
-    b.onclick=function(){ setPersona(pp.id); toast(pp.name+" 선생님으로 바꿨어요 "+pp.emoji); try{ _speak(pp.hi); }catch(e){} renderSettings(); };
+    b.onclick=function(){ setPersona(pp.id); toast(pp.name+" 선생님으로 바꿨어요 "+pp.emoji); try{ _playPersonaIntro(pp); }catch(e){} renderSettings(); };
     card.appendChild(b);
   });
   return card;
