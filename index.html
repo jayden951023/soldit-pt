@@ -3204,7 +3204,7 @@ async function startTimer(sec, label){
 }
 function _timerFinish(label){
   const wrap=$("#timerWrap"); if(wrap) wrap.innerHTML=`<div class="inner"><b>💪 다음 세트 준비!</b><button onclick="stopTimer()">닫기</button></div>`;
-  alarm();
+  alarm(); try{ _natNoti("💪 쉬는 시간 끝!","다음 세트 준비하세요"); }catch(e){}
   try{ if("serviceWorker" in navigator && window.Notification && Notification.permission==="granted"){
     navigator.serviceWorker.getRegistration().then(reg=>{ if(reg&&reg.showNotification) reg.showNotification("💪 쉬는 시간 끝!",{body:"다음 세트 준비하세요"+(label?" · "+label:""),icon:"icon-192.png",badge:"icon-192.png",tag:"soldpt-rest",renotify:true,vibrate:[500,150,500,150,600],data:{url:"./"}}); }); } }catch(e){}
   setTimeout(stopTimer,6000);
@@ -3887,7 +3887,7 @@ function migrateEquip(){
   }catch(e){ console.log('[복구] 실패', e); }
 }
 
-function boot(){
+function boot(){ try{ _natNotiPerm(); }catch(e){}
   fixShape();
   migrateEquip();
   if(!S.current){ $("#app").classList.add("hidden"); $("#onboard").classList.remove("hidden"); renderProfiles(); return; }
@@ -4269,6 +4269,8 @@ function coachTick(){
 }
 
 /* 짧은 비프 — 카운트다운 체감용 (오디오 파일 없이 WebAudio) */
+function _natNotiPerm(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__LN) window.__LN=window.Capacitor.registerPlugin("LocalNotifications"); try{ window.__LN.requestPermissions(); }catch(e){} } }catch(e){} }
+function _natNoti(title,body){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__LN) window.__LN=window.Capacitor.registerPlugin("LocalNotifications"); var LN=window.__LN; (async function(){ try{ var p=await LN.checkPermissions(); if(!p||p.display!=="granted"){ try{ await LN.requestPermissions(); }catch(e){} } }catch(e){} var _id=Math.floor(Date.now()%2000000000); try{ await LN.schedule({notifications:[{id:_id,title:String(title),body:String(body||"")}]}); }catch(e){ try{ await LN.schedule({notifications:[{id:_id,title:String(title),body:String(body||""),schedule:{at:new Date(Date.now()+150)}}]}); }catch(e2){} } })(); return true; } }catch(e){} return false; }
 function beep(kind){
   try{
     const ac = window._ac || (window._ac = new (window.AudioContext||window.webkitAudioContext)());
