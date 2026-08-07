@@ -3699,13 +3699,18 @@ function renderSettings(){
         renderSettings(); toast("마이크를 껐어요"); return;
       }
       try{
+        var _nat=_nativeSR(); if(_nat){ var pp={}; try{ pp=await _nat.checkPermissions(); }catch(e){} if(!pp||pp.speechRecognition!=="granted"){ try{ pp=await _nat.requestPermissions(); }catch(e){} } if(!pp||pp.speechRecognition!=="granted"){ _micHelp(); renderSettings(); return; } localStorage.setItem("jayna_mic","1"); renderSettings(); toast('허용됨! 이제 "세트 끝" 하고 말해보세요 🎤'); return; }
         const st = await navigator.mediaDevices.getUserMedia({audio:true});
         st.getTracks().forEach(function(t){ t.stop(); });
         localStorage.setItem("jayna_mic","1"); renderSettings();
         toast('이제 "세트 끝" 하고 말해보세요 🎤');
-      }catch(e){ toast("마이크 권한을 허용해주세요 (안 되면 크롬 브라우저에서 열기) 🎤"); }
+      }catch(e){ _micHelp(); }
     };
     mc.appendChild(mb);
+    var _hb=el("button","btn sec","❓ 권한 팝업이 안 뜨면 (허용 방법)");
+    _hb.style.marginTop="8px";
+    _hb.onclick=function(){ _micHelp(); };
+    mc.appendChild(_hb);
     v.appendChild(mc);
   }
 
@@ -4169,6 +4174,7 @@ function micStart(){
   };
   try{ r.start(); MIC_R = r; }catch(e){}
 }
+function _micHelp(){ try{ alert("\uD83C\uDF99\uFE0F \uB9C8\uC774\uD06C \uAD8C\uD55C \uC8FC\uB294 \uBC95\n\n[\uD3F0 \uC124\uC815\uC5D0\uC11C]\n1. \uD3F0 \u0027\uC124\uC815\u0027 \uC5F4\uAE30\n2. \u0027\uC560\uD50C\uB9AC\uCF00\uC774\uC158\u0027 \uB610\uB294 \u0027\uC571\u0027\n3. \uBAA9\uB85D\uC5D0\uC11C \u0027\uD3F0PT\u0027(phonept) \uCC3E\uAE30\n4. \u0027\uAD8C\uD55C\u0027 \u2192 \u0027\uB9C8\uC774\uD06C\u0027 \u2192 \u0027\uD5C8\uC6A9\u0027\n5. \uC571\uC73C\uB85C \uB3CC\uC544\uC640 \uB2E4\uC2DC \u0027\uB9D0\uB85C \uB118\uAE30\uAE30 \uCF1C\uAE30\u0027\n\n\uADF8\uB798\uB3C4 \uC548 \uB418\uBA74 \uD06C\uB86C \uBE0C\uB77C\uC6B0\uC800\uC5D0\uC11C \uC5F4\uC5B4\uC694:\njayden951023.github.io/jn-7a0dd207bc"); }catch(e){} }
 function _nativeSR(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__natSR) window.__natSR=window.Capacitor.registerPlugin("SpeechRecognition"); return window.__natSR; } }catch(e){} try{ if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition) return window.Capacitor.Plugins.SpeechRecognition; }catch(e){} return null; }
 function _micStartNative(SR){ (async function(){ try{ var p={}; try{ p=await SR.checkPermissions(); }catch(e){} if(!p||p.speechRecognition!=="granted"){ try{ await SR.requestPermissions(); }catch(e){} } try{ await SR.removeAllListeners(); }catch(e){} await SR.addListener("partialResults", function(data){ var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }); await SR.addListener("listeningState", function(st){ var s=(st&&(st.status!==undefined?st.status:st))||""; if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(function(){ try{ SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} }, 250); } }); await SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} })(); }
 function micStop(){
