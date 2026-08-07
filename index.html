@@ -3035,7 +3035,7 @@ function renderWorkout(){
     }
   };
   v.appendChild(go);
-  const cgo=el("button","btn sec","🏃 유산소 시작"); cgo.style.cssText="margin:0 0 8px;padding:14px;font-size:15px;width:100%;font-weight:700"; cgo.onclick=openCardioLog; v.appendChild(cgo);
+  const cgo=el("button","btn sec","🏃 유산소 시작"); cgo.style.cssText="margin:0 0 8px;padding:14px;font-size:15px;width:100%;font-weight:700"; cgo.onclick=openCardioLog; v.insertBefore(cgo, go);
   // 오늘 운동 미리보기 (8/4 대표 — 미리 공부하려고)
   const pv=el("button","btn sec","📋 오늘 운동 한눈에 보기");
   pv.style.cssText="margin:0 0 10px;padding:14px;font-size:15px";
