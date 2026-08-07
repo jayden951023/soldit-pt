@@ -3727,6 +3727,11 @@ function renderSettings(){
     _rb.style.marginTop="8px";
     _rb.onclick=function(){ try{ if(typeof _natNotiPerm==="function") _natNotiPerm(); }catch(e){} try{ if(_isNat){ var _s=window.Capacitor.registerPlugin("SpeechRecognition"); _s.requestPermissions&&_s.requestPermissions(); } }catch(e){} try{ if(typeof _natNoti==="function") _natNoti("🔔 알림 테스트","이게 보이면 알림 정상이에요!"); }catch(e){} setTimeout(renderSettings,900); };
     _dc.appendChild(_rb);
+    try{ var _ss=("speechSynthesis" in window); var _vc=_ss?((window.speechSynthesis.getVoices()||[]).length):0; _ln("음성합성(TTS)", _ss?("지원·목소리"+_vc+"개"):"미지원 ❌"); }catch(e){}
+    var _sb=el("button","btn sec","🔊 소리·음성 테스트 (눌러보세요)");
+    _sb.style.marginTop="8px";
+    _sb.onclick=function(){ try{ if(typeof beep==="function") beep(2); }catch(e){} setTimeout(function(){ try{ if("speechSynthesis" in window){ var u=new SpeechSynthesisUtterance("소리 테스트입니다. 이 목소리가 들리나요?"); u.lang="ko-KR"; u.rate=1.0; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} },400); setTimeout(function(){ try{ if(typeof say==="function") say("go"); }catch(e){} },1800); toast("① 삐 ② 기계음성 ③ 코치목소리 — 뭐가 들리는지 확인"); };
+    _dc.appendChild(_sb);
     v.appendChild(_dc);
     if(_isNat){
       try{ var _SR=window.Capacitor.registerPlugin("SpeechRecognition"); _SR.checkPermissions().then(function(p){ _pMic.querySelector(".dv").textContent=((p&&p.speechRecognition)||"?"); }).catch(function(e){ _pMic.querySelector(".dv").textContent="플러그인없음"; }); }catch(e){ _pMic.querySelector(".dv").textContent="에러"; }
