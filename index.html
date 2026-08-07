@@ -2401,8 +2401,8 @@ function renderCardioCard(v){
 }
 let cardioT=null, cardioSec=0;
 function _ivSpeak(t){ try{ if("speechSynthesis" in window && t){ var u=new SpeechSynthesisUtterance(String(t)); u.lang="ko-KR"; u.rate=1.05; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} }
-var _IVF_MENTS=["자, 빠르게!","스피드 올려요!","전력으로 갑니다!","힘차게 밀어붙여요!","가속!","지금 최고 속도로!"];
-var _IVS_MENTS=["이제 천천히","숨 고르세요","편하게 회복하세요","살살 걸어요","회복 구간이에요","천천히 숨 골라요"];
+var _IVF_MENTS=["자, 빠르게!","스피드 올려요!","전력으로 갑니다!","힘차게 밀어붙여요!","가속!","지금 최고 속도로!","폭발적으로 가요!","여기서 다 쏟아부어요!","심장을 깨워요, 빠르게!","속도 확 올려요!","지금이 승부처예요!","한계까지 밀어붙여요!","질주 시작!","숨차게 달려요!","다리 힘껏 밀어요!","지금 불태워요!","스퍼트, 지금이에요!","더 빠르게, 할 수 있어요!","전속력으로!","여기서 안 쉬어요, 가속!","지방 태우는 구간, 빠르게!","지금 제대로 밟아요!","강하게, 빠르게!","심장 터지게 달려요!","포기 없이, 빠르게!","이 악물고 갑니다!","여기서 터뜨려요!","전력 질주!","빠르게, 곧 쉬어요!","마지막이라 생각하고 밀어요!"];
+var _IVS_MENTS=["이제 천천히","숨 고르세요","편하게 회복하세요","살살 걸어요","회복 구간이에요","천천히 숨 골라요","잘했어요, 이제 회복","심박수 낮춰요","가볍게 걸으며 쉬어요","다음 질주를 위해 회복해요","천천히 가세요","호흡 정리해요","몸에 산소 채워요","편안하게 다리 풀어요","회복도 훈련이에요","느긋하게 걸어요","잠깐 숨 돌려요","천천히, 곧 다시 갑니다","심장 진정시켜요","가볍게 회복 걷기","잘 버텼어요, 쉬어가요","숨 크게 들이쉬어요","천천히, 힘 아껴요","회복하며 리듬 유지해요","편하게, 다음 구간 준비","느린 걸음으로 걸어요","천천히, 거의 다 왔어요","숨 고르고 다시 폭발할 준비","회복 잘하면 더 잘 달려요","잘하고 있어요, 천천히"];
 function openCardioLog(){
   // 화면 꺼지거나 나가도 유지 + 인터벌 모드 (8/6 대표)
   const CKEY="soldpt_cardio_run";
@@ -2432,7 +2432,7 @@ function openCardioLog(){
         iv.style.background = info.fast ? "rgba(255,120,90,.14)" : "rgba(120,180,255,.12)";
         iv.style.borderColor = info.fast ? "#ff7a5a" : "#5b9dff";
         var _dur=info.fast?IVF:IVS; var _spd=info.fast?((plan&&plan.ivf)||"힘차게 빠르게"):((plan&&plan.ivs)||"편하게 천천히"); iv.innerHTML='<div style="font-size:22px;font-weight:900;color:'+(info.fast?"#ff9a7a":"#8fc0ff")+'">'+(info.fast?"🔥 빠르게":"🚶 천천히")+' <span style="font-size:14px;opacity:.85">'+(_dur%60===0?(_dur/60)+"분":_dur+"초")+' 동안</span></div><div style="font-size:34px;font-weight:900;color:'+(info.left<=5?"#ff5a5a":"#fff")+';margin-top:2px;line-height:1.05">'+info.left+'<span style="font-size:15px"> 초 남음</span></div><div style="font-size:12.5px;color:#8b97ab;margin-top:4px">'+_spd+'</div>';
-        if(info.seg!==lastSeg){ try{ beep(1); }catch(e){} try{ var _mts=info.fast?_IVF_MENTS:_IVS_MENTS; _ivSpeak(_mts[Math.max(0,(info.round-1))%_mts.length]+" "+(info.fast?((plan&&plan.ivf)||"빠르게"):((plan&&plan.ivs)||"천천히"))); }catch(e){} lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ _ivSpeak(["","하나","둘","셋","넷","다섯"][info.left]); }catch(e){} try{ beep(0); }catch(e){} }
+        if(info.seg!==lastSeg){ try{ beep(1); }catch(e){} try{ var _mts=info.fast?_IVF_MENTS:_IVS_MENTS; _ivSpeak(_mts[Math.floor(Math.random()*_mts.length)]+" "+(info.fast?((plan&&plan.ivf)||"빠르게"):((plan&&plan.ivs)||"천천히"))); }catch(e){} lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ _ivSpeak(["","하나","둘","셋","넷","다섯"][info.left]); }catch(e){} try{ beep(0); }catch(e){} }
       } else { iv.style.display="none"; lastSeg=-1; lastCount=0; }
     }
     const h=m.querySelector("#c_hint"); if(h && s>=goalMin*60){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
