@@ -4134,7 +4134,7 @@ function micHelpHTML(){
 }
 
 function micSupported(){
-  return !!(window.SpeechRecognition || window.webkitSpeechRecognition || (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition));
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition || _nativeSR());
 }
 function micOn(){ return localStorage.getItem("jayna_mic") === "1"; }
 
@@ -4142,7 +4142,7 @@ function micStart(){
   if(!micSupported() || !micOn()) return;
   MIC_WANT = true;
   if(MIC_R) return;
-  var _CapSR=(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition); if(_CapSR){ MIC_R="native"; _micStartNative(_CapSR); return; }
+  var _CapSR=_nativeSR(); if(_CapSR){ MIC_R="native"; _micStartNative(_CapSR); return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const r = new SR();
   r.lang = "ko-KR";
@@ -4166,10 +4166,11 @@ function micStart(){
   };
   try{ r.start(); MIC_R = r; }catch(e){}
 }
+function _nativeSR(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__natSR) window.__natSR=window.Capacitor.registerPlugin("SpeechRecognition"); return window.__natSR; } }catch(e){} try{ if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition) return window.Capacitor.Plugins.SpeechRecognition; }catch(e){} return null; }
 function _micStartNative(SR){ (async function(){ try{ var p={}; try{ p=await SR.checkPermissions(); }catch(e){} if(!p||p.speechRecognition!=="granted"){ try{ await SR.requestPermissions(); }catch(e){} } try{ await SR.removeAllListeners(); }catch(e){} await SR.addListener("partialResults", function(data){ var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }); await SR.addListener("listeningState", function(st){ var s=(st&&(st.status!==undefined?st.status:st))||""; if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(function(){ try{ SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} }, 250); } }); await SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false}); }catch(e){} })(); }
 function micStop(){
   MIC_WANT = false;
-  var _cs=(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition); if(_cs&&MIC_R==="native"){ try{ _cs.stop(); }catch(e){} try{ _cs.removeAllListeners(); }catch(e){} MIC_R=null; return; } if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
+  var _cs=_nativeSR(); if(_cs&&MIC_R==="native"){ try{ _cs.stop(); }catch(e){} try{ _cs.removeAllListeners(); }catch(e){} MIC_R=null; return; } if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
 }
 /* 코치가 말할 땐 마이크를 잠깐 놓아준다 — 안 그러면 음성인식이 오디오를 붙잡아 코치 목소리가 끊긴다 (8/5 대표) */
 /* 백그라운드 갔다 돌아오면 음성인식 되살리기 (8/5 대표 — 화면 다시 보이거나 포커스 오면 재시작) */
