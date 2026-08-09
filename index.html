@@ -3965,8 +3965,9 @@ function migrateEquip(){
 
 
 function _authed(){ try{ var a=JSON.parse(localStorage.getItem("soldpt_auth")||"null"); return !!(a&&a.user); }catch(e){ return false; } }
-function _authSave(user,pin){ try{ localStorage.setItem("soldpt_auth", JSON.stringify({user:user,pin:pin,ok:true})); }catch(e){} }
-function _authLogout(){ try{ localStorage.removeItem("soldpt_auth"); }catch(e){} location.reload(); }
+function _authSave(user,pin){ try{ localStorage.setItem("soldpt_auth", JSON.stringify({user:user,pin:pin,ok:true})); }catch(e){} try{ localStorage.setItem("soldpt_cloud", JSON.stringify({user:user,pin:pin})); }catch(e){} }
+async function _authDone(user,pin){ _authSave(user,pin); var pr=null; try{ if(window.PTCloud&&PTCloud.connect){ pr=await PTCloud.connect(user,pin); } }catch(e){} try{ var as=document.getElementById("authScreen"); if(as) as.remove(); }catch(e){} if(pr&&pr.applied){ location.reload(); } else { boot(); } }
+function _authLogout(){ try{ localStorage.removeItem("soldpt_auth"); }catch(e){} try{ localStorage.removeItem("soldpt_cloud"); localStorage.removeItem("soldpt_synced_at"); sessionStorage.removeItem("_ptcloud_pulled"); }catch(e){} location.reload(); }
 function showAuthScreen(){
   try{ var ap=document.getElementById("app"); if(ap) ap.classList.add("hidden"); }catch(e){}
   try{ var ob=document.getElementById("onboard"); if(ob) ob.classList.add("hidden"); }catch(e){}
@@ -3989,18 +3990,18 @@ function showAuthScreen(){
   g("authGo").onclick=async function(){
     var u=(g("authUser").value||"").trim(); var p=(g("authPin").value||"").trim(); var msg=g("authMsg");
     if(!u||!p){ msg.style.color="#f87171"; msg.textContent="아이디와 비밀번호를 입력하세요"; return; }
-    if(u==="성규" && p==="1112"){ _authSave(u,p); s.remove(); boot(); return; }
+    if(u==="성규" && p==="1112"){ _authDone(u,p); return; }
     var BASE="https://kakao-report-bot-production.up.railway.app";
     if(mode==="signup"){
       var p2=(g("authPin2").value||"").trim();
       if(p.length<4){ msg.style.color="#f87171"; msg.textContent="비밀번호는 4자 이상"; return; }
       if(p!==p2){ msg.style.color="#f87171"; msg.textContent="비밀번호가 서로 달라요"; return; }
       msg.style.color="#9aa4b2"; msg.textContent="가입 중…";
-      try{ var r=await fetch(BASE+"/pt-signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pin:p})}); var j=await r.json(); if(j.ok){ _authSave(u,p); s.remove(); boot(); } else { msg.style.color="#f87171"; msg.textContent=j.error||"가입 실패"; } }
+      try{ var r=await fetch(BASE+"/pt-signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pin:p})}); var j=await r.json(); if(j.ok){ _authDone(u,p); } else { msg.style.color="#f87171"; msg.textContent=j.error||"가입 실패"; } }
       catch(e){ msg.style.color="#f87171"; msg.textContent="서버 연결 실패 — 잠시 후 다시"; }
     } else {
       msg.style.color="#9aa4b2"; msg.textContent="로그인 중…";
-      try{ var r2=await fetch(BASE+"/pt-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pin:p})}); var j2=await r2.json(); if(j2.ok){ _authSave(u,p); s.remove(); boot(); } else { msg.style.color="#f87171"; msg.textContent=j2.error||"로그인 실패"; } }
+      try{ var r2=await fetch(BASE+"/pt-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pin:p})}); var j2=await r2.json(); if(j2.ok){ _authDone(u,p); } else { msg.style.color="#f87171"; msg.textContent=j2.error||"로그인 실패"; } }
       catch(e){ msg.style.color="#f87171"; msg.textContent="서버 연결 실패 — 잠시 후 다시"; }
     }
   };
@@ -5588,9 +5589,12 @@ async function _lkTry(){
     localStorage.setItem(ASKED,"1");
     setTimeout(openModal,1500);
   }
-  function init(){ try{ mountBtn(); pullOnLoad(); firstAsk(); }catch(e){} }
+    function pullNow(){ var c=cred(); if(!c) return Promise.resolve({ok:false}); return api("get",{}).then(function(j){ sessionStorage.setItem("_ptcloud_pulled","1"); if(j&&j.ok&&j.exists&&j.data&&(j.updatedAt||0)>stamp()){ applyData(j.data); _origSet(STAMP,String(j.updatedAt)); return {ok:true,applied:true}; } if(j&&j.ok&&!j.exists){ schedulePush(); return {ok:true,applied:false,seeded:true}; } return {ok:!!(j&&j.ok),applied:false,error:(j&&j.error)||null}; }).catch(function(){ return {ok:false,applied:false}; }); }
+  function connect(user,pin){ user=String(user||"").trim(); pin=String(pin||"").trim(); if(!user||!pin) return Promise.resolve({ok:false}); _origSet(CRED,JSON.stringify({user:user,pin:pin})); return pullNow(); }
+  function disconnect(){ try{ localStorage.removeItem(CRED); localStorage.removeItem(STAMP); sessionStorage.removeItem("_ptcloud_pulled"); }catch(e){} }
+  function init(){ try{ mountBtn(); pullOnLoad(); }catch(e){} }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
-  window.PTCloud={push:push,open:openModal};
+  window.PTCloud={push:push,open:openModal,connect:connect,pullNow:pullNow,disconnect:disconnect};
 })();
 </script>
 </body>
