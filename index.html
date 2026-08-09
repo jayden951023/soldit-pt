@@ -4286,15 +4286,24 @@ function _micHelp(){ try{ alert("\uD83C\uDF99\uFE0F \uB9C8\uC774\uD06C \uAD8C\uD
 function _nativeSR(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__natSR) window.__natSR=window.Capacitor.registerPlugin("SpeechRecognition"); return window.__natSR; } }catch(e){} try{ if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition) return window.Capacitor.Plugins.SpeechRecognition; }catch(e){} return null; }
 function _beepQuiet(){ try{ if(window.SoldPtBeep && SoldPtBeep.quiet) SoldPtBeep.quiet(700); }catch(e){} }
 function _micStartNative(SR){ (async function(){
-  try{ _rlog("네이티브마이크 진입"); }catch(e){}
+  try{ _rlog("네이티브마이크 진입(oneshot)"); }catch(e){}
   try{ var p=await SR.checkPermissions(); _rlog("마이크권한:"+JSON.stringify(p)); if(!p||p.speechRecognition!=="granted"){ try{ p=await SR.requestPermissions(); _rlog("요청후:"+JSON.stringify(p)); }catch(e){ _rlog("req오류:"+e); } } }catch(e){ _rlog("perm오류:"+e); }
-  try{ SR.removeAllListeners(); }catch(e){ _rlog("removeL오류:"+e); }
-  _rlog("리스너등록 시작");
-  try{ SR.addListener("partialResults", function(data){ try{ _rlog("partial:"+JSON.stringify(data).slice(0,200)); }catch(e){} var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }); }catch(e){ _rlog("addP오류:"+e); }
-  try{ SR.addListener("result", function(data){ try{ _rlog("result:"+JSON.stringify(data).slice(0,200)); }catch(e){} var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }); }catch(e){}
-  try{ SR.addListener("listeningState", function(st){ try{ _rlog("상태:"+JSON.stringify(st)); }catch(e){} var s=(st&&(st.status!==undefined?st.status:st))||""; if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(function(){ try{ (_beepQuiet(), SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false})); }catch(e){} }, 300); } }); }catch(e){}
-  _rlog("start 호출직전");
-  try{ var r=await (_beepQuiet(), SR.start({language:"ko-KR",maxResults:6,partialResults:true,popup:false})); try{ _rlog("start결과:"+JSON.stringify(r).slice(0,200)); }catch(e){} if(r&&(r.matches||r.value)){ var mm=r.matches||r.value; for(var k=0;k<mm.length;k++){ var tt=String(mm[k]||"").trim(); if(tt) micHandle(tt); } } }catch(e){ _rlog("start오류:"+e); }
+  try{ await SR.removeAllListeners(); }catch(e){}
+  // 실시간(partialResults)이 결과를 안 내보내는 기종 대응 → 단발(one-shot) 반복. 결과는 start() 반환값에서 받음.
+  var _loops=0;
+  async function _loop(){
+    if(!MIC_WANT || MIC_R!=="native") return;
+    _loops++;
+    try{ _beepQuiet(); }catch(e){}
+    try{
+      var r=await SR.start({language:"ko-KR", maxResults:6, partialResults:false, popup:false});
+      try{ if(_loops<=3) _rlog("oneshot결과:"+JSON.stringify(r).slice(0,160)); }catch(e){}
+      var arr=(r&&(r.matches||r.value))||[];
+      for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); }
+    }catch(e){ try{ if(_loops<=3) _rlog("oneshot오류:"+e); }catch(_){} }
+    if(MIC_WANT && MIC_R==="native") setTimeout(_loop, 350);
+  }
+  _loop();
 })(); }
 function micStop(){
   MIC_WANT = false;
