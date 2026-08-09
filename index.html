@@ -2976,7 +2976,7 @@ function showTodayPreview(offset){
       '<div class="pv-th">'+(ph?'<img src="'+ph+'">':'<span>'+(i+1)+'</span>')+'</div>'+
       '<div class="pv-info">'+
         '<b>'+(i+1)+'. '+e.name+'</b>'+
-        '<small>'+e.m+(e.br&&e.wt!=="free" ? ' · '+e.br+(e.no&&e.no!=="—"?' · No.'+e.no:'') : '')+'</small>'+
+        '<small>'+e.m+(e.wt&&e.wt!=="free" ? ' · '+_eqLabel(e) : '')+'</small>'+
         '<div class="pv-set">'+
           (warm.length ? '<span class="pv-warm">🔥 워밍업 '+warm[0].w+'kg×'+warm[0].reps+'</span>' : '')+
           '<span class="pv-work">'+(work.length||e.sets)+'세트 × '+
@@ -3292,6 +3292,7 @@ function coachContext(){
 /* 코치가 실제로 프로그램/설정을 바꾸게 (8/4) */
 function _dateKeyOff(off){ const d=nowKST(); if(off) d.setDate(d.getDate()+(+off||0)); return d.toISOString().slice(0,10); }
 const _PART2KEY={"가슴":"push","어깨":"push","미는":"push","등":"pull","당기는":"pull","이두":"pull","하체":"legs","다리":"legs","엉덩이":"legs","허벅지":"legs","상체":"upper","전신":"upper"};
+function _eqLabel(e){ var w=e&&e.wt; if(w==="pin") return "핀 로디드 머신"; if(w==="plate") return "원판(플레이트) 머신"; if(w==="cable") return "케이블 머신"; if(w==="sel"||w==="stack") return "핀 로디드 머신"; return "머신"; }
 function applyCoachActions(actions){
   const p=P(); const done=[];
   for(const a of (actions||[])){ try{
@@ -3328,7 +3329,7 @@ async function sendChat(){
     clearTimeout(to);
     const j = await r.json();
     if(j && j.ok && j.answer){ a = j.answer;
-      if(Array.isArray(j.actions) && j.actions.length){ const _s=applyCoachActions(j.actions); if(_s) a += "\n\n✅ "+_s; } }
+      if(Array.isArray(j.actions) && j.actions.length){ const _s=applyCoachActions(j.actions); if(_s){ a += "\n\n✅ "+_s; try{ if(typeof renderWorkout==="function") renderWorkout(); if(typeof renderHome==="function") renderHome(); }catch(e){} } } }
   }catch(e){ /* 오프라인·서버다운 → 폴백 */ }
 
   if(!a) a = coachReply(t) + "\n\n(지금 인터넷이 불안정해 기본 답변을 드렸어요)";
@@ -4685,7 +4686,7 @@ function coachRender(){
     <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
 
     <div class="co-exname">${(_mv?CO.ei+2:CO.ei+1)}. ${e.name}</div>
-    ${e.br && e.wt!=="free" ? `<div class="co-eq">🏋️ ${e.br}${e.wt==="pin"?" · 핀":e.wt==="plate"?" · 원판":""}${e.no&&e.no!=="—"?" · No."+e.no:""}</div>` : ""}
+    ${e.wt && e.wt!=="free" ? `<div class="co-eq">🏋️ ${_eqLabel(e)}</div>` : ""}
     <div class="co-machine">${machineArt(e)}</div>
     <div class="co-btnrow">
       <button class="co-yt" onclick="openYT('${(e.yt||e.name).replace(/'/g,"")}')">▶ 운동방법 보기</button>
@@ -4771,7 +4772,7 @@ function coachBodyHTML(){
     const nx = CO.plan.exs[CO.ei+1];
     return `<div class="co-phase move">🚶 다음 운동으로 이동</div>
       <div class="co-movename">${nx.name}</div>
-      ${nx.br && nx.wt!=="free" ? `<div class="co-eq">🏋️ ${nx.br}${nx.wt==="pin"?" · 핀":nx.wt==="plate"?" · 원판":""}${nx.no&&nx.no!=="—"?" · No."+nx.no:""}</div>`:""}
+      ${nx.wt && nx.wt!=="free" ? `<div class="co-eq">🏋️ ${_eqLabel(nx)}</div>`:""}
       <div class="co-count sm" id="coT">${mmss(CO.t)}</div>
       <div class="co-sub">기구로 이동하세요</div>
       <button class="co-btn big" onclick="coachMoved()">이동 완료 ✓</button>`;
