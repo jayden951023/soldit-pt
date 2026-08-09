@@ -4292,7 +4292,7 @@ function _beepQuiet(){ try{ if(window.SoldPtBeep && SoldPtBeep.quiet) SoldPtBeep
 function _micStartNative(SR){
   window._natLast = Date.now(); window._natState = "";
   function _startOnce(){
-    if(!MIC_WANT || MIC_R!=="native") return;
+    if(!MIC_WANT || MIC_R!=="native" || window._micDub || _vplaying) return;
     try{ _beepQuiet(); }catch(e){}
     window._natLast = Date.now();
     try{ SR.start({language:"ko-KR", maxResults:6, partialResults:true, popup:false}); }catch(e){ try{ _rlog("start오류:"+e); }catch(_){} }
@@ -4320,8 +4320,8 @@ function _micRevive(){ try{ if(micOn() && document.getElementById("coachView")){
 document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _micRevive(); });
 window.addEventListener("focus", _micRevive);
 window.addEventListener("pageshow", _micRevive);
-function _micPauseForTts(){ /* 마이크 계속 켜둠 — 껐다켜졌다 방지 (8/7 대표) */ }
-function _micResumeAfterTts(){}
+function _micPauseForTts(){ try{ window._micDub=true; if(MIC_R){ micStop(); } }catch(e){} }
+function _micResumeAfterTts(){ try{ window._micDub=false; if(micOn() && !MIC_R){ setTimeout(function(){ try{ if(!_vplaying && !MIC_R && micOn()) micStart(); }catch(e){} }, 250); } }catch(e){} }
 function micHandle(text){
   try{ _rlog("마이크 인식됨: "+text); }catch(e){}
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
