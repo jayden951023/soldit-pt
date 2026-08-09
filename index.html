@@ -2413,7 +2413,7 @@ var _IVS_MENTS=["이제 천천히","숨 고르세요","편하게 회복하세요
 function openCardioLog(){
   // 화면 꺼지거나 나가도 유지 + 인터벌 모드 (8/6 대표)
   const CKEY="soldpt_cardio_run";
-  const goalMin=(P().goal||"").includes("체지방")?20:15;
+  const goalMin=()=>{ var v=+(P().cardioMin||0); return (v>=5)?v:((P().goal||"").includes("체지방")?20:15); };
   const IVF=60, IVS=120, CYC=180; // 빠르게 1분 / 천천히 2분
   let sess=null; try{ sess=JSON.parse(localStorage.getItem(CKEY)||"null"); }catch(e){}
   let plan;
@@ -2442,7 +2442,7 @@ function openCardioLog(){
         if(info.seg!==lastSeg){ try{ beep(1); }catch(e){} try{ var _mts=info.fast?_IVF_MENTS:_IVS_MENTS; _ivSpeak(_mts[Math.floor(Math.random()*_mts.length)]+" "+(info.fast?((plan&&plan.ivf)||"빠르게"):((plan&&plan.ivs)||"천천히"))); }catch(e){} lastSeg=info.seg; lastCount=0; } if(info.left<=5 && info.left>=1 && info.left!==lastCount){ lastCount=info.left; try{ _ivSpeak(["","하나","둘","셋","넷","다섯"][info.left]); }catch(e){} try{ beep(0); }catch(e){} }
       } else { iv.style.display="none"; lastSeg=-1; lastCount=0; }
     }
-    const h=m.querySelector("#c_hint"); if(h && s>=goalMin*60){ h.textContent="목표 "+goalMin+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
+    const h=m.querySelector("#c_hint"); if(h && s>=goalMin()*60){ h.textContent="목표 "+goalMin()+"분 달성! 👏 더 해도 좋아요"; h.style.color="#22d3a7"; }
   };
   const startTick=()=>{ if(!tick) tick=setInterval(paint,1000); };
   const stopTick=()=>{ if(tick){ clearInterval(tick); tick=null; } };
@@ -2451,7 +2451,7 @@ function openCardioLog(){
       '<div style="font-size:15px;font-weight:800;color:#7fd3a8;letter-spacing:.5px">🏃 오늘의 유산소</div>'+
       '<div style="font-size:26px;font-weight:900;color:#fff;margin:10px 0 4px">'+plan.n+'</div>'+
       '<div style="font-size:12.5px;color:#7cc4ff;background:rgba(124,196,255,.1);border:1px solid rgba(124,196,255,.24);border-radius:8px;padding:6px 12px;display:inline-block;margin-bottom:14px">'+plan.tip+'</div>'+
-      '<div style="font-size:15px;color:#bcd3e6">목표 <b style="color:#fff;font-size:26px">'+goalMin+'</b>분</div>'+
+      '<div style="font-size:15px;color:#bcd3e6">목표 <button onclick="_cardioSetMin(-5)" style="background:#2a3340;color:#fff;border:0;border-radius:8px;width:32px;height:32px;font-size:19px;vertical-align:middle;margin-right:4px">−</button><b style="color:#fff;font-size:26px">'+goalMin()+'</b>분<button onclick="_cardioSetMin(5)" style="background:#2a3340;color:#fff;border:0;border-radius:8px;width:32px;height:32px;font-size:19px;vertical-align:middle;margin-left:4px">+</button></div>'+
       '<div id="c_tdisp" style="font-size:62px;font-weight:900;color:#fff;line-height:1.1;margin:8px 0;font-variant-numeric:tabular-nums">'+fmt(elapsed())+'</div>'+
       '<div id="c_iv" style="display:none;border:1px solid #5b9dff;border-radius:12px;padding:10px 14px;margin:4px auto 10px;max-width:320px"></div>'+
       '<div id="c_hint" class="k">'+(sess.running?"운동 중 · 화면 꺼지거나 나가도 계속 돼요":(sess.accum?"일시정지됨 · 이어서 누르세요":"시작을 누르면 시간이 올라가요"))+'</div>';
@@ -2464,6 +2464,7 @@ function openCardioLog(){
       if(sess.running){ sess.accum=elapsed(); sess.running=false; sess.startTs=0; saveSess(); stopTick(); releaseAwake(); draw(); }
       else { sess.running=true; sess.startTs=Date.now(); saveSess(); if(voiceOn() && !VP){ try{ voiceLoad(); }catch(e){} } startTick(); keepAwake(); draw(); }
     };
+    window._cardioSetMin=function(d){ try{ var v=+(P().cardioMin||0); if(!(v>=5)) v=((P().goal||"").includes("체지방")?20:15); v=Math.max(5,Math.min(60,v+(+d||0))); P().cardioMin=v; persist(); try{ toast("유산소 목표 "+v+"분"); }catch(e){} draw(); }catch(e){} };
     ivbtn.onclick=()=>{ var _on=!intervalOn(); try{ localStorage.setItem("jayna_interval", _on?"1":"0"); }catch(e){} lastSeg=-1; draw(); if(_on){ var _f=(plan&&plan.ivf)||"빠르게", _sw=(plan&&plan.ivs)||"천천히"; try{ alert("⚡ 인터벌 하는 법 — "+((plan&&plan.n)||"")+"\n\n\u2460 빠르게 1분: "+_f+"\n\u2461 천천히 2분: "+_sw+"\n\n\u2192 \u2460\u2461을 계속 번갈아 반복하면 돼요.\n화면이 빨강(빠르게)\u00b7파랑(천천히)으로 바뀌고 음성으로도 알려줘요."); }catch(e){} try{ _ivSpeak("인터벌 시작합니다. 먼저 1분간 "+_f+". 그다음 2분간 "+_sw+". 이걸 계속 반복하세요."); }catch(e){} try{ toast("⚡ 인터벌 켜짐 — 빠르게 1분·천천히 2분 반복"); }catch(e){} } else { try{ toast("인터벌 껐어요"); }catch(e){} } };
     swap.onclick=()=>{ if(sess.running) return; const i=CARDIO.findIndex(c=>c.id===plan.id); plan=CARDIO[(i+1)%CARDIO.length]; sess.planId=plan.id; saveSess(); draw(); };
     save.onclick=()=>{ const min=Math.max(1,Math.round(elapsed()/60)); stopTick(); releaseAwake(); clearSess(); P().cardio=P().cardio||[]; P().cardio.push({date:todayKey(),type:plan.n,min:min,intensity:intervalOn()?"인터벌":"Zone 2"}); const g=gameStats(); const newB=syncBadges(g); persist(); if(m._vis) document.removeEventListener("visibilitychange",m._vis); m.remove(); try{ beep(2); }catch(e){} toast(plan.n+" "+min+"분 기록 · +20 XP"+(newB.length?" · 배지 "+newB.length+"개!":"")); nav("home"); };
