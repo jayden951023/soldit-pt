@@ -4285,26 +4285,27 @@ function micStart(){
 function _micHelp(){ try{ alert("\uD83C\uDF99\uFE0F \uB9C8\uC774\uD06C \uAD8C\uD55C \uC8FC\uB294 \uBC95\n\n[\uD3F0 \uC124\uC815\uC5D0\uC11C]\n1. \uD3F0 \u0027\uC124\uC815\u0027 \uC5F4\uAE30\n2. \u0027\uC560\uD50C\uB9AC\uCF00\uC774\uC158\u0027 \uB610\uB294 \u0027\uC571\u0027\n3. \uBAA9\uB85D\uC5D0\uC11C \u0027\uD3F0PT\u0027(phonept) \uCC3E\uAE30\n4. \u0027\uAD8C\uD55C\u0027 \u2192 \u0027\uB9C8\uC774\uD06C\u0027 \u2192 \u0027\uD5C8\uC6A9\u0027\n5. \uC571\uC73C\uB85C \uB3CC\uC544\uC640 \uB2E4\uC2DC \u0027\uB9D0\uB85C \uB118\uAE30\uAE30 \uCF1C\uAE30\u0027\n\n\uADF8\uB798\uB3C4 \uC548 \uB418\uBA74 \uD06C\uB86C \uBE0C\uB77C\uC6B0\uC800\uC5D0\uC11C \uC5F4\uC5B4\uC694:\njayden951023.github.io/jn-7a0dd207bc"); }catch(e){} }
 function _nativeSR(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__natSR) window.__natSR=window.Capacitor.registerPlugin("SpeechRecognition"); return window.__natSR; } }catch(e){} try{ if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition) return window.Capacitor.Plugins.SpeechRecognition; }catch(e){} return null; }
 function _beepQuiet(){ try{ if(window.SoldPtBeep && SoldPtBeep.quiet) SoldPtBeep.quiet(700); }catch(e){} }
-function _micStartNative(SR){ (async function(){
-  try{ _rlog("네이티브마이크 진입(oneshot)"); }catch(e){}
-  try{ var p=await SR.checkPermissions(); _rlog("마이크권한:"+JSON.stringify(p)); if(!p||p.speechRecognition!=="granted"){ try{ p=await SR.requestPermissions(); _rlog("요청후:"+JSON.stringify(p)); }catch(e){ _rlog("req오류:"+e); } } }catch(e){ _rlog("perm오류:"+e); }
-  try{ await SR.removeAllListeners(); }catch(e){}
-  // 실시간(partialResults)이 결과를 안 내보내는 기종 대응 → 단발(one-shot) 반복. 결과는 start() 반환값에서 받음.
-  var _loops=0;
-  async function _loop(){
+function _micStartNative(SR){
+  window._natLast = Date.now(); window._natState = "";
+  function _startOnce(){
     if(!MIC_WANT || MIC_R!=="native") return;
-    _loops++;
     try{ _beepQuiet(); }catch(e){}
-    try{
-      var r=await SR.start({language:"ko-KR", maxResults:6, partialResults:false, popup:false});
-      try{ if(_loops<=3) _rlog("oneshot결과:"+JSON.stringify(r).slice(0,160)); }catch(e){}
-      var arr=(r&&(r.matches||r.value))||[];
-      for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); }
-    }catch(e){ try{ if(_loops<=3) _rlog("oneshot오류:"+e); }catch(_){} }
-    if(MIC_WANT && MIC_R==="native") setTimeout(_loop, 350);
+    window._natLast = Date.now();
+    try{ SR.start({language:"ko-KR", maxResults:6, partialResults:true, popup:false}); }catch(e){ try{ _rlog("start오류:"+e); }catch(_){} }
   }
-  _loop();
-})(); }
+  (async function(){
+    try{ _rlog("네이티브마이크 진입(robust)"); }catch(e){}
+    try{ var p=await SR.checkPermissions(); if(!p||p.speechRecognition!=="granted"){ try{ p=await SR.requestPermissions(); }catch(e){} } _rlog("마이크권한:"+JSON.stringify(p)); }catch(e){ _rlog("perm오류:"+e); }
+    try{ await SR.removeAllListeners(); }catch(e){}
+    var _handle=function(data){ try{ window._natLast=Date.now(); var arr=(data&&(data.matches||data.value))||[]; for(var i=0;i<arr.length;i++){ var t=String(arr[i]||"").trim(); if(t) micHandle(t); } }catch(e){} };
+    try{ SR.addListener("partialResults", _handle); }catch(e){}
+    try{ SR.addListener("result", _handle); }catch(e){}
+    try{ SR.addListener("listeningState", function(st){ try{ var s=(st&&(st.status!==undefined?st.status:st))||""; window._natState=String(s); window._natLast=Date.now(); if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(_startOnce, 300); } }catch(e){} }); }catch(e){}
+    if(window._natWatch) clearInterval(window._natWatch);
+    window._natWatch = setInterval(function(){ try{ if(!MIC_WANT || MIC_R!=="native"){ clearInterval(window._natWatch); return; } if(Date.now()-window._natLast > 3500 && String(window._natState).indexOf("start")<0) _startOnce(); }catch(e){} }, 2000);
+    _startOnce();
+  })();
+}
 function micStop(){
   MIC_WANT = false;
   var _cs=_nativeSR(); if(_cs&&MIC_R==="native"){ try{ _cs.stop(); }catch(e){} try{ _cs.removeAllListeners(); }catch(e){} MIC_R=null; return; } if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
