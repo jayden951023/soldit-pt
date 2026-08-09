@@ -4261,6 +4261,8 @@ function micSupported(){
 function micOn(){ return localStorage.getItem("jayna_mic") === "1"; }
 
 function micStart(){
+  if(Date.now()-(window._micLastStart||0) < 2200) return;
+  window._micLastStart=Date.now();
   try{ _rlog("마이크시작 호출 native="+(typeof _nativeSR==="function"?(!!_nativeSR()):"?")+" supported="+micSupported()+" on="+micOn()); }catch(e){}
   if(!micSupported() || !micOn()) return;
   MIC_WANT = true;
@@ -4309,7 +4311,7 @@ function _micStartNative(SR){
     try{ SR.addListener("result", _handle); }catch(e){}
     try{ SR.addListener("listeningState", function(st){ try{ var s=(st&&(st.status!==undefined?st.status:st))||""; window._natState=String(s); window._natLast=Date.now(); if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(_startOnce, 300); } }catch(e){} }); }catch(e){}
     if(window._natWatch) clearInterval(window._natWatch);
-    window._natWatch = setInterval(function(){ try{ if(!MIC_WANT || MIC_R!=="native"){ clearInterval(window._natWatch); return; } if(Date.now()-window._natLast > 3500 && String(window._natState).indexOf("start")<0) _startOnce(); }catch(e){} }, 2000);
+    window._natWatch = setInterval(function(){ try{ if(!MIC_WANT || MIC_R!=="native"){ clearInterval(window._natWatch); return; } if(Date.now()-window._natLast > 7000 && String(window._natState).indexOf("start")<0) _startOnce(); }catch(e){} }, 4000);
     _startOnce();
   })();
 }
