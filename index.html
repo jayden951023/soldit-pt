@@ -2614,6 +2614,7 @@ function todayPlan(dayOffset){
   // 프로필 맞춤 — 안 하는 부위 제외 / 키우고 싶은 부위 우선 (8/4 대표)
   const _avoidM=(P().avoidMuscle||[]), _focusM=(P().focusMuscle||[]);
   if(_avoidM.length){ const _p2=pool.filter(id=>!_avoidM.some(a=>a&&(EX[id].m||"").includes(a))); if(_p2.length>=4) pool=_p2; }
+  const _avoidE=(P().avoidExercise||[]); if(_avoidE.length){ const _ns=s=>String(s||"").replace(/s/g,""); const _p3=pool.filter(id=>!_avoidE.some(a=>a&&_ns(EX[id].name).includes(_ns(a)))); if(_p3.length>=3) pool=_p3; }
   if(_focusM.length){ pool.sort((x,y)=>(_focusM.some(f=>(EX[y].m||"").includes(f))?1:0)-(_focusM.some(f=>(EX[x].m||"").includes(f))?1:0)); }
   // 복합 먼저, 고립 뒤 — 5~6개 (50분)
   // 부위 쿼터 (8/4) — 요일 성격에 맞게 부위를 배분한다.
@@ -3303,6 +3304,8 @@ function applyCoachActions(actions){
       done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+(a.part||key)+" 운동으로 변경"); }
     else if(a.type==="set_rest"){ p.restOverride=Math.max(20,Math.min(300,+a.sec||60)); done.push("쉬는시간 "+p.restOverride+"초"); }
     else if(a.type==="set_goal"){ if(a.value){ p.goal=String(a.value); done.push("목표 "+a.value);} }
+    else if(a.type==="avoid_exercise"){ p.avoidExercise=p.avoidExercise||[]; const v=String(a.value||a.name||a.part||"").trim(); if(v&&!p.avoidExercise.includes(v)){ p.avoidExercise.push(v); done.push(v+" 종목 제외"); } }
+    else if(a.type==="unavoid_exercise"){ const v=String(a.value||a.name||a.part||"").trim(); p.avoidExercise=(p.avoidExercise||[]).filter(x=>x!==v); if(v) done.push(v+" 제외 해제"); }
     else if(a.type==="avoid_muscle"){ p.avoidMuscle=p.avoidMuscle||[]; const v=String(a.value||a.part||"").trim(); if(v&&!p.avoidMuscle.includes(v)){ p.avoidMuscle.push(v); done.push(v+" 운동 제외"); } }
     else if(a.type==="unavoid_muscle"){ const v=String(a.value||a.part||"").trim(); p.avoidMuscle=(p.avoidMuscle||[]).filter(x=>x!==v); done.push(v+" 제외 해제"); }
     else if(a.type==="focus_muscle"){ p.focusMuscle=p.focusMuscle||[]; const v=String(a.value||a.part||"").trim(); if(v&&!p.focusMuscle.includes(v)){ p.focusMuscle.push(v); done.push(v+" 집중 강화"); } }
