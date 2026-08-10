@@ -2402,8 +2402,8 @@ function renderCardioCard(v){
 let cardioT=null, cardioSec=0;
 function _TTSp(){ try{ if(typeof _isNativeApp==="function" && _isNativeApp()){ if(!window.__TTS) window.__TTS=_capPlugin("TextToSpeech"); return window.__TTS; } }catch(e){} return null; }
 function _speakWeb(t){ try{ if("speechSynthesis" in window){ var u=new SpeechSynthesisUtterance(String(t)); u.lang="ko-KR"; u.rate=1.05; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} }
-function _speak(t){ if(t==null||t==="") return; var tts=null; try{ tts=_TTSp(); }catch(e){} try{ _rlog("speak:+String(t).slice(0,16)+ tts="+(!!tts)+" webTTS="+("speechSynthesis" in window)); }catch(e){}
-  if(tts){ try{ var _pp=(typeof coachPersona==="function")?coachPersona():null; var _r=tts.speak({text:String(t), lang:"ko-KR", rate:(_pp&&_pp.rate)||1.0, pitch:(_pp&&_pp.pitch)||1.0, volume:1.0}); if(_r&&_r.then){ _r.then(function(){ try{_rlog("TTS ok");}catch(_){} }).catch(function(e){ try{_rlog("TTS reject:"+e);}catch(_){}; _speakWeb(t); }); } return; }catch(e){ try{ _rlog("네이티브TTS오류:"+e); }catch(_){} } }
+function _speak(t){ if(t==null||t==="") return; try{ _beepMute(false); }catch(e){} var _remute=function(){ try{ if(MIC_WANT && MIC_R && !window._micDub && !_vplaying) _beepMute(true); }catch(e){} }; var tts=null; try{ tts=_TTSp(); }catch(e){} try{ _rlog("speak:+String(t).slice(0,16)+ tts="+(!!tts)+" webTTS="+("speechSynthesis" in window)); }catch(e){}
+  if(tts){ try{ var _pp=(typeof coachPersona==="function")?coachPersona():null; var _r=tts.speak({text:String(t), lang:"ko-KR", rate:(_pp&&_pp.rate)||1.0, pitch:(_pp&&_pp.pitch)||1.0, volume:1.0}); if(_r&&_r.then){ _r.then(function(){ try{_rlog("TTS ok");}catch(_){} _remute(); }).catch(function(e){ try{_rlog("TTS reject:"+e);}catch(_){}; _speakWeb(t); setTimeout(_remute,2600); }); } else { setTimeout(_remute,2600); } return; }catch(e){ try{ _rlog("네이티브TTS오류:"+e); }catch(_){} } }
   _speakWeb(t);
 }
 function _speakN(t){ if(t==null||t==="") return; try{ var tts=_TTSp(); if(tts){ var _r=tts.speak({text:String(t), lang:"ko-KR", rate:1.0, pitch:1.0, volume:1.0}); if(_r&&_r.then){ _r.catch(function(){ _speakWeb(t); }); } return; } }catch(e){} _speakWeb(t); }
@@ -4298,7 +4298,8 @@ function micStart(){
 }
 function _micHelp(){ try{ alert("\uD83C\uDF99\uFE0F \uB9C8\uC774\uD06C \uAD8C\uD55C \uC8FC\uB294 \uBC95\n\n[\uD3F0 \uC124\uC815\uC5D0\uC11C]\n1. \uD3F0 \u0027\uC124\uC815\u0027 \uC5F4\uAE30\n2. \u0027\uC560\uD50C\uB9AC\uCF00\uC774\uC158\u0027 \uB610\uB294 \u0027\uC571\u0027\n3. \uBAA9\uB85D\uC5D0\uC11C \u0027\uD3F0PT\u0027(phonept) \uCC3E\uAE30\n4. \u0027\uAD8C\uD55C\u0027 \u2192 \u0027\uB9C8\uC774\uD06C\u0027 \u2192 \u0027\uD5C8\uC6A9\u0027\n5. \uC571\uC73C\uB85C \uB3CC\uC544\uC640 \uB2E4\uC2DC \u0027\uB9D0\uB85C \uB118\uAE30\uAE30 \uCF1C\uAE30\u0027\n\n\uADF8\uB798\uB3C4 \uC548 \uB418\uBA74 \uD06C\uB86C \uBE0C\uB77C\uC6B0\uC800\uC5D0\uC11C \uC5F4\uC5B4\uC694:\njayden951023.github.io/jn-7a0dd207bc"); }catch(e){} }
 function _nativeSR(){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && typeof window.Capacitor.registerPlugin==="function"){ if(!window.__natSR) window.__natSR=window.Capacitor.registerPlugin("SpeechRecognition"); return window.__natSR; } }catch(e){} try{ if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.SpeechRecognition) return window.Capacitor.Plugins.SpeechRecognition; }catch(e){} return null; }
-function _beepQuiet(){ try{ if(window.SoldPtBeep && SoldPtBeep.quiet) SoldPtBeep.quiet(700); }catch(e){} }
+function _beepMute(on){ try{ if(window.SoldPtBeep){ if(SoldPtBeep.setMuted){ SoldPtBeep.setMuted(!!on); return; } if(on && SoldPtBeep.quiet){ SoldPtBeep.quiet(1600); } } }catch(e){} }
+function _beepQuiet(){ _beepMute(true); }
 function _micStartNative(SR){
   window._natLast = Date.now(); window._natState = "";
   function _startOnce(){
@@ -4321,7 +4322,7 @@ function _micStartNative(SR){
   })();
 }
 function micStop(){
-  MIC_WANT = false;
+  MIC_WANT = false; try{ _beepMute(false); }catch(e){}
   var _cs=_nativeSR(); if(_cs&&MIC_R==="native"){ try{ _cs.stop(); }catch(e){} try{ _cs.removeAllListeners(); }catch(e){} MIC_R=null; return; } if(MIC_R){ try{ MIC_R.stop(); }catch(e){} MIC_R = null; }
 }
 /* 코치가 말할 땐 마이크를 잠깐 놓아준다 — 안 그러면 음성인식이 오디오를 붙잡아 코치 목소리가 끊긴다 (8/5 대표) */
@@ -4330,7 +4331,7 @@ function _micRevive(){ try{ if(micOn() && document.getElementById("coachView")){
 document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _micRevive(); });
 window.addEventListener("focus", _micRevive);
 window.addEventListener("pageshow", _micRevive);
-function _micPauseForTts(){ try{ window._micDub=true; if(MIC_R){ micStop(); } }catch(e){} }
+function _micPauseForTts(){ try{ _beepMute(false); window._micDub=true; if(MIC_R){ micStop(); } }catch(e){} }
 function _micResumeAfterTts(){ try{ window._micDub=false; if(micOn() && !MIC_R){ setTimeout(function(){ try{ if(!_vplaying && !MIC_R && micOn()) micStart(); }catch(e){} }, 250); } }catch(e){} }
 function micHandle(text){
   try{ _rlog("마이크 인식됨: "+text); }catch(e){}
