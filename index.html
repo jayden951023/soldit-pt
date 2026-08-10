@@ -4195,7 +4195,7 @@ function _vstop(){
 }
 function _vnext(){
   const k = _vq.shift();
-  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 1200; _micResumeAfterTts(); return; }
+  if(!k){ _vplaying = false; window._micTalkUntil = Date.now() + 700; _micResumeAfterTts(); return; }
   _vplaying = true; _micPauseForTts();
   try{
     const a = new Audio("data:audio/mpeg;base64," + VP[k]);
@@ -4221,13 +4221,13 @@ function vEx(id){ return "ex_" + id; }
    브라우저 내장 음성인식이라 따로 돈이 안 든다.
    ⚠️ 아이폰 사파리는 화면이 꺼지면 마이크가 끊긴다 → 화면 켜둠(wakeLock)과 같이 써야 함. */
 const MIC_CMDS = [
-  { re: /끝|완료|다\s*했|오케이|오케바리|다\s*됐|스톱/, act: "done"  },
-  { re: /다음\s*운동|넘어가|스킵|건너/,                                    act: "next"  },
-  { re: /더\s*쉬|십오초|십오\s*초|더\s*쉴/,                        act: "rest+" },
-  { re: /시작|고고|가자/,                                          act: "start" },
-  { re: /무거|무겁|힘들|버겁/,                                          act: "heavy" },
-  { re: /가벼|쉬웠|여유/,                                          act: "light" },
-  { re: /딱\s*좋|괜찮|적당/, act: "ok" },
+  { re: /끝|끝나|끝내|끝냈|완료|다\s*했|다\s*됐|다\s*돼|다\s*끝|오케이|오케바리|오키|옼케|스톱|스탑|됐어|됐다|끝이야|끝임/, act: "done"  },
+  { re: /다음|넘어가|넘겨|넘길|스킵|건너|패스|생략/,                                    act: "next"  },
+  { re: /더\s*쉬|더\s*쉴|십오|쉬어|쉴게|조금\s*더|좀\s*더/,                        act: "rest+" },
+  { re: /시작|고고|가자|스타트|출발|가즈아|고우/,                                          act: "start" },
+  { re: /무거|무겁|힘들|힘드|버겁|버거|빡세|헤비|벅차/,                                          act: "heavy" },
+  { re: /가벼|가뿐|쉬웠|쉬워|여유|널널|라이트/,                                          act: "light" },
+  { re: /딱\s*좋|괜찮|적당|딱이|알맞|무난/, act: "ok" },
 ];
 let MIC_R = null, MIC_WANT = false, _ttsPaused = false;
 
@@ -4337,9 +4337,9 @@ function micHandle(text){
   try{ _rlog("마이크 인식됨: "+text); }catch(e){}
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
   if(typeof CO === "undefined" || !CO) return;
-  const hit = MIC_CMDS.find(c => c.re.test(text));
+  const _nt = String(text||"").replace(/\s+/g,"").toLowerCase(); const hit = MIC_CMDS.find(c => c.re.test(text) || c.re.test(_nt));
   if(!hit) return;
-  if(Date.now() < (window._micCmdCd||0)) return; window._micCmdCd = Date.now()+900;
+  if(Date.now() < (window._micCmdCd||0)) return; window._micCmdCd = Date.now()+600;
   micFlash(text);
   if(hit.act === "done"){
     if(CO.phase === "work") coachDone();
