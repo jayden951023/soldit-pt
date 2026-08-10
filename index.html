@@ -4317,7 +4317,7 @@ function _micStartNative(SR){
     try{ SR.addListener("result", _handle); }catch(e){}
     try{ SR.addListener("listeningState", function(st){ try{ var s=(st&&(st.status!==undefined?st.status:st))||""; window._natState=String(s); window._natLast=Date.now(); if(String(s).indexOf("stop")>=0 && MIC_WANT && MIC_R==="native"){ setTimeout(_startOnce, 300); } }catch(e){} }); }catch(e){}
     if(window._natWatch) clearInterval(window._natWatch);
-    window._natWatch = setInterval(function(){ try{ if(!MIC_WANT || MIC_R!=="native"){ clearInterval(window._natWatch); return; } if(Date.now()-window._natLast > 7000 && String(window._natState).indexOf("start")<0) _startOnce(); }catch(e){} }, 4000);
+    window._natWatch = setInterval(function(){ try{ if(!MIC_WANT || MIC_R!=="native"){ clearInterval(window._natWatch); return; } if(window._micDub||_vplaying){ window._natLast=Date.now(); } else if(Date.now()-window._natLast > 6000){ window._natMiss=(window._natMiss||0)+1; try{ SR.stop(); }catch(e){} window._natLast=Date.now(); try{ _rlog("마이크죽음감지 재시작 miss="+window._natMiss); }catch(e){} if(window._natMiss>=4){ window._natMiss=0; try{ SR.removeAllListeners(); }catch(e){} MIC_R=null; setTimeout(function(){ try{ if(MIC_WANT && micOn() && !MIC_R){ MIC_R="native"; _micStartNative(SR); } }catch(e){} }, 600); } else { setTimeout(_startOnce, 400); } } else { window._natMiss=0; } }catch(e){} }, 4000);
     _startOnce();
   })();
 }
@@ -4332,7 +4332,7 @@ document.addEventListener("visibilitychange", function(){ if(document.visibility
 window.addEventListener("focus", _micRevive);
 window.addEventListener("pageshow", _micRevive);
 function _micPauseForTts(){ try{ _beepMute(false); window._micDub=true; if(MIC_R){ micStop(); } }catch(e){} }
-function _micResumeAfterTts(){ try{ window._micDub=false; if(micOn() && !MIC_R){ setTimeout(function(){ try{ if(!_vplaying && !MIC_R && micOn()) micStart(); }catch(e){} }, 250); } }catch(e){} }
+function _micResumeAfterTts(){ try{ window._micDub=false; if(micOn() && !MIC_R){ setTimeout(function(){ try{ if(!_vplaying && !MIC_R && micOn()){ window._micLastStart=0; micStart(); } }catch(e){} }, 250); } }catch(e){} }
 function micHandle(text){
   try{ _rlog("마이크 인식됨: "+text); }catch(e){}
   if(_vplaying || Date.now() < (window._micTalkUntil||0)) return; /* 코치가 말하는 중엔 스피커로 나온 자기 목소리를 명령으로 오인하지 않게 (8/5 — 이어폰 없이도) */
