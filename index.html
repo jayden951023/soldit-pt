@@ -3550,7 +3550,7 @@ var PERSONAS=[
 function _playPersonaIntro(pp){ try{ if(window._introA){ try{ window._introA.pause(); }catch(e){} } var a=new Audio("voice/intro_"+pp.id+".mp3"); window._introA=a; a.onerror=function(){ try{ _speak(pp.hi); }catch(e){} }; var pr=a.play(); if(pr&&pr.catch) pr.catch(function(){ try{ _speak(pp.hi); }catch(e){} }); }catch(e){ try{ _speak(pp.hi); }catch(e2){} } }
 function coachPersona(){ var id=""; try{ id=localStorage.getItem("soldpt_persona")||""; }catch(e){} for(var i=0;i<PERSONAS.length;i++){ if(PERSONAS[i].id===id) return PERSONAS[i]; } return PERSONAS[0]; }
 function coachPersonaLite(){ try{ var pp=coachPersona(); return {name:pp.name, tone:pp.tone}; }catch(e){ return null; } }
-function setPersona(id){ try{ localStorage.setItem("soldpt_persona", id); }catch(e){} try{ var pp=coachPersona(); if(pp.pack) localStorage.setItem("jayna_voice_id", pp.pack); }catch(e){} }
+function setPersona(id){ try{ localStorage.setItem("soldpt_persona", id); }catch(e){} try{ var pp=coachPersona(); var pk=pp.pack||({sua:"minji",jiho:"seohyeon",minsu:"daeun",gangchul:"seohyeon",taeyang:"daeun"}[id])||"seohyeon"; localStorage.setItem("jayna_voice_id", pk); }catch(e){} }
 function _personaCard(){
   var cur=coachPersona();
   var card=el("div","card");
@@ -3559,7 +3559,7 @@ function _personaCard(){
     var b=el("button", pp.id===cur.id?"btn green":"btn sec");
     b.style.cssText="margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;width:100%";
     b.innerHTML='<span style="font-size:24px">'+pp.emoji+'</span><span style="flex:1"><b style="font-size:16px">'+pp.name+' 선생님</b><br><span class="k">'+pp.tag+'</span></span>'+(pp.id===cur.id?'<span style="font-size:18px">✓</span>':'');
-    b.onclick=function(){ setPersona(pp.id); toast(pp.name+" 선생님으로 바꿨어요 "+pp.emoji); try{ _playPersonaIntro(pp); }catch(e){} renderSettings(); };
+    b.onclick=function(){ setPersona(pp.id); toast(pp.name+" 선생님으로 바꿨어요 "+pp.emoji); try{ _playPersonaIntro(pp); }catch(e){} try{ if(voiceOn()){ VP=null; VP_ID=null; voiceLoad(voiceId()); } }catch(e){} renderSettings(); };
     card.appendChild(b);
   });
   return card;
@@ -3670,7 +3670,7 @@ function renderSettings(){
   const vc = el("div","card");
   const vOn = voiceOn(), vId = voiceId();
   vc.innerHTML = '<h3>🎧 음성 코치 <span class="pill">' + (vOn ? "켜짐" : "꺼짐") + '</span></h3>' +
-    '<p class="k" style="margin:6px 0 4px">코치가 <b>무게와 횟수를 말로</b> 알려줘요.<br>' +
+    '<p class="k" style="margin:6px 0 4px"><b>선생님</b>이 무게·횟수를 <b>말로</b> 알려줘요. (선생님은 위 [🧑‍🏫 PT 선생님]에서 골라요)<br>' +
     '이어폰을 끼면 <b>폰을 안 봐도</b> 운동할 수 있어요.<br>' +
     '<span style="opacity:.7">처음 켤 때만 목소리를 받아둬요 (약 20MB). 그 다음부터는 인터넷 없이도 돼요.</span></p>';
   const vrow = el("div","vpick");
@@ -3694,7 +3694,7 @@ function renderSettings(){
     };
     vrow.appendChild(b);
   });
-  vc.appendChild(vrow);
+  /* 목소리 선택 버튼 제거 — 선생님(페르소나)이 목소리를 정한다(통합, 대표 지시) */
   const vbar = el("div","vbar"); vbar.id = "vBar"; vbar.innerHTML = "<i></i>"; vc.appendChild(vbar);
   const vb = el("button", vOn ? "btn sec" : "btn green", vOn ? "음성 끄기" : "🎧 음성 코치 켜기");
   vb.style.marginTop = "10px";
