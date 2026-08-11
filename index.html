@@ -2614,7 +2614,7 @@ function todayPlan(dayOffset){
   // 프로필 맞춤 — 안 하는 부위 제외 / 키우고 싶은 부위 우선 (8/4 대표)
   const _avoidM=(P().avoidMuscle||[]), _focusM=(P().focusMuscle||[]);
   if(_avoidM.length){ const _p2=pool.filter(id=>!_avoidM.some(a=>a&&(EX[id].m||"").includes(a))); if(_p2.length>=4) pool=_p2; }
-  const _avoidE=(P().avoidExercise||[]); if(_avoidE.length){ const _ns=s=>String(s||"").replace(/s/g,""); const _p3=pool.filter(id=>!_avoidE.some(a=>a&&_ns(EX[id].name).includes(_ns(a)))); if(_p3.length>=3) pool=_p3; }
+  const _avoidE=[...(P().avoidExercise||[]), ...(P().avoidMuscle||[])]; if(_avoidE.length){ const _ns=s=>String(s||"").replace(/s/g,""); const _p3=pool.filter(id=>!_avoidE.some(a=>a&&_ns(EX[id].name).includes(_ns(a)))); if(_p3.length>=3) pool=_p3; }
   if(_focusM.length){ pool.sort((x,y)=>(_focusM.some(f=>(EX[y].m||"").includes(f))?1:0)-(_focusM.some(f=>(EX[x].m||"").includes(f))?1:0)); }
   // 복합 먼저, 고립 뒤 — 5~6개 (50분)
   // 부위 쿼터 (8/4) — 요일 성격에 맞게 부위를 배분한다.
