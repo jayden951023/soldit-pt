@@ -2586,12 +2586,29 @@ function activeSplit(p){
 Object.defineProperty(window, "SPLIT", { get: activeSplit, configurable: true });
 
 /* dayOffset: 0(없음)=오늘, 1=내일 — 내일 운동 미리 공부하기용 (8/4) */
+function _muscleRe(part){
+  var p = String(part||"").replace(/\s/g,"");
+  var M = {
+    "가슴":/가슴/, "등":/등/, "어깨":/어깨/, "삼두":/삼두/, "이두":/이두/,
+    "팔":/이두|삼두/, "복근":/복근|코어|복부/, "코어":/복근|코어|복부/,
+    "엉덩이":/엉덩이|둘/, "힙":/엉덩이|둘/,
+    "허벅지앞":/허벅지 앞|사두/, "사두":/허벅지 앞|사두/, "앞허벅지":/허벅지 앞|사두/,
+    "허벅지뒤":/허벅지 뒤|햄/, "햄스트링":/허벅지 뒤|햄/, "뒤허벅지":/허벅지 뒤|햄/,
+    "종아리":/종아리|카프/,
+    "하체":/허벅지|엉덩이|둘|종아리|다리|사두|햄/, "다리":/허벅지|엉덩이|둘|종아리|다리|사두|햄/,
+    "상체":/가슴|등|어깨|삼두|이두/
+  };
+  return M[p] || (p ? new RegExp(p) : /_never_match_/);
+}
+
 function todayPlan(dayOffset){
   const _d = nowKST(); if(dayOffset) _d.setDate(_d.getDate() + dayOffset);
   const dow = _d.getDay();
   let day = activeSplit()[dow];
   const _ovKey = (P().dayOverride||{})[_d.toISOString().slice(0,10)];
   if(_ovKey){ const _sp=activeSplit(); const _f=Object.values(_sp).find(x=>x&&(x.key===_ovKey||String(x.key||"").startsWith(_ovKey))); if(_f) day=_f; }
+  var _cmParts = (P().dayMuscles||{})[_d.toISOString().slice(0,10)];
+  if(Array.isArray(_cmParts) && _cmParts.length){ var _cids = Object.keys(EX).filter(function(id){ return _cmParts.some(function(pp){ return _muscleRe(pp).test(EX[id].m||""); }); }); if(_cids.length>=2) day = { key:"__custom", pool:_cids, _parts:_cmParts.slice() }; }
   if(day.key==="rest") return {rest:true, day};
   const eq = P().equip;
   const avail = id => EX[id].eq.every(t=> eq.includes(t) || t==="");
@@ -2610,7 +2627,7 @@ function todayPlan(dayOffset){
     pool = [...pool.filter(id=>SIT_GLUTE.includes(id)), ...pool.filter(id=>!SIT_GLUTE.includes(id))];
   }
   // 부족하면 다른 요일 풀에서 같은 성격 보충
-  if(pool.length<5){ for(const k in SPLIT){ for(const id of SPLIT[k].pool){ if(pool.length>=6) break; if(avail(id)&&!pool.includes(id)) pool.push(id);} } }
+  if(pool.length<5 && day.key!=="__custom"){ for(const k in SPLIT){ for(const id of SPLIT[k].pool){ if(pool.length>=6) break; if(avail(id)&&!pool.includes(id)) pool.push(id);} } }
   // 프로필 맞춤 — 안 하는 부위 제외 / 키우고 싶은 부위 우선 (8/4 대표)
   const _avoidM=(P().avoidMuscle||[]), _focusM=(P().focusMuscle||[]);
   if(_avoidM.length){ const _p2=pool.filter(id=>!_avoidM.some(a=>a&&(EX[id].m||"").includes(a))); if(_p2.length>=4) pool=_p2; }
@@ -2652,7 +2669,7 @@ const _Q6 = {
     lower: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리/,1]],
     legs2: [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리/,1]],
   };
-  const QUOTA = (_sit && _QSIT[day.key]) ? _QSIT[day.key] : (_knee ? {
+  let QUOTA = (_sit && _QSIT[day.key]) ? _QSIT[day.key] : (_knee ? {
     push:  [[/가슴/,2],[/^어깨/,2],[/삼두/,1]],
     pull:  [[/등/,4],[/이두/,1]],
     legs:  [[/엉덩이|안쪽/,3],[/허벅지 뒤/,2],[/종아리/,1]],
@@ -2676,6 +2693,7 @@ const _Q6 = {
     upper: [[/등/,2],[/^어깨/,2],[/가슴/,1],[/이두|삼두/,1]],
     lower: [[/엉덩이|안쪽/,2],[/허벅지 뒤/,2],[/허벅지 앞/,1],[/종아리/,1]],
   })[day.key] || (_knee ? _Q6K : _Q6)[day.key] || [];
+  if(day.key==="__custom" && Array.isArray(day._parts)){ var _per=Math.max(2, Math.round(6/day._parts.length)); QUOTA = day._parts.map(function(pp){ return [_muscleRe(pp), _per]; }); }
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
   const wk = weekIndex();
@@ -3343,8 +3361,9 @@ function applyCoachActions(actions){
   const p=P(); const done=[];
   for(const a of (actions||[])){ try{
     if(a.type==="set_day"){ const key=_PART2KEY[a.part]||String(a.part||"").toLowerCase(); const off=+a.offset||0;
-      p.dayOverride=p.dayOverride||{}; p.dayOverride[_dateKeyOff(off)]=key;
+      p.dayOverride=p.dayOverride||{}; p.dayOverride[_dateKeyOff(off)]=key; if(p.dayMuscles)delete p.dayMuscles[_dateKeyOff(off)];
       done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+(a.part||key)+" 운동으로 변경"); }
+    else if(a.type==="set_day_muscles"){ var off=+a.offset||0; var parts=(Array.isArray(a.parts)?a.parts:String(a.parts||a.value||"").split(/[,\s]+/)).map(function(x){return String(x||"").trim();}).filter(Boolean); if(parts.length){ p.dayMuscles=p.dayMuscles||{}; p.dayMuscles[_dateKeyOff(off)]=parts; if(p.dayOverride)delete p.dayOverride[_dateKeyOff(off)]; done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+parts.join("+")+" 운동으로 변경"); } }
     else if(a.type==="set_rest"){ p.restOverride=Math.max(20,Math.min(300,+a.sec||60)); done.push("쉬는시간 "+p.restOverride+"초"); }
     else if(a.type==="set_goal"){ if(a.value){ p.goal=String(a.value); done.push("목표 "+a.value);} }
     else if(a.type==="avoid_exercise"){ p.avoidExercise=p.avoidExercise||[]; const v=String(a.value||a.name||a.part||"").trim(); if(v&&!p.avoidExercise.includes(v)){ p.avoidExercise.push(v); done.push(v+" 종목 제외"); } }
