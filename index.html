@@ -2402,11 +2402,11 @@ function renderCardioCard(v){
 let cardioT=null, cardioSec=0;
 function _TTSp(){ try{ if(typeof _isNativeApp==="function" && _isNativeApp()){ if(!window.__TTS) window.__TTS=_capPlugin("TextToSpeech"); return window.__TTS; } }catch(e){} return null; }
 function _speakWeb(t){ try{ if("speechSynthesis" in window){ var u=new SpeechSynthesisUtterance(String(t)); u.lang="ko-KR"; u.rate=1.05; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} }
-function _speak(t){ if(t==null||t==="") return; try{ _beepMute(false); }catch(e){} var _remute=function(){ try{ if(MIC_WANT && MIC_R && !window._micDub && !_vplaying) _beepMute(true); }catch(e){} }; var tts=null; try{ tts=_TTSp(); }catch(e){} try{ _rlog("speak:+String(t).slice(0,16)+ tts="+(!!tts)+" webTTS="+("speechSynthesis" in window)); }catch(e){}
+function _speak(t){ if(t==null||t==="") return; try{ window._micTalkUntil = Date.now() + Math.min(25000, Math.max(2000, String(t).length*200 + 1200)); }catch(e){} try{ _beepMute(false); }catch(e){} var _remute=function(){ try{ if(MIC_WANT && MIC_R && !window._micDub && !_vplaying) _beepMute(true); }catch(e){} }; var tts=null; try{ tts=_TTSp(); }catch(e){} try{ _rlog("speak:+String(t).slice(0,16)+ tts="+(!!tts)+" webTTS="+("speechSynthesis" in window)); }catch(e){}
   if(tts){ try{ var _pp=(typeof coachPersona==="function")?coachPersona():null; var _r=tts.speak({text:String(t), lang:"ko-KR", rate:(_pp&&_pp.rate)||1.0, pitch:(_pp&&_pp.pitch)||1.0, volume:1.0}); if(_r&&_r.then){ _r.then(function(){ try{_rlog("TTS ok");}catch(_){} _remute(); }).catch(function(e){ try{_rlog("TTS reject:"+e);}catch(_){}; _speakWeb(t); setTimeout(_remute,2600); }); } else { setTimeout(_remute,2600); } return; }catch(e){ try{ _rlog("네이티브TTS오류:"+e); }catch(_){} } }
   _speakWeb(t);
 }
-function _speakN(t){ if(t==null||t==="") return; try{ var tts=_TTSp(); if(tts){ var _r=tts.speak({text:String(t), lang:"ko-KR", rate:1.0, pitch:1.0, volume:1.0}); if(_r&&_r.then){ _r.catch(function(){ _speakWeb(t); }); } return; } }catch(e){} _speakWeb(t); }
+function _speakN(t){ if(t==null||t==="") return; try{ window._micTalkUntil = Date.now() + Math.min(25000, Math.max(2000, String(t).length*200 + 1200)); }catch(e){} try{ var tts=_TTSp(); if(tts){ var _r=tts.speak({text:String(t), lang:"ko-KR", rate:1.0, pitch:1.0, volume:1.0}); if(_r&&_r.then){ _r.catch(function(){ _speakWeb(t); }); } return; } }catch(e){} _speakWeb(t); }
 function _ivSpeak(t){ try{ if(t){ _speakN(t); } }catch(e){} }
 var _IVF_MENTS=["자, 빠르게!","스피드 올려요!","전력으로 갑니다!","힘차게 밀어붙여요!","가속!","지금 최고 속도로!","폭발적으로 가요!","여기서 다 쏟아부어요!","심장을 깨워요, 빠르게!","속도 확 올려요!","지금이 승부처예요!","한계까지 밀어붙여요!","질주 시작!","숨차게 달려요!","다리 힘껏 밀어요!","지금 불태워요!","스퍼트, 지금이에요!","더 빠르게, 할 수 있어요!","전속력으로!","여기서 안 쉬어요, 가속!","지방 태우는 구간, 빠르게!","지금 제대로 밟아요!","강하게, 빠르게!","심장 터지게 달려요!","포기 없이, 빠르게!","이 악물고 갑니다!","여기서 터뜨려요!","전력 질주!","빠르게, 곧 쉬어요!","마지막이라 생각하고 밀어요!"];
 var _IVS_MENTS=["이제 천천히","숨 고르세요","편하게 회복하세요","살살 걸어요","회복 구간이에요","천천히 숨 골라요","잘했어요, 이제 회복","심박수 낮춰요","가볍게 걸으며 쉬어요","다음 질주를 위해 회복해요","천천히 가세요","호흡 정리해요","몸에 산소 채워요","편안하게 다리 풀어요","회복도 훈련이에요","느긋하게 걸어요","잠깐 숨 돌려요","천천히, 곧 다시 갑니다","심장 진정시켜요","가볍게 회복 걷기","잘 버텼어요, 쉬어가요","숨 크게 들이쉬어요","천천히, 힘 아껴요","회복하며 리듬 유지해요","편하게, 다음 구간 준비","느린 걸음으로 걸어요","천천히, 거의 다 왔어요","숨 고르고 다시 폭발할 준비","회복 잘하면 더 잘 달려요","잘하고 있어요, 천천히"];
@@ -4370,6 +4370,7 @@ function _micStartNative(SR){
   window._natLast = Date.now(); window._natState = "";
   function _startOnce(){
     if(!MIC_WANT || MIC_R!=="native") return;
+    var _tu = window._micTalkUntil||0; if(_vplaying || Date.now() < _tu){ setTimeout(_startOnce, Math.max(300, _tu - Date.now() + 200)); return; }
     try{ _beepQuiet(); }catch(e){}
     window._natLast = Date.now();
     try{ SR.start({language:"ko-KR", maxResults:6, partialResults:true, popup:false}); }catch(e){ try{ _rlog("start오류:"+e); }catch(_){} }
