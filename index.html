@@ -4723,7 +4723,32 @@ function coachFeel(dir){
 }
 /* [시작하기] — 누르면 5초 세고 시작한다 (8/5 대표: 기구에 앉기 전에 카운트가 돌아갔음).
    여기서 소리 잠금도 함께 푼다. */
-function coachGo(){
+function _setupEarbudCtl(){
+  // 이어폰 미디어 버튼(두 번 터치 등) → 세트끝/다음. 무음 루프 오디오로 미디어세션 유지. (대표 지시)
+  try{
+    if(!window._earbudAudio){
+      var sr=8000, sec=0.3, n=Math.floor(sr*sec);
+      var buf=new ArrayBuffer(44+n*2), dv=new DataView(buf);
+      var ws=function(o,s){ for(var i=0;i<s.length;i++) dv.setUint8(o+i, s.charCodeAt(i)); };
+      ws(0,"RIFF"); dv.setUint32(4,36+n*2,true); ws(8,"WAVE"); ws(12,"fmt ");
+      dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+      dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+      ws(36,"data"); dv.setUint32(40,n*2,true);
+      var by=new Uint8Array(buf), bin=""; for(var i2=0;i2<by.length;i2++) bin+=String.fromCharCode(by[i2]);
+      var a=new Audio("data:audio/wav;base64,"+btoa(bin)); a.loop=true; a.volume=0.0001; a.setAttribute("playsinline","");
+      window._earbudAudio=a;
+    }
+    window._earbudAudio.play().catch(function(){});
+    if("mediaSession" in navigator){
+      try{ navigator.mediaSession.metadata=new MediaMetadata({title:"JAYNA PT 운동 중", artist:"이어폰 두 번 터치 = 세트끝/다음"}); }catch(e){}
+      var h=function(){ try{ _coachTapAdvance(); }catch(e){} try{ if(window._earbudAudio) window._earbudAudio.play().catch(function(){}); }catch(e){} };
+      ["play","pause","nexttrack","previoustrack","stop"].forEach(function(act){ try{ navigator.mediaSession.setActionHandler(act, h); }catch(e){} });
+      try{ navigator.mediaSession.playbackState="playing"; }catch(e){}
+    }
+  }catch(e){}
+}
+
+function coachGo(){ try{ _setupEarbudCtl(); }catch(e){}
   voiceUnlock();
   CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ _vq=[]; _vstop(); const st=coachSet(), sets=coachSets(); if(st.kind==="warm") say("warmup", vWeight(st.w), vReps(st.reps)); else if(CO.si>=sets.length-1) say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "last_set"); else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go"); }catch(e){}
   coachRender();
