@@ -5287,6 +5287,39 @@ function machineArt(e){
 
 
 
+/* 🔄 자동 최신화 (대표 지시) — 앱 재개 시 새 버전 있으면 자동 새로고침 */
+(function(){ try{
+  var _vbase = location.href.split("#")[0].split("?")[0];
+  var _loadedTag = null, _lastChk = 0, _busy = false;
+  function _tag(cb){
+    try{
+      /* HEAD 는 서비스워커(GET만 처리)를 안 거쳐 서버 ETag 를 바로 받는다 */
+      fetch(_vbase, {method:"HEAD", cache:"no-store"})
+        .then(function(r){ cb((r.headers.get("ETag")||r.headers.get("Last-Modified")||"").trim()); })
+        .catch(function(){ cb(null); });
+    }catch(e){ cb(null); }
+  }
+  _tag(function(t){ _loadedTag = t; });
+  function _chk(){
+    if(_busy || Date.now()-_lastChk < 12000) return;
+    _lastChk = Date.now();
+    if(!_loadedTag){ _tag(function(t){ _loadedTag=t; }); return; }
+    _busy = true;
+    _tag(function(tag){
+      _busy = false;
+      if(!tag || tag===_loadedTag) return;
+      var inWk = (typeof CO!=="undefined" && CO && (CO.phase==="work"||CO.phase==="rest"||CO.phase==="ready"||CO.phase==="move"));
+      if(inWk){ try{ if(typeof toast==="function") toast("🔄 새 버전 있어요 — 운동 끝나면 자동 반영"); }catch(e){} return; }
+      try{ if(sessionStorage.getItem("_autoUpdTag")===tag) return; sessionStorage.setItem("_autoUpdTag", tag); }catch(e){}
+      try{ if("caches" in window) caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }); }catch(e){}
+      _loadedTag = tag;
+      setTimeout(function(){ try{ location.reload(); }catch(e){} }, 150);
+    });
+  }
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _chk(); });
+  window.addEventListener("focus", _chk);
+}catch(e){} })();
+
 /* ═══ PWA (8/4 대표) ═══ */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
