@@ -4335,6 +4335,16 @@ function micSupported(){
   return !!(window.SpeechRecognition || window.webkitSpeechRecognition || _nativeSR());
 }
 function micOn(){ return localStorage.getItem("jayna_mic") === "1"; }
+/* (대표 지시) 음성인식 삐소리+블투 인식불량 → 1회 자동 끄고 '두 번 터치'로 유도(되돌리기 가능) */
+(function(){ try{
+  if(localStorage.getItem("_micOffV1")!=="1"){
+    localStorage.setItem("jayna_mic","0");
+    localStorage.setItem("_micOffV1","1");
+    try{ if(typeof MIC_WANT!=="undefined") MIC_WANT=false; }catch(e){}
+    try{ if(typeof micStop==="function") micStop(); }catch(e){}
+    setTimeout(function(){ try{ if(typeof toast==="function") toast("🔇 음성인식 껐어요 (폰 특성상 삐 소리·이어폰 인식 불량). 이제 이어폰/화면 '두 번 터치'로 세트 넘기세요 — 설정에서 다시 켤 수 있어요."); }catch(e){} }, 2200);
+  }
+}catch(e){} })();
 
 function micStart(){
   if(Date.now()-(window._micLastStart||0) < 2200) return;
