@@ -4467,6 +4467,8 @@ function coachTick(){
       CO.t++;
       // 유산소 안내 (8/5 대표) — 인터벌이면 전환 시점에, 아니면 5분마다
       if(CO.phase==="cardio") cardioVoice(CO.t);
+      /* (대표 지시) 세트 중 시간 안내 — 1분에 안내, 이후 30초마다 */
+      if(CO.phase==="work" && (typeof voiceOn!=="function" || voiceOn())){ if(CO.t===60){ try{_speak("운동 시작 1분 지났습니다");}catch(e){} } else if(CO.t>60 && CO.t%30===0){ try{ var _em=Math.floor(CO.t/60), _es=CO.t%60; _speak(_em+"분"+(_es?(" "+_es+"초"):"")+" 지났습니다"); }catch(e){} } }
       coachPaint(); return;
     }
     // 시작 버튼을 누르기 전에는 카운트가 흐르지 않는다 (8/5 대표)
