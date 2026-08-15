@@ -4742,15 +4742,15 @@ function _setupEarbudCtl(){
   // 이어폰 미디어 버튼(두 번 터치 등) → 세트끝/다음. 무음 루프 오디오로 미디어세션 유지. (대표 지시)
   try{
     if(!window._earbudAudio){
-      var sr=8000, sec=0.3, n=Math.floor(sr*sec);
+      var sr=44100, sec=0.5, n=Math.floor(sr*sec);
       var buf=new ArrayBuffer(44+n*2), dv=new DataView(buf);
       var ws=function(o,s){ for(var i=0;i<s.length;i++) dv.setUint8(o+i, s.charCodeAt(i)); };
       ws(0,"RIFF"); dv.setUint32(4,36+n*2,true); ws(8,"WAVE"); ws(12,"fmt ");
       dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
       dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true);
       ws(36,"data"); dv.setUint32(40,n*2,true);
-      var by=new Uint8Array(buf), bin=""; for(var i2=0;i2<by.length;i2++) bin+=String.fromCharCode(by[i2]);
-      var a=new Audio("data:audio/wav;base64,"+btoa(bin)); a.loop=true; a.volume=0.0001; a.setAttribute("playsinline","");
+      for(var s2=0;s2<n;s2++){ dv.setInt16(44+s2*2, Math.round(5*Math.sin(2*Math.PI*150*s2/sr)), true); } var by=new Uint8Array(buf), bin=""; for(var i2=0;i2<by.length;i2++) bin+=String.fromCharCode(by[i2]);
+      var a=new Audio("data:audio/wav;base64,"+btoa(bin)); a.loop=true; a.volume=1.0; a.setAttribute("playsinline","");
       window._earbudAudio=a;
     }
     window._earbudAudio.play().catch(function(){});
@@ -5334,6 +5334,8 @@ function machineArt(e){
   document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") _chk(); });
   window.addEventListener("focus", _chk);
 }catch(e){} })();
+
+try{ document.addEventListener("pointerdown", function _kaOnce(){ try{ _setupEarbudCtl(); }catch(e){} try{ document.removeEventListener("pointerdown", _kaOnce); }catch(e){} }, {once:true, passive:true}); }catch(e){}
 
 /* ═══ PWA (8/4 대표) ═══ */
 if('serviceWorker' in navigator){
