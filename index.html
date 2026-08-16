@@ -2834,11 +2834,11 @@ const _Q6 = {
   /* (8/4 과학 감사) 복근이 주 0세트였다 — 6종목 제한 '밖'에서 코어 1종목을 마지막에 붙인다.
      맨몸이라 2~3분이면 끝나 50분 예산을 크게 건드리지 않는다. */
   if(!plainCoreOff()){
-    const cid = CORE_POOL[(wk + dow) % CORE_POOL.length];
-    const cex = EX[cid];
+    var _avM=(P().avoidMuscle||[]), _avE=(P().avoidExercise||[]), _nsC=function(s){return String(s||"").replace(/\s/g,"");}; var cid=null; if(!_avM.some(function(a){return /복근|코어|복부/.test(String(a));})){ for(var _k=0;_k<CORE_POOL.length;_k++){ var _cd=CORE_POOL[(wk+dow+_k)%CORE_POOL.length], _cn=_nsC((EX[_cd]||{}).name); if(!_avE.concat(_avM).some(function(a){return a&&_cn.indexOf(_nsC(a))>=0;})){ cid=_cd; break; } } }
+    const cex = cid ? EX[cid] : null;
     const csets = Math.max(2, 3 + setMod);
     const isTime = cid === "ab_plank";
-    exs.push({id:cid, name:cex.name, m:cex.m, type:cex.type, rep:cex.rep, sets:csets,
+    if(cid && cex) exs.push({id:cid, name:cex.name, m:cex.m, type:cex.type, rep:cex.rep, sets:csets,
       recW:null, recReps:(isTime? cex.rep[0] : Math.round((cex.rep[0]+cex.rep[1])/2)),
       note: isTime? "숨 참지 말고 배에 힘! 30초부터" : "허리 뜨지 않게 배에 힘 주고 천천히",
       rest:40, yt:cex.yt, br:"", wt:"free", no:"", eq:[],
