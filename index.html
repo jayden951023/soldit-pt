@@ -4853,7 +4853,7 @@ function _setupEarbudCtl(){
 
 function coachGo(){ try{ _setupEarbudCtl(); }catch(e){}
   voiceUnlock();
-  CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ _vq=[]; _vstop(); const st=coachSet(), sets=coachSets(); if(st.kind==="warm") say("warmup", vWeight(st.w), vReps(st.reps)); else if(CO.si>=sets.length-1) say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "last_set"); else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go"); }catch(e){}
+  CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ _vq=[]; _vstop(); }catch(e){} /* (대표 8/17) 세트 시작 음성(무게·횟수·격려) 제거 */
   coachRender();
   try{ if((CO.si||0)===0) say("form_"+coachEx().id); }catch(e){} /* 첫 세트 자세 안내 음성 (8/6) */
   /* 카운트다운 없이 바로 시작 (8/5 대표) */
