@@ -4597,6 +4597,13 @@ function _ptChatTopics(){
   if(v==null) v="selfdev,startup,realestate,trend,technology";
   return String(v).split(",").map(function(s){return s.trim();}).filter(Boolean);
 }
+function _ptChatToggle(){
+  try{
+    if(localStorage.getItem("jayna_chat")==="0"){ localStorage.setItem("jayna_chat","1"); try{ if(typeof toast==="function") toast("쉬는시간 잡담 ON 💬"); }catch(e){} try{ _ptChatLoad(); }catch(e){} }
+    else { localStorage.setItem("jayna_chat","0"); try{ if(window._ptChatAudio) window._ptChatAudio.pause(); }catch(e){} try{ if(typeof toast==="function") toast("쉬는시간 잡담 OFF"); }catch(e){} }
+    try{ coachRender(); }catch(e){}
+  }catch(e){}
+}
 function _ptChatLoad(){
   try{
     if(localStorage.getItem("jayna_chat")==="0") return;
@@ -4652,7 +4659,7 @@ function coachDone(){
   const last = CO.si >= coachSets().length-1;
   CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   try{ _vq=[]; _vstop(); }catch(e){}
-  say("set_done");
+  try{ var _n=parseInt((coachSet()||{}).label,10); if(_n>=1&&_n<=6) say(vSet(_n),"set_done"); else say("set_done"); }catch(e){ say("set_done"); }
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
   else if(CO.ei < CO.plan.exs.length-1){
     CO.phase="move"; CO.t=20;
@@ -4900,6 +4907,7 @@ function coachRender(){
     <div class="co-top">
       <button class="co-x" onclick="coachStop()">✕</button>
       <div class="co-prog"><span class="co-date">${todayLabel()}</span>${_mv ? (CO.ei+2)+" / "+total+" 운동 · 이동 중" : (CO.ei+1)+" / "+total+" 운동 · "+(CO.si+1)+" / "+sets.length+" 세트"}</div>
+      <button class="co-skip" onclick="_ptChatToggle()">${localStorage.getItem("jayna_chat")==="0"?"💬 잡담 켜기":"💬 잡담 끄기"}</button>
     </div>
     <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
 
