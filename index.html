@@ -4715,6 +4715,7 @@ function coachDone(){
   const last = CO.si >= coachSets().length-1;
   CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   try{ _vq=[]; _vstop(); }catch(e){}
+  try{ if(window._formCueAudio){ window._formCueAudio.pause(); window._formCueAudio=null; } }catch(e){}   // (대표 8/18) 휴식으론 자세더빙 안 넘김 — 운동 중에만 자세설명, 휴식엔 잡담
   try{ _setEndSay(CO.si + 1); }catch(e){ say("set_done"); }   // 완료한 세트번호 = si+1 ("1세트 끝","2세트 끝"). 예전 parseInt(label)은 "본세트 1"→NaN이라 번호 안 나옴
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
   else if(CO.ei < CO.plan.exs.length-1){
@@ -4930,7 +4931,7 @@ function _setupEarbudCtl(){
 
 function coachGo(){ try{ _setupEarbudCtl(); }catch(e){} try{ _setEndPrefetch(); }catch(e){}
   voiceUnlock();
-  CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ _vq=[]; _vstop(); }catch(e){} /* (대표 8/17) 세트 시작 음성(무게·횟수·격려) 제거 */
+  CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ _vq=[]; _vstop(); }catch(e){} try{ if(window._ptChatAudio){ window._ptChatAudio.pause(); window._ptChatAudio=null; } }catch(e){} /* (대표 8/17) 세트 시작 음성 제거 + (8/18) 운동 시작 시 잡담 오디오 정지 — 운동중엔 자세설명만 */
   coachRender();
   try{ if((CO.si||0)===0) say("form_"+coachEx().id); }catch(e){} /* 첫 세트 자세 안내 음성 (8/6) */
   /* 카운트다운 없이 바로 시작 (8/5 대표) */
