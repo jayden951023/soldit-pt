@@ -3796,6 +3796,31 @@ function renderSettings(){
     renderSettings();
   };
   vc.appendChild(cbChat);
+  // 관심 카테고리 선택 (대표 8/17) — 선택한 주제만 잡담에 나옴
+  if(_chatOn){
+    var _TP=[["entertainment","연예"],["sports","스포츠"],["business","경제"],["technology","IT·기술"],["science","과학"],["health","건강"]];
+    var _tsel=_ptChatTopics();
+    var _trow=el("div","");
+    _trow.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px";
+    var _tlab=el("div","","관심 주제 (선택한 것만 얘기해요)");
+    _tlab.style.cssText="width:100%;font-size:12px;opacity:.7;margin-bottom:2px";
+    _trow.appendChild(_tlab);
+    _TP.forEach(function(t){
+      var _on=_tsel.indexOf(t[0])>=0;
+      var _chip=el("button", _on?"btn green":"btn sec", (_on?"✓ ":"")+t[1]);
+      _chip.style.cssText="padding:7px 12px;font-size:13px;border-radius:20px;flex:0 0 auto";
+      _chip.onclick=function(){
+        var s=_ptChatTopics(), k=t[0];
+        if(s.indexOf(k)>=0){ if(s.length<=1){ toast("최소 1개는 선택해야 해요"); return; } s=s.filter(function(x){return x!==k;}); }
+        else { s.push(k); }
+        localStorage.setItem("jayna_chat_topics", s.join(","));
+        try{ window._ptChat=null; _ptChatLoad(); }catch(e){}
+        renderSettings();
+      };
+      _trow.appendChild(_chip);
+    });
+    vc.appendChild(_trow);
+  }
   v.appendChild(vc);
 
   // 유산소 인터벌 (8/5 대표)
@@ -4574,18 +4599,24 @@ if(!window._coachDblInit){ window._coachDblInit=1;
   }, true);
 }
 /* 세트끝 잡담 — 오늘/어제 가벼운 얘깃거리를 코치 목소리(타입캐스트)로 (대표 8/17) */
+function _ptChatTopics(){
+  var v=localStorage.getItem("jayna_chat_topics");
+  if(v==null) v="sports,entertainment";
+  return String(v).split(",").map(function(s){return s.trim();}).filter(Boolean);
+}
 function _ptChatLoad(){
   try{
     if(localStorage.getItem("jayna_chat")==="0") return;
     if(typeof PT_API==="undefined" || !PT_API) return;
     var today = new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);
-    if(window._ptChat && window._ptChat.date===today && window._ptChat.items && window._ptChat.items.length) return;
+    var _tp=(typeof _ptChatTopics==="function"?_ptChatTopics():[]).join(",");
+    if(window._ptChat && window._ptChat.date===today && window._ptChat.topics===_tp && window._ptChat.items && window._ptChat.items.length) return;
     if(window._ptChatLoading) return; window._ptChatLoading=true;
     var vid=(typeof voiceId==="function")?voiceId():"daeun";
-    var url=PT_API.replace("/pt-coach","/pt-chat")+"?voice="+encodeURIComponent(vid);
+    var url=PT_API.replace("/pt-coach","/pt-chat")+"?voice="+encodeURIComponent(vid)+"&topics="+encodeURIComponent(_tp);
     fetch(url).then(function(r){return r.json();}).then(function(j){
       window._ptChatLoading=false;
-      if(j&&j.ok&&j.items&&j.items.length){ window._ptChat={date:(j.date||today), items:j.items, idx:0}; }
+      if(j&&j.ok&&j.items&&j.items.length){ window._ptChat={date:(j.date||today), topics:_tp, items:j.items, idx:0}; }
     }).catch(function(){ window._ptChatLoading=false; });
   }catch(e){ window._ptChatLoading=false; }
 }
