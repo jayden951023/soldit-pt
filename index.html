@@ -3623,7 +3623,7 @@ var PERSONAS=[
 function _playPersonaIntro(pp){ try{ if(window._introA){ try{ window._introA.pause(); }catch(e){} } var a=new Audio("voice/intro_"+pp.id+".mp3"); window._introA=a; a.onerror=function(){ try{ _speak(pp.hi); }catch(e){} }; var pr=a.play(); if(pr&&pr.catch) pr.catch(function(){ try{ _speak(pp.hi); }catch(e){} }); }catch(e){ try{ _speak(pp.hi); }catch(e2){} } }
 function coachPersona(){ var id=""; try{ id=localStorage.getItem("soldpt_persona")||""; }catch(e){} for(var i=0;i<PERSONAS.length;i++){ if(PERSONAS[i].id===id) return PERSONAS[i]; } return PERSONAS[0]; }
 function coachPersonaLite(){ try{ var pp=coachPersona(); return {name:pp.name, tone:pp.tone}; }catch(e){ return null; } }
-function setPersona(id){ try{ localStorage.setItem("soldpt_persona", id); }catch(e){} try{ var pp=coachPersona(); var pk=pp.pack||({sua:"minji",jiho:"daeun",minsu:"daeun",gangchul:"minji",taeyang:"daeun"}[id])||"daeun"; localStorage.setItem("jayna_voice_id", pk); }catch(e){} }
+function setPersona(id){ try{ localStorage.setItem("soldpt_persona", id); }catch(e){} try{ var pp=coachPersona(); var pk=pp.pack||({sua:"minji",jiho:"minji",minsu:"daeun",gangchul:"daeun",taeyang:"daeun"}[id])||"daeun"; localStorage.setItem("jayna_voice_id", pk); }catch(e){} }
 function _personaCard(){
   var cur=coachPersona();
   var card=el("div","card");
@@ -4145,13 +4145,16 @@ function coachSet(){ return coachSets()[CO.si]; }
    고른 목소리 팩만 내려받아 IndexedDB 에 저장 → 두 번째부터는 바로 씀. */
 const VOICES = {
 daeun: { label: "다은",  tone: "밝게", sex: "여" },
-minji: { label: "민지",  tone: "차분", sex: "여" },
+minji: { label: "민지",  tone: "차분", sex: "여" },
+
+
+
 };
 const VOICE_BASE = "voice/";      // pack_<id>.json
 let VP = null;                    // 현재 로드된 음성팩 {key: base64}
 let VP_ID = null;
 
-function voiceOn(){ return localStorage.getItem("jayna_voice") !== "0"; }
+function voiceOn(){ return localStorage.getItem("jayna_voice") === "1"; }
 function voiceId(){ var id = localStorage.getItem("jayna_voice_id"); return (id && VOICES[id]) ? id : "daeun"; }
 
 /* ── IndexedDB (음성팩은 커서 localStorage 에 안 들어간다) ── */
@@ -4194,6 +4197,17 @@ async function vdbDel(id){
     });
   }catch(e){}
 }
+
+/* (8/17 대표) '서현' 목소리를 없앴다. 이미 폰에 받아둔 서현 팩(약 25MB)이 남아
+   저장공간만 먹으므로 앱을 켤 때 한 번 지운다. 설정에 서현이 골라져 있었으면 다은으로. */
+(function cleanupSeohyeon(){
+  try{
+    if(localStorage.getItem("jayna_voice_seohyeon_cleared") === "1") return;
+    if(localStorage.getItem("jayna_voice_id") === "seohyeon") localStorage.setItem("jayna_voice_id", "daeun");
+    vdbDel("seohyeon");
+    localStorage.setItem("jayna_voice_seohyeon_cleared", "1");
+  }catch(e){}
+})();
 
 /* ── 음성팩 준비: 저장된 게 있으면 바로, 없으면 내려받기 ── */
 /* 팩에 들어 있어야 할 멘트 수 (8/5)
