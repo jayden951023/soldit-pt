@@ -2527,17 +2527,7 @@ function estimate1RM(w,reps){ if(!w||!reps) return 0; return Math.round(w*(1+rep
    반환: [{w, reps, kind:"warm"|"work", label}] */
 function buildSets(ex, setN, workW, workReps){
   const out=[];
-  /* 워밍업 (8/4 과학 감사) — 가벼운 날은 1세트로 충분하지만,
-     무거운 복합운동(본세트 60kg 이상)은 한 번에 뛰면 첫 세트 수행력이 떨어지고 다치기 쉽다.
-     → 40% → 65% 두 단계로 올린다. 가벼우면 기존처럼 1세트. */
-  if(workW!=null && ex.type==="comp" && workW >= (ex.inc||2.5)*4){
-    if(workW >= 60){
-      out.push({w:round(workW*0.4, ex.inc||2.5), reps:Math.min(10, workReps+3), kind:"warm", label:"워밍업 1"});
-      out.push({w:round(workW*0.65, ex.inc||2.5), reps:Math.min(8, workReps+1), kind:"warm", label:"워밍업 2"});
-    } else {
-      out.push({w:round(workW*0.6, ex.inc||2.5), reps:Math.min(10, workReps+2), kind:"warm", label:"워밍업"});
-    }
-  }
+  /* 워밍업 제거 (대표 지시 8/18 "워밍업은 알아서 하니깐 빼줘") — 본세트만 생성 */
   for(let i=0;i<setN;i++){
     out.push({w:workW, reps:workReps, kind:"work", label:"본세트 "+(i+1)});
   }
