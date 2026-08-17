@@ -3798,7 +3798,7 @@ function renderSettings(){
   vc.appendChild(cbChat);
   // 관심 카테고리 선택 (대표 8/17) — 선택한 주제만 잡담에 나옴
   if(_chatOn){
-    var _TP=[["entertainment","연예"],["sports","스포츠"],["business","경제"],["technology","IT·기술"],["science","과학"],["health","건강"]];
+    var _TP=[["selfdev","자기계발"],["startup","사업·창업"],["trend","트렌드·화제"],["business","경제"],["technology","IT·AI"],["science","과학"],["entertainment","연예"],["sports","스포츠"],["health","건강"]];
     var _tsel=_ptChatTopics();
     var _trow=el("div","");
     _trow.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px";
@@ -4601,7 +4601,7 @@ if(!window._coachDblInit){ window._coachDblInit=1;
 /* 세트끝 잡담 — 오늘/어제 가벼운 얘깃거리를 코치 목소리(타입캐스트)로 (대표 8/17) */
 function _ptChatTopics(){
   var v=localStorage.getItem("jayna_chat_topics");
-  if(v==null) v="sports,entertainment";
+  if(v==null) v="selfdev,startup,trend,technology";
   return String(v).split(",").map(function(s){return s.trim();}).filter(Boolean);
 }
 function _ptChatLoad(){
