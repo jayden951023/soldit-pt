@@ -4643,27 +4643,27 @@ function _setEndPrefetch(){
 }
 function _formCueSay(){
   try{
-    if(typeof CO==="undefined" || typeof FORM_CUES==="undefined") return;
+    if(typeof CO==="undefined") return;
     var e = (typeof coachEx==="function") ? coachEx() : null;
-    var cue = e ? FORM_CUES[e.id] : null;
-    if(!cue) return;
-    var key = "ex"+CO.ei;   // 운동마다 1번 (같은 운동 세트마다 반복 X)
+    if(!e) return;
+    var key = "ex"+CO.ei;   // 운동마다 1번 (운동 시작 시)
     if(window._formCueSaidFor===key) return; window._formCueSaidFor=key;
-    var cache = window._ttsCache = window._ttsCache || {};
-    var play=function(audio){
-      if(audio){
-        try{ if(window._formCueAudio) window._formCueAudio.pause(); }catch(e){}
-        try{ var a=new Audio(audio); window._formCueAudio=a; a.play().catch(function(){ try{ _speak(cue); }catch(_){} }); }
-        catch(e){ try{ _speak(cue); }catch(_){} }
-      } else { try{ _speak(cue); }catch(e){} }   // 폴백: 폰 TTS
-    };
-    if(cache[cue]){ play(cache[cue]); return; }
-    if(typeof PT_API==="undefined" || !PT_API){ play(""); return; }
     var vid=(typeof voiceId==="function")?voiceId():"daeun";
-    fetch(PT_API.replace("/pt-coach","/pt-chat-tts")+"?voice="+encodeURIComponent(vid)+"&text="+encodeURIComponent(cue))
-      .then(function(r){return r.json();})
-      .then(function(j){ if(j&&j.audio){ cache[cue]=j.audio; play(j.audio); } else play(""); })
-      .catch(function(){ play(""); });
+    var fallback = (typeof FORM_CUES!=="undefined" && FORM_CUES[e.id]) || "";
+    var cache = window._formCache = window._formCache || {};
+    var ckey = e.id+"|"+vid;
+    var play=function(audio, text){
+      if(audio){
+        try{ if(window._formCueAudio) window._formCueAudio.pause(); }catch(_){}
+        try{ var a=new Audio(audio); window._formCueAudio=a; a.play().catch(function(){ try{ if(text||fallback) _speak(text||fallback); }catch(__){} }); }
+        catch(_){ try{ if(text||fallback) _speak(text||fallback); }catch(__){} }
+      } else { try{ if(fallback) _speak(fallback); }catch(_){} }   // 폴백: 짧은 고정 안내 폰TTS
+    };
+    if(cache[ckey]){ play(cache[ckey].audio, cache[ckey].text); return; }
+    if(typeof PT_API==="undefined" || !PT_API){ play("", ""); return; }
+    // 운동별 '상세' 자세 가이드 (Claude 생성, 자연 목소리) — 서버 영구캐시라 두 번째부턴 즉시
+    var url=PT_API.replace("/pt-coach","/pt-form")+"?voice="+encodeURIComponent(vid)+"&ex="+encodeURIComponent(e.name||"")+"&muscle="+encodeURIComponent(e.m||"");
+    fetch(url).then(function(r){return r.json();}).then(function(j){ if(j&&j.audio){ cache[ckey]={audio:j.audio,text:j.text}; play(j.audio,j.text); } else play("",""); }).catch(function(){ play("",""); });
   }catch(e){}
 }
 function _ptChatLoad(){
