@@ -4144,6 +4144,7 @@ function coachStart(){
   const plan = todayPlan();
   if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
   CO = {plan, ei:0, si:0, phase:"ready", t:5, timer:null, log:{}};
+  try{ window._formCueSaidFor=null; if(window._ptChat) window._ptChat.idx=0; _ptChatLoad(); }catch(e){}   // (대표 8/18) 운동 시작마다 잡담 미리 로드 + 처음부터 재생(중복방지 idx 리셋)
   // 이미 한 세트 복원 — 나갔다 와도 처음부터 안 하고 이어서 (대표 지시 8/4)
   try{
     const _dm=(P().done[todayKey()])||{};
