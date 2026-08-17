@@ -4652,7 +4652,10 @@ function _formCueSay(){
     if(cache[ckey]){ play(cache[ckey].audio, cache[ckey].text); return; }
     if(typeof PT_API==="undefined" || !PT_API){ play("", ""); return; }
     // 운동별 '상세' 자세 가이드 (Claude 생성, 자연 목소리) — 서버 영구캐시라 두 번째부턴 즉시
-    var url=PT_API.replace("/pt-coach","/pt-form")+"?voice="+encodeURIComponent(vid)+"&ex="+encodeURIComponent(e.name||"")+"&muscle="+encodeURIComponent(e.m||"");
+    var _gm=(typeof GYM!=="undefined"&&GYM.length)?(GYM.filter(function(x){return x.id===e.id;})[0]||null):null;
+    var _brand=_gm?(_gm.b||""):"";
+    var _equip=_gm?({plate:"플레이트(원판) 로딩 시티드 머신",pin:"핀 셀렉터 머신",free:"프리웨이트"}[_gm.w]||""):"";
+    var url=PT_API.replace("/pt-coach","/pt-form")+"?voice="+encodeURIComponent(vid)+"&ex="+encodeURIComponent(e.name||"")+"&muscle="+encodeURIComponent(e.m||"")+"&brand="+encodeURIComponent(_brand)+"&equip="+encodeURIComponent(_equip);
     fetch(url).then(function(r){return r.json();}).then(function(j){ if(j&&j.audio){ cache[ckey]={audio:j.audio,text:j.text}; play(j.audio,j.text); } else play("",""); }).catch(function(){ play("",""); });
   }catch(e){}
 }
