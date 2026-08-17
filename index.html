@@ -4618,15 +4618,29 @@ function _ptChatSay(){
     if(localStorage.getItem("jayna_chat")==="0") return;
     if(typeof CO==="undefined" || CO.phase!=="rest") return;   // 휴식 중에만
     var pc=window._ptChat; if(!pc || !pc.items || !pc.items.length) return;
-    window._ptChatTurn=(window._ptChatTurn||0)+1;
-    // (대표 8/17) 쉴 때마다 나오게 — 최대한 많이 (중복은 아래에서 차단)
-    if(pc.idx >= pc.items.length) return;             // 중복 X — 세션당 각 꼭지 딱 1번만(순환 안 함)
+    if(pc.idx >= pc.items.length) return;   // 중복 X — 세션당 각 꼭지 딱 1번만
     var it=pc.items[pc.idx]; pc.idx++;
-    if(it && it.audio){
-      try{ if(window._ptChatAudio){ window._ptChatAudio.pause(); } }catch(e){}
-      try{ var a=new Audio(it.audio); window._ptChatAudio=a; a.play().catch(function(){ try{ if(it.text) _speak(it.text); }catch(_){} }); }
-      catch(e){ try{ if(it.text) _speak(it.text); }catch(_){} }
-    } else if(it && it.text){ try{ _speak(it.text); }catch(e){} }
+    var _play=function(audio){
+      if(audio){
+        try{ if(window._ptChatAudio){ window._ptChatAudio.pause(); } }catch(e){}
+        try{ var a=new Audio(audio); window._ptChatAudio=a; a.play().catch(function(){ try{ if(it.text) _speak(it.text); }catch(_){} }); }
+        catch(e){ try{ if(it.text) _speak(it.text); }catch(_){} }
+      } else if(it && it.text){ try{ _speak(it.text); }catch(e){} }
+    };
+    if(it.audio){ _play(it.audio); _ptChatPrefetch(pc.idx); return; }
+    // 재생 직전 음성 1개만 받아옴 (많은 개수도 안정적)
+    var vid=(typeof voiceId==="function")?voiceId():"daeun";
+    var url=PT_API.replace("/pt-coach","/pt-chat-tts")+"?voice="+encodeURIComponent(vid)+"&text="+encodeURIComponent(it.text||"");
+    fetch(url).then(function(r){return r.json();}).then(function(j){ if(j&&j.audio){ it.audio=j.audio; } _play(it.audio||""); _ptChatPrefetch(pc.idx); }).catch(function(){ _play(""); });
+  }catch(e){}
+}
+function _ptChatPrefetch(i){
+  try{
+    if(localStorage.getItem("jayna_chat")==="0") return;
+    var pc=window._ptChat; if(!pc || !pc.items || i>=pc.items.length) return;
+    var nx=pc.items[i]; if(!nx || nx.audio || nx._pf) return; nx._pf=1;
+    var vid=(typeof voiceId==="function")?voiceId():"daeun";
+    fetch(PT_API.replace("/pt-coach","/pt-chat-tts")+"?voice="+encodeURIComponent(vid)+"&text="+encodeURIComponent(nx.text||"")).then(function(r){return r.json();}).then(function(j){ if(j&&j.audio) nx.audio=j.audio; }).catch(function(){});
   }catch(e){}
 }
 
