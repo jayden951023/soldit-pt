@@ -4640,6 +4640,31 @@ function _setEndPrefetch(){
     });
   }catch(e){}
 }
+function _formCueSay(){
+  try{
+    if(typeof CO==="undefined" || typeof FORM_CUES==="undefined") return;
+    var e = (typeof coachEx==="function") ? coachEx() : null;
+    var cue = e ? FORM_CUES[e.id] : null;
+    if(!cue) return;
+    var key = "ex"+CO.ei;   // 운동마다 1번 (같은 운동 세트마다 반복 X)
+    if(window._formCueSaidFor===key) return; window._formCueSaidFor=key;
+    var cache = window._ttsCache = window._ttsCache || {};
+    var play=function(audio){
+      if(audio){
+        try{ if(window._formCueAudio) window._formCueAudio.pause(); }catch(e){}
+        try{ var a=new Audio(audio); window._formCueAudio=a; a.play().catch(function(){ try{ _speak(cue); }catch(_){} }); }
+        catch(e){ try{ _speak(cue); }catch(_){} }
+      } else { try{ _speak(cue); }catch(e){} }   // 폴백: 폰 TTS
+    };
+    if(cache[cue]){ play(cache[cue]); return; }
+    if(typeof PT_API==="undefined" || !PT_API){ play(""); return; }
+    var vid=(typeof voiceId==="function")?voiceId():"daeun";
+    fetch(PT_API.replace("/pt-coach","/pt-chat-tts")+"?voice="+encodeURIComponent(vid)+"&text="+encodeURIComponent(cue))
+      .then(function(r){return r.json();})
+      .then(function(j){ if(j&&j.audio){ cache[cue]=j.audio; play(j.audio); } else play(""); })
+      .catch(function(){ play(""); });
+  }catch(e){}
+}
 function _ptChatLoad(){
   try{
     if(localStorage.getItem("jayna_chat")==="0") return;
@@ -4961,6 +4986,7 @@ function coachRender(){
     <div class="co-body" id="coBody">${coachBodyHTML()}</div>
     <div class="co-navrow" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">${CO.ei>0 ? '<button class="co-skip" onclick="coachPrevEx()">◀ 이전 운동</button> ' : ''}<button class="co-skip" onclick="coachSkipEx()">이 운동 건너뛰기 ⏭</button></div>
    </div>`;
+  try{ if(typeof CO!=="undefined" && CO.phase==="work") _formCueSay(); }catch(e){}
   coachPaint();
 }
 
