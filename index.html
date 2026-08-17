@@ -2846,7 +2846,7 @@ const _Q6 = {
 function estimateMinutes(exs){
   let sec = 0;
   (exs||[]).forEach(e=>{
-    const ps = e.planSets || [];
+    const ps = (e.planSets || []).filter(x=>x&&x.kind!=="warm");   // 워밍업 제거(대표 8/18): 옛 저장/생성 플랜의 워밍업 세트도 표시 X
     const nWarm = ps.filter(x=>x.kind==="warm").length;
     const nWork = ps.filter(x=>x.kind!=="warm").length || e.sets || 3;
     const reps = e.recReps || 10;
@@ -2985,7 +2985,7 @@ function showTodayPreview(offset){
   w.id = "pvSheet";
   const totalSets = plan.exs.reduce((a,e)=>a+((e.planSets||[]).length||e.sets),0);
   const rows = plan.exs.map((e,i)=>{
-    const ps = e.planSets || [];
+    const ps = (e.planSets || []).filter(x=>x&&x.kind!=="warm");   // 워밍업 제거(대표 8/18): 옛 저장/생성 플랜의 워밍업 세트도 표시 X
     const work = ps.filter(x=>x.kind==="work");
     const warm = ps.filter(x=>x.kind==="warm");
     const ph = photoOf(e.id);
@@ -3089,8 +3089,8 @@ function renderWorkout(){
     sets.innerHTML=`<div class="set"><span class="lab">세트</span><span class="lab">무게(kg)</span><span class="lab">횟수</span><span class="lab">여유</span><span class="lab">✓</span></div>`;
     // 세트별 지시 (8/4 대표) — 워밍업 포함, 각 세트 목표 무게·횟수를 미리 정해준다.
     //   저장된 조정값이 있으면 그걸 우선 사용(앱을 다시 열어도 조절한 무게 유지)
-    const ps = (saved.planSets && saved.planSets.length) ? saved.planSets
-             : JSON.parse(JSON.stringify(e.planSets||[]));
+    const ps = ((saved.planSets && saved.planSets.length) ? saved.planSets
+             : JSON.parse(JSON.stringify(e.planSets||[]))).filter(x=>x&&x.kind!=="warm");   // 워밍업 제거(대표 8/18): 저장된 옛 플랜에 남은 워밍업 세트도 표시 X
     e._live = ps;
     const rows=[];
     ps.forEach((psi,i)=>{
@@ -4160,7 +4160,7 @@ function coachStop(){
   renderWorkout();
 }
 function coachEx(){ return CO.plan.exs[CO.ei]; }
-function coachSets(){ const e=coachEx(); return e.planSets && e.planSets.length ? e.planSets : [{w:e.recW, reps:e.recReps, label:"1세트", kind:"work"}]; }
+function coachSets(){ const e=coachEx(); const _a=(e.planSets||[]).filter(x=>x&&x.kind!=="warm"); return _a.length ? _a : [{w:e.recW, reps:e.recReps, label:"1세트", kind:"work"}]; }
 function coachSet(){ return coachSets()[CO.si]; }
 
 /* 1초 타이머 — ready/rest/move 는 카운트다운, work 는 경과시간 */
