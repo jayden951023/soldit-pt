@@ -2739,6 +2739,8 @@ const _Q6 = {
       if(usedMove.has(mv)) continue;
       usedMove.add(mv); qIdx[id] = qi; chosen.push(id); got++;
     }
+    // (대표 8/17) 삼두처럼 종목 적은 부위가 쿼터 미달이면 같은동작이라도 보충 — 안 그러면 가슴이 그 자리를 채워 삼두가 중간으로 밀림
+    if(got < cnt){ for(const id of seq){ if(got >= cnt) break; if(chosen.includes(id)) continue; qIdx[id] = qi; chosen.push(id); got++; } }
   });
   // 쿼터로 못 채웠으면(기구를 꺼둔 경우 등) 남은 풀에서 보충
   if(chosen.length<5){
@@ -2746,7 +2748,7 @@ const _Q6 = {
       if(chosen.length>=6) break;
       if(chosen.includes(id)) continue;
       const mv = moveOf(id); if(usedMove.has(mv)) continue;
-      usedMove.add(mv); qIdx[id] = 99; chosen.push(id);
+      var _fq = QUOTA.findIndex(function(q){ return q[0].test(EX[id].m||""); }); usedMove.add(mv); qIdx[id] = (_fq>=0?_fq:99); chosen.push(id);
     }
   }
   // (8/4 대표 지적) 어깨 하다 갑자기 하체로 튀던 문제 — 같은 부위끼리 붙여서 정렬한다.
