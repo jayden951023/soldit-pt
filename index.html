@@ -4528,12 +4528,7 @@ function coachTick(){
       if(CO.phase==="ready"){
         CO.phase="work"; CO.t=0; CO.counting=false; beep(2);
         // "3세트 · 40킬로 · 12번" 을 이어서 말한다 (8/5)
-        try{
-          const st = coachSet(), sets = coachSets();
-          if(st.kind === "warm") say("warmup", vWeight(st.w), vReps(st.reps));
-          else if(CO.si >= sets.length-1) say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "last_set");
-          else say(vSet(CO.si+1), vWeight(st.w), vReps(st.reps), "go");
-        }catch(e){}
+        /* (대표 8/17) 세트 시작 음성(무게·횟수·격려) 제거 — 삐 소리만, "세트 끝"만 말함 */
       }
       else if(CO.phase==="rest"){ coachGo(); /* 휴식 끝나면 시작버튼 없이 바로 다음 세트 (8/6 대표) */ }
       else if(CO.phase==="move"){ CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("moved"); }
@@ -4541,8 +4536,6 @@ function coachTick(){
     }
     if(CO.t<=3 && CO.phase!=="work") beep(0);
     // 휴식 10초 전 알림 + 5·4·3·2·1 카운트 (8/5 대표)
-    if(CO.phase==="rest" && CO.t===10) say("ten");
-    if(CO.t<=5 && CO.t>=1 && CO.phase!=="work" && CO.phase!=="cardio") sayNow("cnt"+CO.t);
     coachPaint();
   }, 1000);
 }
@@ -4646,7 +4639,7 @@ function coachDone(){
   CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   try{ _vq=[]; _vstop(); }catch(e){}
   say("set_done");
-  if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; say("rest_start"); try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
+  if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
   else if(CO.ei < CO.plan.exs.length-1){
     CO.phase="move"; CO.t=20;
     const nx = CO.plan.exs[CO.ei+1];
@@ -4825,14 +4818,7 @@ function coachFeel(dir){
   adjustFrom(coachSets(), CO.si-1 < 0 ? 0 : CO.si-1, dir, EX[e.id]);
   const nx = coachSets()[CO.si];
   const hasW = nx && nx.w!=null;
-  // (대표 8/17) 가벼워/무거워 여러 번 눌러도 더빙이 누적 재생되지 않게 — 이전 재생·대기 취소 후 마지막 1번만
-  try{
-    var _fk = dir==="ok" ? "ok_keep" : dir==="heavy" ? "heavy_down" : "light_up";
-    if(window._feelSpkT) clearTimeout(window._feelSpkT);
-    try{ _vq = []; _vstop(); }catch(e){}
-    try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
-    window._feelSpkT = setTimeout(function(){ try{ say(_fk); }catch(e){} }, 380);
-  }catch(e){ try{ say(dir==="ok" ? "ok_keep" : dir==="heavy" ? "heavy_down" : "light_up"); }catch(_){} }
+  /* (대표 8/17) 가벼워/무거워 음성 안내 제거 — 화면 토스트만 */
   toast(dir==="ok"    ? "딱 좋은 무게예요! 그대로 갑니다 👍"
       : dir==="heavy" ? (hasW ? "다음 세트 "+nx.w+"kg로 낮췄어요 👍" : "다음 세트는 횟수를 조금 줄여도 돼요 👍")
       :                 (hasW ? "다음 세트 "+nx.w+"kg로 올렸어요 💪" : "좋아요! 다음 세트도 힘내요 💪"));
