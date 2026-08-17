@@ -4604,6 +4604,42 @@ function _ptChatToggle(){
     try{ coachRender(); }catch(e){}
   }catch(e){}
 }
+function _setEndSay(n){
+  try{
+    var phrase = (n>=1 && n<=12) ? (n+"세트 끝!") : "세트 끝!";
+    var cache = window._setEndCache = window._setEndCache || {};
+    var play=function(audio){
+      if(audio){
+        try{ if(window._setEndAudio) window._setEndAudio.pause(); }catch(e){}
+        try{ var a=new Audio(audio); window._setEndAudio=a; a.play().catch(function(){ try{ say("set_done"); }catch(_){} }); }
+        catch(e){ try{ say("set_done"); }catch(_){} }
+      } else { try{ say("set_done"); }catch(e){} }   // 폴백: 팩 "세트 끝"
+    };
+    if(cache[phrase]){ play(cache[phrase]); return; }
+    if(typeof PT_API==="undefined" || !PT_API){ play(""); return; }
+    var vid=(typeof voiceId==="function")?voiceId():"daeun";
+    fetch(PT_API.replace("/pt-coach","/pt-chat-tts")+"?voice="+encodeURIComponent(vid)+"&text="+encodeURIComponent(phrase))
+      .then(function(r){return r.json();})
+      .then(function(j){ if(j&&j.audio){ cache[phrase]=j.audio; play(j.audio); } else play(""); })
+      .catch(function(){ play(""); });
+  }catch(e){ try{ say("set_done"); }catch(_){} }
+}
+function _setEndPrefetch(){
+  try{
+    if(typeof PT_API==="undefined" || !PT_API) return;
+    if(window._setEndPF) return; window._setEndPF=1;   // 운동당 한 번만
+    var vid=(typeof voiceId==="function")?voiceId():"daeun";
+    var cache = window._setEndCache = window._setEndCache || {};
+    var ps=["세트 끝!"]; for(var i=1;i<=8;i++) ps.push(i+"세트 끝!");
+    ps.forEach(function(p,idx){
+      setTimeout(function(){
+        if(cache[p]) return;
+        fetch(PT_API.replace("/pt-coach","/pt-chat-tts")+"?voice="+encodeURIComponent(vid)+"&text="+encodeURIComponent(p))
+          .then(function(r){return r.json();}).then(function(j){ if(j&&j.audio) cache[p]=j.audio; }).catch(function(){});
+      }, idx*500);
+    });
+  }catch(e){}
+}
 function _ptChatLoad(){
   try{
     if(localStorage.getItem("jayna_chat")==="0") return;
@@ -4659,7 +4695,7 @@ function coachDone(){
   const last = CO.si >= coachSets().length-1;
   CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   try{ _vq=[]; _vstop(); }catch(e){}
-  try{ var _n=parseInt((coachSet()||{}).label,10); if(_n>=1&&_n<=6) say(vSet(_n),"set_done"); else say("set_done"); }catch(e){ say("set_done"); }
+  try{ _setEndSay(parseInt((coachSet()||{}).label,10)); }catch(e){ say("set_done"); }
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
   else if(CO.ei < CO.plan.exs.length-1){
     CO.phase="move"; CO.t=20;
@@ -4872,7 +4908,7 @@ function _setupEarbudCtl(){
   }catch(e){}
 }
 
-function coachGo(){ try{ _setupEarbudCtl(); }catch(e){}
+function coachGo(){ try{ _setupEarbudCtl(); }catch(e){} try{ _setEndPrefetch(); }catch(e){}
   voiceUnlock();
   CO.phase="work"; CO.t=0; CO.counting=false; beep(2); try{ _vq=[]; _vstop(); }catch(e){} /* (대표 8/17) 세트 시작 음성(무게·횟수·격려) 제거 */
   coachRender();
