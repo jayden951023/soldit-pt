@@ -4714,7 +4714,7 @@ function coachDone(){
   const last = CO.si >= coachSets().length-1;
   CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   try{ _vq=[]; _vstop(); }catch(e){}
-  try{ _setEndSay(parseInt((coachSet()||{}).label,10)); }catch(e){ say("set_done"); }
+  try{ _setEndSay(CO.si + 1); }catch(e){ say("set_done"); }   // 완료한 세트번호 = si+1 ("1세트 끝","2세트 끝"). 예전 parseInt(label)은 "본세트 1"→NaN이라 번호 안 나옴
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
   else if(CO.ei < CO.plan.exs.length-1){
     CO.phase="move"; CO.t=20;
