@@ -4751,7 +4751,14 @@ function coachFeel(dir){
   adjustFrom(coachSets(), CO.si-1 < 0 ? 0 : CO.si-1, dir, EX[e.id]);
   const nx = coachSets()[CO.si];
   const hasW = nx && nx.w!=null;
-  say(dir==="ok" ? "ok_keep" : dir==="heavy" ? "heavy_down" : "light_up");
+  // (대표 8/17) 가벼워/무거워 여러 번 눌러도 더빙이 누적 재생되지 않게 — 이전 재생·대기 취소 후 마지막 1번만
+  try{
+    var _fk = dir==="ok" ? "ok_keep" : dir==="heavy" ? "heavy_down" : "light_up";
+    if(window._feelSpkT) clearTimeout(window._feelSpkT);
+    try{ _vq = []; _vstop(); }catch(e){}
+    try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+    window._feelSpkT = setTimeout(function(){ try{ say(_fk); }catch(e){} }, 380);
+  }catch(e){ try{ say(dir==="ok" ? "ok_keep" : dir==="heavy" ? "heavy_down" : "light_up"); }catch(_){} }
   toast(dir==="ok"    ? "딱 좋은 무게예요! 그대로 갑니다 👍"
       : dir==="heavy" ? (hasW ? "다음 세트 "+nx.w+"kg로 낮췄어요 👍" : "다음 세트는 횟수를 조금 줄여도 돼요 👍")
       :                 (hasW ? "다음 세트 "+nx.w+"kg로 올렸어요 💪" : "좋아요! 다음 세트도 힘내요 💪"));
