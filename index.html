@@ -2612,7 +2612,7 @@ function todayPlan(dayOffset){
   const _ovKey = (P().dayOverride||{})[_d.toISOString().slice(0,10)];
   if(_ovKey){ const _sp=activeSplit(); const _f=Object.values(_sp).find(x=>x&&(x.key===_ovKey||String(x.key||"").startsWith(_ovKey))); if(_f) day=_f; }
   var _cmParts = (P().dayMuscles||{})[_d.toISOString().slice(0,10)];
-  if(Array.isArray(_cmParts) && _cmParts.length){ var _cids = Object.keys(EX).filter(function(id){ return _cmParts.some(function(pp){ return _muscleRe(pp).test(EX[id].m||""); }); }); if(_cids.length>=2) day = { key:"__custom", pool:_cids, _parts:_cmParts.slice() }; }
+  if(Array.isArray(_cmParts) && _cmParts.length){ var _cids = Object.keys(EX).filter(function(id){ return _cmParts.some(function(pp){ return _muscleRe(pp).test(EX[id].m||""); }); }); if(_cids.length>=2) day = { key:"__custom", pool:_cids, _parts:_cmParts.slice(), _keep: !!((P().dayMuscleKeep||{})[_d.toISOString().slice(0,10)]) }; }
   if(day.key==="rest") return {rest:true, day};
   const eq = P().equip;
   const avail = id => EX[id].eq.every(t=> eq.includes(t) || t==="");
@@ -2697,7 +2697,7 @@ const _Q6 = {
     upper: [[/등/,2],[/^어깨/,2],[/가슴/,1],[/이두|삼두/,1]],
     lower: [[/엉덩이|안쪽/,2],[/허벅지 뒤/,2],[/허벅지 앞/,1],[/종아리/,1]],
   })[day.key] || (_knee ? _Q6K : _Q6)[day.key] || [];
-  if(day.key==="__custom" && Array.isArray(day._parts)){ var _ord=day._parts.slice().sort(function(x,y){ return _musclePriority(x)-_musclePriority(y); }); var _per=Math.max(2, Math.round(6/_ord.length)); QUOTA = _ord.map(function(pp){ return [_muscleRe(pp), _per]; }); }
+  if(day.key==="__custom" && Array.isArray(day._parts)){ var _ord=day._keep ? day._parts.slice() : day._parts.slice().sort(function(x,y){ return _musclePriority(x)-_musclePriority(y); }); var _per=Math.max(2, Math.round(6/_ord.length)); QUOTA = _ord.map(function(pp){ return [_muscleRe(pp), _per]; }); }
 
   // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
   const wk = weekIndex();
@@ -3372,7 +3372,7 @@ function applyCoachActions(actions){
     if(a.type==="set_day"){ const key=_PART2KEY[a.part]||String(a.part||"").toLowerCase(); const off=+a.offset||0;
       p.dayOverride=p.dayOverride||{}; p.dayOverride[_dateKeyOff(off)]=key; if(p.dayMuscles)delete p.dayMuscles[_dateKeyOff(off)];
       done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+(a.part||key)+" 운동으로 변경"); }
-    else if(a.type==="set_day_muscles"){ var off=+a.offset||0; var parts=(Array.isArray(a.parts)?a.parts:String(a.parts||a.value||"").split(/[,\s]+/)).map(function(x){return String(x||"").trim();}).filter(Boolean); parts.sort(function(x,y){ return _musclePriority(x)-_musclePriority(y); }); if(parts.length){ p.dayMuscles=p.dayMuscles||{}; p.dayMuscles[_dateKeyOff(off)]=parts; p.avoidMuscle=(p.avoidMuscle||[]).filter(function(am){ return !parts.some(function(pp){ return am===pp || String(am).indexOf(pp)>=0 || pp.indexOf(String(am))>=0; }); }); if(p.dayOverride)delete p.dayOverride[_dateKeyOff(off)]; done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+parts.join("+")+" 운동으로 변경"); } }
+    else if(a.type==="set_day_muscles"){ var off=+a.offset||0; var parts=(Array.isArray(a.parts)?a.parts:String(a.parts||a.value||"").split(/[,\s]+/)).map(function(x){return String(x||"").trim();}).filter(Boolean); var _keepOrd=!!(a.keepOrder||a.keep||a.order==="asis"||a.order==="user"); if(!_keepOrd) parts.sort(function(x,y){ return _musclePriority(x)-_musclePriority(y); }); if(parts.length){ p.dayMuscles=p.dayMuscles||{}; p.dayMuscles[_dateKeyOff(off)]=parts; p.dayMuscleKeep=p.dayMuscleKeep||{}; p.dayMuscleKeep[_dateKeyOff(off)]=_keepOrd; p.avoidMuscle=(p.avoidMuscle||[]).filter(function(am){ return !parts.some(function(pp){ return am===pp || String(am).indexOf(pp)>=0 || pp.indexOf(String(am))>=0; }); }); if(p.dayOverride)delete p.dayOverride[_dateKeyOff(off)]; done.push((off===0?"오늘":off===1?"내일":off+"일 뒤")+" "+parts.join("+")+" 운동으로 변경"); } }
     else if(a.type==="set_rest"){ p.restOverride=Math.max(20,Math.min(300,+a.sec||60)); done.push("쉬는시간 "+p.restOverride+"초"); }
     else if(a.type==="set_goal"){ if(a.value){ p.goal=String(a.value); done.push("목표 "+a.value);} }
     else if(a.type==="avoid_exercise"){ p.avoidExercise=p.avoidExercise||[]; const v=String(a.value||a.name||a.part||"").trim(); if(v&&!p.avoidExercise.includes(v)){ p.avoidExercise.push(v); done.push(v+" 종목 제외"); } }
