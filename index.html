@@ -3786,6 +3786,16 @@ function renderSettings(){
     } else toast("받지 못했어요. 인터넷을 확인해주세요");
   };
   vc.appendChild(vb);
+  // 세트끝 잡담 on/off (대표 8/17)
+  var _chatOn = localStorage.getItem("jayna_chat") !== "0";
+  const cbChat = el("button", _chatOn ? "btn sec" : "btn green", _chatOn ? "쉬는시간 잡담 끄기 💬" : "💬 쉬는시간 잡담 켜기");
+  cbChat.style.marginTop = "8px";
+  cbChat.onclick = function(){
+    if(_chatOn){ localStorage.setItem("jayna_chat","0"); toast("쉬는시간 잡담을 껐어요"); }
+    else { localStorage.setItem("jayna_chat","1"); toast("쉬는시간마다 오늘 얘깃거리를 들려드려요 💬"); try{ _ptChatLoad(); }catch(e){} }
+    renderSettings();
+  };
+  vc.appendChild(cbChat);
   v.appendChild(vc);
 
   // 유산소 인터벌 (8/5 대표)
@@ -4563,6 +4573,36 @@ if(!window._coachDblInit){ window._coachDblInit=1;
     }catch(e){}
   }, true);
 }
+/* 세트끝 잡담 — 오늘/어제 가벼운 얘깃거리를 코치 목소리(타입캐스트)로 (대표 8/17) */
+function _ptChatLoad(){
+  try{
+    if(localStorage.getItem("jayna_chat")==="0") return;
+    if(typeof PT_API==="undefined" || !PT_API) return;
+    var today = new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);
+    if(window._ptChat && window._ptChat.date===today && window._ptChat.items && window._ptChat.items.length) return;
+    if(window._ptChatLoading) return; window._ptChatLoading=true;
+    var vid=(typeof voiceId==="function")?voiceId():"daeun";
+    var url=PT_API.replace("/pt-coach","/pt-chat")+"?voice="+encodeURIComponent(vid);
+    fetch(url).then(function(r){return r.json();}).then(function(j){
+      window._ptChatLoading=false;
+      if(j&&j.ok&&j.items&&j.items.length){ window._ptChat={date:(j.date||today), items:j.items, idx:0}; }
+    }).catch(function(){ window._ptChatLoading=false; });
+  }catch(e){ window._ptChatLoading=false; }
+}
+function _ptChatSay(){
+  try{
+    if(localStorage.getItem("jayna_chat")==="0") return;
+    if(typeof CO==="undefined" || CO.phase!=="rest") return;   // 휴식 중에만
+    var pc=window._ptChat; if(!pc || !pc.items || !pc.items.length) return;
+    var it=pc.items[pc.idx % pc.items.length]; pc.idx++;
+    if(it && it.audio){
+      try{ if(window._ptChatAudio){ window._ptChatAudio.pause(); } }catch(e){}
+      try{ var a=new Audio(it.audio); window._ptChatAudio=a; a.play().catch(function(){ try{ if(it.text) _speak(it.text); }catch(_){} }); }
+      catch(e){ try{ if(it.text) _speak(it.text); }catch(_){} }
+    } else if(it && it.text){ try{ _speak(it.text); }catch(e){} }
+  }catch(e){}
+}
+
 function coachDone(){
   const e = coachEx(), st = coachSet();
   CO.log[e.id] = CO.log[e.id] || [];
@@ -4572,7 +4612,7 @@ function coachDone(){
   CO.feel = null;   // 새 휴식마다 체감 선택 초기화 (8/4)
   try{ _vq=[]; _vstop(); }catch(e){}
   say("set_done");
-  if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; say("rest_start"); }
+  if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; say("rest_start"); try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 5200); }catch(e){} }
   else if(CO.ei < CO.plan.exs.length-1){
     CO.phase="move"; CO.t=20;
     const nx = CO.plan.exs[CO.ei+1];
