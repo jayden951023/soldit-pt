@@ -4134,7 +4134,7 @@ function coachStart(){
   const plan = todayPlan();
   if(plan.rest){ toast("오늘은 휴식일이에요 🌙"); return; }
   CO = {plan, ei:0, si:0, phase:"ready", t:5, timer:null, log:{}};
-  try{ window._formCueSaidFor=null; if(window._ptChat) window._ptChat.idx=0; _ptChatLoad(); }catch(e){}   // (대표 8/18) 운동 시작마다 잡담 미리 로드 + 처음부터 재생(중복방지 idx 리셋)
+  try{ window._formCueSaidFor=null; _ptChatLoad(); }catch(e){}   // (대표 8/18) 잡담 미리 로드. idx는 리셋 안 함 — 재진입/새로고침에도 이어가서 그날 각 꼭지 딱 1번만(중복 방지, localStorage 유지)
   // 이미 한 세트 복원 — 나갔다 와도 처음부터 안 하고 이어서 (대표 지시 8/4)
   try{
     const _dm=(P().done[todayKey()])||{};
@@ -4671,7 +4671,7 @@ function _ptChatLoad(){
     var url=PT_API.replace("/pt-coach","/pt-chat")+"?voice="+encodeURIComponent(vid)+"&topics="+encodeURIComponent(_tp);
     fetch(url).then(function(r){return r.json();}).then(function(j){
       window._ptChatLoading=false;
-      if(j&&j.ok&&j.items&&j.items.length){ window._ptChat={date:(j.date||today), topics:_tp, items:j.items, idx:0}; }
+      if(j&&j.ok&&j.items&&j.items.length){ var _si=0; try{ _si=parseInt(localStorage.getItem("jayna_chat_idx_"+(j.date||today)+"_"+_tp)||"0",10)||0; }catch(e){} if(_si<0||_si>j.items.length) _si=0; window._ptChat={date:(j.date||today), topics:_tp, items:j.items, idx:_si}; }   // 그날 이미 들려준 만큼 이어서(중복 방지)
     }).catch(function(){ window._ptChatLoading=false; });
   }catch(e){ window._ptChatLoading=false; }
 }
@@ -4682,6 +4682,7 @@ function _ptChatSay(){
     var pc=window._ptChat; if(!pc || !pc.items || !pc.items.length) return;
     if(pc.idx >= pc.items.length) return;   // 중복 X — 세션당 각 꼭지 딱 1번만
     var it=pc.items[pc.idx]; pc.idx++;
+    try{ localStorage.setItem("jayna_chat_idx_"+pc.date+"_"+pc.topics, String(pc.idx)); }catch(e){}   // 들려준 개수 저장 — 새로고침/재진입에도 중복 없이 다음 것부터
     var _play=function(audio){
       if(audio){
         try{ if(window._ptChatAudio){ window._ptChatAudio.pause(); } }catch(e){}
