@@ -4866,7 +4866,6 @@ function coachRender(){
     <div class="co-top">
       <button class="co-x" onclick="coachStop()">✕</button>
       <div class="co-prog"><span class="co-date">${todayLabel()}</span>${_mv ? (CO.ei+2)+" / "+total+" 운동 · 이동 중" : (CO.ei+1)+" / "+total+" 운동 · "+(CO.si+1)+" / "+sets.length+" 세트"}</div>
-      ${CO.ei>0 ? '<button class="co-skip" onclick="coachPrevEx()">◀ 이전 운동</button> ' : ''}<button class="co-skip" onclick="coachSkipEx()">이 운동 건너뛰기 ⏭</button>
     </div>
     <div class="co-bar"><i style="width:${Math.round(((CO.ei + (CO.si+1)/sets.length)/total)*100)}%"></i></div>
 
@@ -4882,6 +4881,7 @@ function coachRender(){
     </div>
 
     <div class="co-body" id="coBody">${coachBodyHTML()}</div>
+    <div class="co-navrow" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">${CO.ei>0 ? '<button class="co-skip" onclick="coachPrevEx()">◀ 이전 운동</button> ' : ''}<button class="co-skip" onclick="coachSkipEx()">이 운동 건너뛰기 ⏭</button></div>
    </div>`;
   coachPaint();
 }
