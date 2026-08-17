@@ -4594,7 +4594,10 @@ function _ptChatSay(){
     if(localStorage.getItem("jayna_chat")==="0") return;
     if(typeof CO==="undefined" || CO.phase!=="rest") return;   // 휴식 중에만
     var pc=window._ptChat; if(!pc || !pc.items || !pc.items.length) return;
-    var it=pc.items[pc.idx % pc.items.length]; pc.idx++;
+    window._ptChatTurn=(window._ptChatTurn||0)+1;
+    if(window._ptChatTurn % 2 === 0) return;          // (대표 8/17) 매번 X — 한 번 걸러(짝수 휴식은 건너뜀)
+    if(pc.idx >= pc.items.length) return;             // 중복 X — 세션당 각 꼭지 딱 1번만(순환 안 함)
+    var it=pc.items[pc.idx]; pc.idx++;
     if(it && it.audio){
       try{ if(window._ptChatAudio){ window._ptChatAudio.pause(); } }catch(e){}
       try{ var a=new Audio(it.audio); window._ptChatAudio=a; a.play().catch(function(){ try{ if(it.text) _speak(it.text); }catch(_){} }); }
