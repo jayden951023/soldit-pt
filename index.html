@@ -4536,7 +4536,7 @@ function coachTick(){
         }catch(e){}
       }
       else if(CO.phase==="rest"){ coachGo(); /* 휴식 끝나면 시작버튼 없이 바로 다음 세트 (8/6 대표) */ }
-      else if(CO.phase==="move"){ CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("moved"); }
+      else if(CO.phase==="move"){ CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("moved"); }
       coachRender(); return;
     }
     if(CO.t<=3 && CO.phase!=="work") beep(0);
