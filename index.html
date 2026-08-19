@@ -2302,7 +2302,7 @@ function gameStats(){
   const cardio=(P().cardio||[]).length;
   const xp=sessions*50+sets*5+prs*30+cardio*20;
   const per=300; const level=Math.floor(xp/per)+1;
-  return {sessions,sets,prs,vol,cardio,xp,level,xpIn:xp%per,xpFor:per,streak:streakCount(),week:weekDoneCount(),target:P().weeklyTarget||4};
+  return {sessions,sets,prs,vol,cardio,xp,level,xpIn:xp%per,xpFor:per,streak:streakCount(),week:weekDoneCount(),target:P().weeklyTarget||6};
 }
 const BADGES=[
   {id:"first", i:"🎯", n:"첫 발걸음", chk:g=>g.sessions>=1},
@@ -2321,11 +2321,32 @@ function syncBadges(g){ // 신규 획득분 반환
   P().badges=P().badges||[]; const now=earnedBadges(g); const fresh=now.filter(id=>!P().badges.includes(id));
   P().badges=now; return fresh.map(id=>BADGES.find(b=>b.id===id));
 }
+// (대표 8/20) 이번주 요일별 운동/미운동 스트립 — 경험치 대신 한 주가 한눈에.
+function weekDayStrip(){
+  const ws=weekStart(); const A=activeDays();
+  const tk=nowKST().toISOString().slice(0,10);
+  const L=["월","화","수","목","금","토","일"]; let h="";
+  for(let i=0;i<7;i++){
+    const k=new Date(Date.parse(ws)+i*86400000).toISOString().slice(0,10);
+    const done=A.has(k), today=k===tk, future=k>tk;
+    const bg=done?"#12603e":(future?"#141c2b":"#3a1620");
+    const bd=today?"2px solid #2ea8ee":"1px solid #22304a";
+    const col=done?"#4ade80":(future?"#5f6f86":"#f87171");
+    const ic=done?"✓":(future?"·":"✕");
+    h+=`<div style="flex:1;text-align:center;background:${bg};border:${bd};border-radius:9px;padding:6px 0">
+      <div style="font-size:10.5px;color:#9fb2c8">${L[i]}</div>
+      <div style="font-size:17px;font-weight:800;color:${col};line-height:1.25">${ic}</div></div>`;
+  }
+  return `<div style="display:flex;gap:5px;margin-top:8px">${h}</div>`;
+}
 function renderGameCard(v){
   const g=gameStats(); const c=el("div","game");
-  const pct=Math.round(g.xpIn/g.xpFor*100);
-  const wPct=Math.min(100,Math.round(g.week/g.target*100));
   const R=28,C=2*Math.PI*R, off=C*(1-Math.min(1,g.week/g.target));
+  const left=Math.max(0,g.target-g.week);
+  const dow=(nowKST().getDay()+6)%7;   // 0=월 … 5=토 6=일
+  const motiv = g.week>=g.target
+    ? `⭐ 이번주 목표 ${g.target}회 달성! 대단해요 ${P().name||""}님`
+    : `이번주 ${g.week}/${g.target}회 · ${left}번 더 하면 목표! ${dow>=4?"주말(토·일)에도 나가서 마저 패요 💪":"오늘도 가볼까요 💪"}`;
   c.innerHTML=`<div class="lv">
     <div class="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="${R}" fill="none" stroke="#0d1826" stroke-width="7"/>
       <circle cx="32" cy="32" r="${R}" fill="none" stroke="url(#rg)" stroke-width="7" stroke-linecap="round"
@@ -2333,13 +2354,12 @@ function renderGameCard(v){
       <defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#2ea8ee"/><stop offset="1" stop-color="#12d18e"/></linearGradient></defs></svg>
       <div class="txt">${g.week}/${g.target}<small>이번주</small></div></div>
     <div style="flex:1">
-      <div class="row between"><span class="lvlbadge">Lv.${g.level}</span><span class="pill">🔥 ${g.streak}일 연속</span></div>
-      <div class="xpbar"><i style="width:${pct}%"></i></div>
-      <div class="k" style="margin-top:4px">다음 레벨까지 ${g.xpFor-g.xpIn} XP</div>
+      <div class="row between"><b style="font-size:14px">이번주 운동</b><span class="pill">🔥 ${g.streak}일 연속</span></div>
+      ${weekDayStrip()}
     </div></div>
     <div class="badges">${BADGES.map(b=>{const on=(P().badges||[]).includes(b.id);
       return `<div class="bdg ${on?'':'lock'}"><div class="i">${b.i}</div><div class="n">${b.n}</div></div>`;}).join("")}</div>
-    <div class="motiv">${g.week>=g.target?`⭐ 이번주 목표 달성! 대단해요 ${P().name}님`:MOTIV[g.sessions%MOTIV.length]}</div>`;
+    <div class="motiv">${motiv}</div>`;
   v.appendChild(c);
 }
 function confetti(){ const cols=["#ffd76b","#2ea8ee","#12d18e","#ff5d6c","#c3a0ff"];
@@ -3639,7 +3659,7 @@ function renderSettings(){
     <label class="fld">숙련도</label>
     <select id="s_exp">${["초급","중급","상급"].map(g=>`<option ${p.exp===g?'selected':''}>${g}</option>`).join("")}</select>
     <label class="fld">주간 목표</label>
-    <select id="s_wt">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${(p.weeklyTarget||4)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>
+    <select id="s_wt">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${(p.weeklyTarget||6)===n?'selected':''}>주 ${n}회</option>`).join("")}</select>
     <label class="fld">세트 사이 쉬는 시간</label>
     <select id="s_rest">${[[0,"자동 (목표에 맞게)"],[30,"30초"],[45,"45초"],[60,"1분"],[90,"1분 30초"],[120,"2분"],[180,"3분"]].map(o=>`<option value="${o[0]}" ${(+(p.restOverride||0)===o[0])?'selected':''}>${o[1]}</option>`).join("")}</select>
     <div class="row" style="gap:10px;margin-top:4px">
