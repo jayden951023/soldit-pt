@@ -2709,8 +2709,12 @@ const _Q6 = {
   })[day.key] || (_knee ? _Q6K : _Q6)[day.key] || [];
   if(day.key==="__custom" && Array.isArray(day._parts)){ var _ord=day._keep ? day._parts.slice() : day._parts.slice().sort(function(x,y){ return _musclePriority(x)-_musclePriority(y); }); var _per=Math.max(2, Math.round(6/_ord.length)); QUOTA = _ord.map(function(pp){ return [_muscleRe(pp), _per]; }); }
 
-  // 주차 로테이션 — 매주 다른 기구를 쓰게. 같은 주에는 같은 조합(그날 다시 열어도 안 바뀜).
-  const wk = weekIndex();
+  // (대표 8/24 "운동이 매번 똑같다") 주차 → '며칠째'로 로테이션 → 날마다 다른 종목.
+  //   날짜 기준이라 하루 안에선 고정(재열람·중간로그해도 안 바뀜), 다음 날엔 다른 종목이 나온다.
+  const _ld0 = P().logdays;
+  const wk = (Array.isArray(_ld0) && _ld0.length)
+    ? Math.floor((nowKST() - new Date(_ld0[0] + "T00:00:00+09:00")) / 86400000)
+    : 0;
   //  요일 시드를 더해 수요일/금요일이 같은 종목을 뽑지 않게 한다 (8/4 감사 — 레그컬 중복)
   const daySeed = dow * 3;
   const rot = (arr, take, seed) => {
