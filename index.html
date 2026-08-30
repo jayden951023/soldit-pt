@@ -2737,14 +2737,18 @@ const _Q6 = {
   const moveOf = id => { const n = EX[id].name||""; for(const [re,k] of MOVE){ if(re.test(n)) return k; } return "single_"+id; };
 
   let chosen = [], usedMove = new Set(), qIdx = {};
+  const _doneEx = id => ((P().history||{})[id]||[]).length > 0;
   QUOTA.forEach(([re, cnt], qi)=>{
     // 복합 먼저 채우고 부족하면 고립으로 — 큰 근육을 앞에 두기 위함
     const hit = pool.filter(id=>re.test(EX[id].m) && !chosen.includes(id));
     const c = hit.filter(id=>EX[id].type==="comp");
     const iso = hit.filter(id=>EX[id].type==="iso");
-    const ordered = [...c, ...iso];
+    const _dOrd = [...c.filter(_doneEx), ...iso.filter(_doneEx)];
+    const _fOrd = [...c.filter(id=>!_doneEx(id)), ...iso.filter(id=>!_doneEx(id))];
+    const ordered = [..._dOrd, ..._fOrd];
+    const rotPool = _dOrd.length >= cnt ? _dOrd : ordered;
     // 로테이션 순서를 먼저 쓰되, 같은 동작이면 건너뛰고 다음 후보로 넘어간다.
-    const seq = [...rot(ordered, cnt, qi), ...ordered];
+    const seq = [...rot(rotPool, cnt, qi), ...ordered];
     let got = 0;
     for(const id of seq){
       if(got >= cnt) break;
@@ -2758,7 +2762,7 @@ const _Q6 = {
   });
   // 쿼터로 못 채웠으면(기구를 꺼둔 경우 등) 남은 풀에서 보충
   if(chosen.length<5){
-    for(const id of pool){
+    for(const id of [...pool.filter(_doneEx), ...pool.filter(id=>!_doneEx(id))]){
       if(chosen.length>=6) break;
       if(chosen.includes(id)) continue;
       const mv = moveOf(id); if(usedMove.has(mv)) continue;
