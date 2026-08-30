@@ -4753,7 +4753,7 @@ function _ptChatSay(){
     if(localStorage.getItem("jayna_chat")==="0") return;
     if(typeof CO==="undefined" || CO.phase!=="rest") return;   // 휴식 중에만
     var pc=window._ptChat; if(!pc || !pc.items || !pc.items.length) return;
-    if(pc.idx >= pc.items.length) return;   // 중복 X — 세션당 각 꼭지 딱 1번만
+    if(pc.idx >= pc.items.length) pc.idx = 0;   // 중복 X — 세션당 각 꼭지 딱 1번만
     var it=pc.items[pc.idx]; pc.idx++;
     try{ localStorage.setItem("jayna_chat_idx_"+pc.date+"_"+pc.topics, String(pc.idx)); }catch(e){}   // 들려준 개수 저장 — 새로고침/재진입에도 중복 없이 다음 것부터
     var _play=function(audio){
