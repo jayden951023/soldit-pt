@@ -4562,7 +4562,7 @@ function coachTick(){
         /* (대표 8/17) 세트 시작 음성(무게·횟수·격려) 제거 — 삐 소리만, "세트 끝"만 말함 */
       }
       else if(CO.phase==="rest"){ coachGo(); /* 휴식 끝나면 시작버튼 없이 바로 다음 세트 (8/6 대표) */ }
-      else if(CO.phase==="move"){ CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; CO.counting=false; beep(1); say("moved"); }
+      else if(CO.phase==="move"){ CO.ei++; CO.si=0; coachGo(); /* (대표 9/16) 이동 30초 끝나면 바로 1세트 시작 */ }
       coachRender(); return;
     }
     if(CO.t<=3 && CO.phase!=="work") beep(0);
@@ -4809,7 +4809,7 @@ function coachDone(){
   try{ _setEndSay(CO.si + 1); }catch(e){ say("set_done"); }   // 완료한 세트번호 = si+1 ("1세트 끝","2세트 끝"). 예전 parseInt(label)은 "본세트 1"→NaN이라 번호 안 나옴
   if(!last){ CO.si++; CO.phase="rest"; CO.t=e.rest||60; try{ _ptChatLoad(); if(window._ptChatT) clearTimeout(window._ptChatT); window._ptChatT=setTimeout(_ptChatSay, 1800); }catch(e){} }   // (대표 8/18) 세트끝 더빙 직후 바로 잡담(5.2초→1.8초)
   else if(CO.ei < CO.plan.exs.length-1){
-    CO.phase="move"; CO.t=20;
+    CO.phase="move"; CO.t=30;
     const nx = CO.plan.exs[CO.ei+1];
     say("move", nx ? vEx(nx.id) : null);
   }
@@ -4833,7 +4833,7 @@ function coachSkipEx(){
 
 /* [이동완료] — 다음 운동으로 */
 function coachMoved(){
-  CO.ei++; CO.si=0; CO.phase="ready"; CO.t=5; coachRender();
+  CO.ei++; CO.si=0; coachGo(); /* (대표 9/16) 이동완료 시 바로 1세트 시작 */
 }
 /* ═══ 무릎 보호 (8/4 대표 — 아내분 무릎이 약함) ═══
    무릎 부담이 큰 종목: 깊은 무릎 굴곡 + 대퇴사두 단독 부하
